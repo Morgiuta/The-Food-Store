@@ -1,35 +1,24 @@
-from typing import Optional, List
-from pydantic import BaseModel
+from sqlmodel import SQLModel
+
+from app.shared.schemas.base import PublicSchema
+from app.shared.schemas.pagination import PaginatedResponse
 
 
-# CREATE
-class ProductoCreate(BaseModel):
-    nombre: str
-    descripcion: Optional[str] = None
-    precio_base: float
-    imagen_url: Optional[str] = None
-    stock_cantidad: int = 0
+class ProductoCategoriaCreate(SQLModel):
+    producto_id: int
+    categoria_id: int
+    es_principal: bool = False
 
 
-#  UPDATE
-class ProductoUpdate(BaseModel):
-    nombre: Optional[str] = None
-    descripcion: Optional[str] = None
-    precio_base: Optional[float] = None
-    imagen_url: Optional[str] = None
-    stock_cantidad: Optional[int] = None
-    disponible: Optional[bool] = None
+class ProductoCategoriaUpdate(SQLModel):
+    es_principal: bool
 
 
-#  READ
-class ProductoRead(BaseModel):
-    id: int
-    nombre: str
-    descripcion: Optional[str]
-    precio_base: float
-    imagen_url: Optional[str]
-    stock_cantidad: int
-    disponible: bool
+class ProductoCategoriaPublic(PublicSchema):
+    producto_id: int
+    categoria_id: int
+    es_principal: bool
 
-    class Config:
-        from_attributes = True
+
+class ProductoCategoriaList(PaginatedResponse[ProductoCategoriaPublic]):
+    pass
