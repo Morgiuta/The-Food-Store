@@ -1,0 +1,267 @@
+@baseUrl = http://localhost:8000
+@json = application/json
+
+################################################################################
+# HEALTH
+################################################################################
+
+### Health check básico
+GET {{baseUrl}}/health/
+
+################################################################################
+# TEAMS — CRUD
+################################################################################
+
+### 1. Crear Team Avengers
+POST {{baseUrl}}/teams/
+Content-Type: {{json}}
+
+{
+  "name": "Avengers",
+  "headquarters": "Stark Tower, New York"
+}
+
+### 2. Crear Team Guardians
+POST {{baseUrl}}/teams/
+Content-Type: {{json}}
+
+{
+  "name": "Guardians",
+  "headquarters": "Knowhere"
+}
+
+### 3. Crear Team X-Men
+POST {{baseUrl}}/teams/
+Content-Type: {{json}}
+
+{
+  "name": "X-Men",
+  "headquarters": "Xavier Institute, Westchester"
+}
+
+### 4. Listar todos los teams (paginado)
+GET {{baseUrl}}/teams/
+
+### 5. Listar con paginado explícito
+GET {{baseUrl}}/teams/?offset=0&limit=10
+
+### 6. Ver Team 1 (sin héroes)
+GET {{baseUrl}}/teams/1
+
+### 7. Ver Team 1 con sus héroes
+GET {{baseUrl}}/teams/1/heroes
+
+### 8. Actualización parcial de Team 1 (PATCH)
+PATCH {{baseUrl}}/teams/1
+Content-Type: {{json}}
+
+{
+  "headquarters": "Avengers Compound, Upstate NY"
+}
+
+### 9. Soft delete Team 3
+DELETE {{baseUrl}}/teams/3
+
+### 10. Verificar que Team 3 ya no aparece en el listado
+GET {{baseUrl}}/teams/
+
+### 11. Team inexistente → espera 404
+GET {{baseUrl}}/teams/999
+
+
+################################################################################
+# HEROES — CRUD
+################################################################################
+
+### 12. Crear Hero Captain America (sin equipo)
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Steve Rogers",
+  "alias": "Captain America",
+  "power_level": 88
+}
+
+### 13. Crear Hero Iron Man (sin equipo)
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Tony Stark",
+  "alias": "Iron Man",
+  "power_level": 95
+}
+
+### 14. Crear Hero Black Widow (sin equipo)
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Natasha Romanoff",
+  "alias": "Black Widow",
+  "power_level": 80
+}
+
+### 15. Crear Hero Spider-Man (sin equipo)
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Peter Parker",
+  "alias": "Spider-Man",
+  "power_level": 85
+}
+
+### 16. Crear Hero Groot (para Guardians)
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Groot",
+  "alias": "I am Groot",
+  "power_level": 78
+}
+
+### 17. Alias duplicado → espera 409 Conflict
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Otro Steve",
+  "alias": "Captain America",
+  "power_level": 50
+}
+
+### 18. Power level fuera de rango → espera 422
+POST {{baseUrl}}/heroes/
+Content-Type: {{json}}
+
+{
+  "name": "Overpowered",
+  "alias": "OverHero",
+  "power_level": 150
+}
+
+### 19. Listar todos los héroes activos
+GET {{baseUrl}}/heroes/
+
+### 20. Listar con paginado
+GET {{baseUrl}}/heroes/?offset=0&limit=3
+
+### 21. Ver Hero 1
+GET {{baseUrl}}/heroes/1
+
+### 22. Hero inexistente → espera 404
+GET {{baseUrl}}/heroes/999
+
+
+################################################################################
+# RELACIÓN 1:N — TEAM → HEROES
+################################################################################
+
+### 23. Asignar Hero 1 (Captain America) al Team 1 (Avengers)
+POST {{baseUrl}}/teams/1/heroes/1
+
+### 24. Asignar Hero 2 (Iron Man) al Team 1 (Avengers)
+POST {{baseUrl}}/teams/1/heroes/2
+
+### 25. Asignar Hero 3 (Black Widow) al Team 1 (Avengers)
+POST {{baseUrl}}/teams/1/heroes/3
+
+### 26. Ver Team 1 con sus héroes → debe listar 3
+GET {{baseUrl}}/teams/1/heroes
+
+### 27. Asignar Hero 5 (Groot) al Team 2 (Guardians)
+POST {{baseUrl}}/teams/2/heroes/5
+
+### 28. Ver Team 2 con sus héroes → debe listar Groot
+GET {{baseUrl}}/teams/2/heroes
+
+### 29. Mover Hero 1 de Avengers a Guardians
+#     PATCH actualiza team_id directamente en el héroe
+PATCH {{baseUrl}}/heroes/1
+Content-Type: {{json}}
+
+{
+  "team_id": 2
+}
+
+### 30. Ver Team 1 → Captain America ya no debe aparecer
+GET {{baseUrl}}/teams/1/heroes
+
+### 31. Ver Team 2 → Captain America ahora debe aparecer junto a Groot
+GET {{baseUrl}}/teams/2/heroes
+
+### 32. Quitar héroe de su equipo (team_id = null)
+PATCH {{baseUrl}}/heroes/1
+Content-Type: {{json}}
+
+{
+  "team_id": null
+}
+
+### 33. Verificar que Hero 1 quedó sin equipo
+GET {{baseUrl}}/heroes/1
+
+### 34. Intentar asignar héroe inactivo → espera 422
+#     Primero hacemos soft delete del Hero 4 (Spider-Man)
+DELETE {{baseUrl}}/heroes/4
+
+### 35. Intentar asignar Hero 4 inactivo al Team 1 → espera 422
+POST {{baseUrl}}/teams/1/heroes/4
+
+
+################################################################################
+# PATCH PARCIAL — exclude_unset
+################################################################################
+
+### 36. Actualizar solo power_level — name y alias no deben cambiar
+PATCH {{baseUrl}}/heroes/2
+Content-Type: {{json}}
+
+{
+  "power_level": 99
+}
+
+### 37. Verificar que solo cambió power_level
+GET {{baseUrl}}/heroes/2
+
+### 38. Cambiar alias → si el nuevo alias ya existe, espera 409
+PATCH {{baseUrl}}/heroes/2
+Content-Type: {{json}}
+
+{
+  "alias": "Black Widow"
+}
+
+### 39. Cambiar alias a uno nuevo válido
+PATCH {{baseUrl}}/heroes/2
+Content-Type: {{json}}
+
+{
+  "alias": "Iron Man MK50"
+}
+
+### 40. Verificar cambio de alias
+GET {{baseUrl}}/heroes/2
+
+
+################################################################################
+# SOFT DELETE
+################################################################################
+
+### 41. Soft delete Hero 5 (Groot)
+DELETE {{baseUrl}}/heroes/5
+
+### 42. Hero 5 no debe aparecer en el listado activo
+GET {{baseUrl}}/heroes/
+
+### 43. Hero 5 sigue existiendo pero is_active=false (ver directo por ID)
+GET {{baseUrl}}/heroes/5
+
+### 44. Soft delete Team 2
+DELETE {{baseUrl}}/teams/2
+
+### 45. Team 2 no debe aparecer en el listado
+GET {{baseUrl}}/teams/

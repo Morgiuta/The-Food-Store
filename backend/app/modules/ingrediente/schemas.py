@@ -1,27 +1,29 @@
 from typing import Optional
-from pydantic import BaseModel
+
+from sqlmodel import Field, SQLModel
+
+from app.shared.schemas.base import PublicSchema
+from app.shared.schemas.pagination import PaginatedResponse
 
 
-# 🔹 CREATE
-class IngredienteCreate(BaseModel):
-    nombre: str
+class IngredienteCreate(SQLModel):
+    nombre: str = Field(min_length=1, max_length=100)
     descripcion: Optional[str] = None
     es_alergeno: bool = False
 
 
-# 🔹 UPDATE
-class IngredienteUpdate(BaseModel):
-    nombre: Optional[str] = None
+class IngredienteUpdate(SQLModel):
+    nombre: Optional[str] = Field(default=None, min_length=1, max_length=100)
     descripcion: Optional[str] = None
     es_alergeno: Optional[bool] = None
 
 
-# 🔹 READ
-class IngredienteRead(BaseModel):
+class IngredientePublic(PublicSchema):
     id: int
     nombre: str
     descripcion: Optional[str]
     es_alergeno: bool
 
-    class Config:
-        from_attributes = True
+
+class IngredienteList(PaginatedResponse[IngredientePublic]):
+    pass

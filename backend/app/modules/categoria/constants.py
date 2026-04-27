@@ -1,0 +1,1 @@
+MAX_NOMBRE_LEN = 100
