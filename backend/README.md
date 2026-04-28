@@ -28,11 +28,11 @@ pip install -r requirements.txt
 ## Ejecucion
 
 ```bash
-fastapi dev main.py
+uvicorn main:app --reload
 ```
 
 o
 
 ```bash
-uvicorn main:app --reload
+fastapi dev main.py
 ```

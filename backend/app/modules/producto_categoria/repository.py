@@ -24,6 +24,26 @@ class ProductoCategoriaRepository(BaseRepository[ProductoCategoria]):
     def count_all(self) -> int:
         return len(self.session.exec(select(ProductoCategoria)).all())
 
+    def list_by_producto(self, producto_id: int) -> list[ProductoCategoria]:
+        return list(
+            self.session.exec(
+                select(ProductoCategoria)
+                .where(ProductoCategoria.producto_id == producto_id)
+                .order_by(ProductoCategoria.categoria_id)
+            ).all()
+        )
+
+    def list_by_producto_ids(self, producto_ids: list[int]) -> list[ProductoCategoria]:
+        if not producto_ids:
+            return []
+        return list(
+            self.session.exec(
+                select(ProductoCategoria)
+                .where(ProductoCategoria.producto_id.in_(producto_ids))
+                .order_by(ProductoCategoria.producto_id, ProductoCategoria.categoria_id)
+            ).all()
+        )
+
     def get_principal_for_producto(self, producto_id: int) -> ProductoCategoria | None:
         return self.session.exec(
             select(ProductoCategoria).where(

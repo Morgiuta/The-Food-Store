@@ -4,3 +4,17 @@ venv
 __pycache__
 tests
 .vscode
+
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/api/__pycache__/
+backend/app/core/__pycache__/
+backend/app/modules/__pycache__/
+backend/app/modules/categoria/__pycache__/
+backend/app/modules/ingrediente/__pycache__/
+backend/app/modules/producto/__pycache__/
+backend/app/modules/producto_categoria/__pycache__/
+backend/app/modules/producto_ingrediente/__pycache__/
+backend/app/shared/__pycache__/
+backend/app/shared/schemas/__pycache__/
+backend/app/shared/services/__pycache__/
