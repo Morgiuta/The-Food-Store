@@ -1,0 +1,48 @@
+.supplies-table {
+  overflow-x: auto;
+}
+
+.supplies-table table {
+  border-collapse: collapse;
+  min-width: 720px;
+  width: 100%;
+}
+
+.supplies-table th,
+.supplies-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.supplies-table th {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.supplies-table td {
+  color: var(--color-muted);
+}
+
+.supplies-table td strong {
+  color: var(--color-charcoal);
+}
+
+.supplies-table__quantity {
+  background: #ecfccb;
+  border-radius: 999px;
+  color: var(--color-lettuce);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  min-width: 46px;
+  padding: 6px 10px;
+}
+
+.supplies-table__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

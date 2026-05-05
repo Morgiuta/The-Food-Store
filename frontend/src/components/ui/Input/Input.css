@@ -1,0 +1,29 @@
+.input-field {
+  display: grid;
+  gap: 8px;
+}
+
+.input-field span {
+  color: var(--color-charcoal);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.input-field input {
+  background: #fffaf3;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-charcoal);
+  min-height: 44px;
+  outline: none;
+  padding: 0 12px;
+}
+
+.input-field input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.16);
+}
+
+.input-field__error {
+  color: var(--color-ketchup);
+}

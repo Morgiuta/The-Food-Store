@@ -1,0 +1,21 @@
+.supply-form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.supply-form__header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.supply-form__header h2 {
+  font-size: 1.4rem;
+  margin-top: 4px;
+}
