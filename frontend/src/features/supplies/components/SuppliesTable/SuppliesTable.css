@@ -22,6 +22,17 @@
   text-transform: uppercase;
 }
 
+.supplies-table th button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  padding: 0;
+  text-transform: uppercase;
+}
+
 .supplies-table td {
   color: var(--color-muted);
 }
@@ -30,19 +41,46 @@
   color: var(--color-charcoal);
 }
 
-.supplies-table__quantity {
+.supplies-table__badge {
   background: #ecfccb;
   border-radius: 999px;
   color: var(--color-lettuce);
   display: inline-flex;
   font-weight: 900;
   justify-content: center;
-  min-width: 46px;
+  min-width: 72px;
   padding: 6px 10px;
+}
+
+.supplies-table__badge--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.supplies-table__badge--inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.supplies-table__badge--active {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .supplies-table__actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.supplies-table__state {
+  align-items: center;
+  background: #fff7ed;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  display: flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 220px;
 }

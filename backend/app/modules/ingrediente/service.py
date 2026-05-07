@@ -6,6 +6,7 @@ from app.modules.ingrediente.models import Ingrediente
 from app.modules.ingrediente.schemas import (
     IngredienteCreate,
     IngredienteList,
+    IngredienteListParams,
     IngredientePublic,
     IngredienteUpdate,
 )
@@ -28,7 +29,7 @@ class IngredienteService(BaseService):
         nombre: str,
         current_id: int | None = None,
     ) -> None:
-        ingrediente = uow.ingredientes.get_by_nombre(nombre)
+        ingrediente = uow.ingredientes.get_by_nombre(nombre, include_deleted=True)
         if ingrediente and ingrediente.id != current_id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -43,10 +44,10 @@ class IngredienteService(BaseService):
             result = IngredientePublic.model_validate(ingrediente)
         return result
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> IngredienteList:
+    def get_all(self, params: IngredienteListParams) -> IngredienteList:
         with IngredienteUnitOfWork(self._session) as uow:
-            ingredientes = uow.ingredientes.list_all(offset=offset, limit=limit)
-            total = uow.ingredientes.count_all()
+            ingredientes = uow.ingredientes.list_all(params)
+            total = uow.ingredientes.count_all(params)
             result = IngredienteList(
                 data=[IngredientePublic.model_validate(ingrediente) for ingrediente in ingredientes],
                 total=total,
@@ -78,5 +79,6 @@ class IngredienteService(BaseService):
     def delete(self, ingrediente_id: int) -> None:
         with IngredienteUnitOfWork(self._session) as uow:
             ingrediente = self._get_or_404(uow, ingrediente_id)
-            uow.ingredientes.session.delete(ingrediente)
-            uow.ingredientes.session.flush()
+            ingrediente.deleted_at = utcnow()
+            ingrediente.updated_at = utcnow()
+            uow.ingredientes.add(ingrediente)

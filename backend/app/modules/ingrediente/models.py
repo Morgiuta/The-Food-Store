@@ -25,6 +25,10 @@ class Ingrediente(SQLModel, table=True):
         default_factory=utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
     productos_ingrediente: list["ProductoIngrediente"] = Relationship(
         back_populates="ingrediente"

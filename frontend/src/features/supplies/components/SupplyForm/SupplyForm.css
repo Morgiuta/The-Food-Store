@@ -19,3 +19,22 @@
   font-size: 1.4rem;
   margin-top: 4px;
 }
+
+.supply-form__check {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-charcoal);
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  gap: 10px;
+  padding: 13px 14px;
+}
+
+.supply-form__check input {
+  accent-color: var(--color-primary);
+  height: 18px;
+  width: 18px;
+}

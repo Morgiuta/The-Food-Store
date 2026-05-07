@@ -6,4 +6,5 @@ export interface LoginCredentials {
 export interface User {
   id: string;
   name: string;
+  role: 'ADMIN' | 'STOCK';
 }

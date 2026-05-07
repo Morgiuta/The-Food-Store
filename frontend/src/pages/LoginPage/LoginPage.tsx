@@ -10,6 +10,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, login } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [credentials, setCredentials] = useState<LoginCredentials>({
     username: '',
     password: '',
@@ -21,10 +23,23 @@ export function LoginPage() {
     return <Navigate to="/" replace />;
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    login(credentials);
-    navigate(from, { replace: true });
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await login(credentials);
+      navigate(from, { replace: true });
+    } catch (loginError) {
+      setError(
+        loginError instanceof Error
+          ? loginError.message
+          : 'No se pudo iniciar sesion.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,7 +57,7 @@ export function LoginPage() {
           <div>
             <span className="section-kicker">Acceso interno</span>
             <h1>Ingresar al panel</h1>
-            <p>Login mock para primera entrega funcional.</p>
+            <p>Credenciales demo: admin/1234 o stock/stock.</p>
           </div>
 
           <Input
@@ -50,6 +65,7 @@ export function LoginPage() {
             name="username"
             placeholder="admin"
             value={credentials.username}
+            autoComplete="username"
             onChange={(event) =>
               setCredentials((current) => ({ ...current, username: event.target.value }))
             }
@@ -61,12 +77,17 @@ export function LoginPage() {
             placeholder="1234"
             type="password"
             value={credentials.password}
+            autoComplete="current-password"
             onChange={(event) =>
               setCredentials((current) => ({ ...current, password: event.target.value }))
             }
           />
 
-          <Button type="submit">Entrar</Button>
+          {error ? <div className="login-page__error">{error}</div> : null}
+
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Validando...' : 'Entrar'}
+          </Button>
         </form>
       </section>
     </main>

@@ -1,30 +1,88 @@
-import { mockSupplies } from '../data/mockSupplies';
-import type { Supply } from '../types/supply';
+import type { SuppliesQuery, SuppliesResponse, Supply, SupplyFormValues } from '../types/supply';
 
-let supplies = [...mockSupplies];
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1').replace(
+  /\/$/,
+  '',
+);
+
+class ApiError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+  }
+}
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    let message = 'No se pudo completar la operacion.';
+    try {
+      const payload = await response.json();
+      message = payload.detail ?? payload.message ?? message;
+    } catch {
+      message = response.statusText || message;
+    }
+    throw new ApiError(message, response.status);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function buildQuery(params: SuppliesQuery): string {
+  const query = new URLSearchParams();
+  query.set('offset', String(params.offset));
+  query.set('limit', String(params.limit));
+  query.set('sort_by', params.sort_by);
+  query.set('sort_dir', params.sort_dir);
+  query.set('include_deleted', String(params.include_deleted));
+
+  if (params.search.trim()) {
+    query.set('search', params.search.trim());
+  }
+
+  if (params.es_alergeno !== 'all') {
+    query.set('es_alergeno', params.es_alergeno);
+  }
+
+  return query.toString();
+}
 
 export const suppliesService = {
-  getAll(): Supply[] {
-    return [...supplies];
+  getAll(params: SuppliesQuery): Promise<SuppliesResponse> {
+    return request<SuppliesResponse>(`/ingredientes?${buildQuery(params)}`);
   },
 
-  create(input: Omit<Supply, 'id'>): Supply {
-    const supply: Supply = {
-      ...input,
-      id: crypto.randomUUID(),
-    };
-
-    supplies = [supply, ...supplies];
-    return supply;
+  getById(id: number): Promise<Supply> {
+    return request<Supply>(`/ingredientes/${id}`);
   },
 
-  update(id: string, input: Omit<Supply, 'id'>): Supply {
-    const updated: Supply = { id, ...input };
-    supplies = supplies.map((supply) => (supply.id === id ? updated : supply));
-    return updated;
+  create(input: SupplyFormValues): Promise<Supply> {
+    return request<Supply>('/ingredientes/', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   },
 
-  remove(id: string): void {
-    supplies = supplies.filter((supply) => supply.id !== id);
+  update(id: number, input: SupplyFormValues): Promise<Supply> {
+    return request<Supply>(`/ingredientes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+
+  remove(id: number): Promise<void> {
+    return request<void>(`/ingredientes/${id}`, {
+      method: 'DELETE',
+    });
   },
 };

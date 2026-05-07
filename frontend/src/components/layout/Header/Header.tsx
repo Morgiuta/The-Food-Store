@@ -12,7 +12,9 @@ export function Header() {
         <h1>Food Store</h1>
       </div>
       <div className="header__actions">
-        <span className="header__user">{user?.name}</span>
+        <span className="header__user">
+          {user?.name} - {user?.role}
+        </span>
         <Button variant="secondary" onClick={logout}>
           Cerrar sesion
         </Button>

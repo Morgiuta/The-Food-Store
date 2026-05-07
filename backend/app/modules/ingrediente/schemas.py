@@ -1,4 +1,5 @@
-from typing import Optional
+from datetime import datetime
+from typing import Literal, Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -23,6 +24,19 @@ class IngredientePublic(PublicSchema):
     nombre: str
     descripcion: Optional[str]
     es_alergeno: bool
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime]
+
+
+class IngredienteListParams(SQLModel):
+    search: Optional[str] = Field(default=None, max_length=100)
+    es_alergeno: Optional[bool] = None
+    include_deleted: bool = False
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1, le=100)
+    sort_by: Literal["id", "nombre", "es_alergeno", "created_at", "updated_at"] = "nombre"
+    sort_dir: Literal["asc", "desc"] = "asc"
 
 
 class IngredienteList(PaginatedResponse[IngredientePublic]):

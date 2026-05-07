@@ -27,10 +27,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       user,
       isAuthenticated: Boolean(user),
-      login: ({ username }) => {
+      login: async ({ username, password }) => {
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 450);
+        });
+
+        const normalizedUser = username.trim().toLowerCase();
+        const isAdmin = normalizedUser === 'admin' && password === '1234';
+        const isStock = normalizedUser === 'stock' && password === 'stock';
+
+        if (!isAdmin && !isStock) {
+          throw new Error('Credenciales invalidas. Usa admin/1234 o stock/stock.');
+        }
+
         const nextUser: User = {
-          id: crypto.randomUUID(),
-          name: username.trim() || 'Food Store Admin',
+          id: isAdmin ? 'demo-admin' : 'demo-stock',
+          name: isAdmin ? 'Food Store Admin' : 'Gestor de Stock',
+          role: isAdmin ? 'ADMIN' : 'STOCK',
         };
 
         setUser(nextUser);
