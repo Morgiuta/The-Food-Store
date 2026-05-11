@@ -70,6 +70,14 @@ def update_ingrediente(
     return svc.update(ingrediente_id, data)
 
 
+@router.patch("/{ingrediente_id}/restore", response_model=IngredientePublic)
+def restore_ingrediente(
+    ingrediente_id: Annotated[int, Path(gt=0)],
+    svc: IngredienteService = Depends(get_ingrediente_service),
+) -> IngredientePublic:
+    return svc.restore(ingrediente_id)
+
+
 @router.delete("/{ingrediente_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_ingrediente(
     ingrediente_id: Annotated[int, Path(gt=0)],

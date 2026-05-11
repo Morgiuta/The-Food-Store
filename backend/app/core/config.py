@@ -1,4 +1,6 @@
-from pydantic import computed_field
+from secrets import token_urlsafe
+
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 
 
@@ -8,6 +10,9 @@ class Settings(BaseSettings):
     postgres_db: str = "catalogo_productos"
     postgres_host: str = "localhost"
     postgres_port: int = 5432
+    secret_key: str = Field(default_factory=lambda: token_urlsafe(32), min_length=32)
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
 
     @computed_field
     @property

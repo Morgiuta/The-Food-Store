@@ -73,6 +73,16 @@ export function useSupplies(query: SuppliesQuery) {
     }
   };
 
+  const restoreSupply = async (id: number) => {
+    setIsMutating(true);
+    try {
+      await suppliesService.restore(id);
+      await loadSupplies();
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   return {
     supplies,
     total,
@@ -85,5 +95,6 @@ export function useSupplies(query: SuppliesQuery) {
     createSupply,
     updateSupply,
     deleteSupply,
+    restoreSupply,
   };
 }

@@ -1,17 +1,42 @@
 .supplies-table {
-  overflow-x: auto;
+  min-width: 0;
+  width: 100%;
 }
 
 .supplies-table table {
   border-collapse: collapse;
-  min-width: 720px;
+  table-layout: fixed;
   width: 100%;
+}
+
+.supplies-table__col--name {
+  width: 20%;
+}
+
+.supplies-table__col--description {
+  width: 29%;
+}
+
+.supplies-table__col--type {
+  width: 10%;
+}
+
+.supplies-table__col--status {
+  width: 10%;
+}
+
+.supplies-table__col--date {
+  width: 13%;
+}
+
+.supplies-table__col--actions {
+  width: 18%;
 }
 
 .supplies-table th,
 .supplies-table td {
   border-bottom: 1px solid var(--color-border);
-  padding: 14px 12px;
+  padding: 14px 10px;
   text-align: left;
   vertical-align: middle;
 }
@@ -35,6 +60,23 @@
 
 .supplies-table td {
   color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.supplies-table th:nth-child(5),
+.supplies-table td:nth-child(5) {
+  padding-right: 28px;
+  white-space: nowrap;
+}
+
+.supplies-table th:nth-child(6),
+.supplies-table td:nth-child(6) {
+  padding-left: 24px;
+}
+
+.supplies-table th:nth-child(n + 3),
+.supplies-table td:nth-child(n + 3) {
+  text-align: right;
 }
 
 .supplies-table td strong {
@@ -50,6 +92,7 @@
   justify-content: center;
   min-width: 72px;
   padding: 6px 10px;
+  white-space: nowrap;
 }
 
 .supplies-table__badge--warning {
@@ -69,8 +112,16 @@
 
 .supplies-table__actions {
   display: flex;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
   justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.supplies-table__actions .button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 11px;
 }
 
 .supplies-table__state {
@@ -83,4 +134,51 @@
   font-weight: 900;
   justify-content: center;
   min-height: 220px;
+}
+
+@media (max-width: 760px) {
+  .supplies-table table,
+  .supplies-table colgroup,
+  .supplies-table thead,
+  .supplies-table tbody,
+  .supplies-table tr,
+  .supplies-table th,
+  .supplies-table td {
+    display: block;
+  }
+
+  .supplies-table thead {
+    display: none;
+  }
+
+  .supplies-table tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    padding: 10px;
+  }
+
+  .supplies-table td {
+    align-items: flex-start;
+    border-bottom: 0;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+
+  .supplies-table td::before {
+    color: var(--color-muted);
+    content: attr(data-label);
+    flex: 0 0 110px;
+    font-size: 0.76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .supplies-table__actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    white-space: normal;
+  }
 }

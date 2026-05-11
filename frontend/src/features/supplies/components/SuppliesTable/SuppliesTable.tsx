@@ -12,6 +12,7 @@ interface SuppliesTableProps {
   onView: (supply: Supply) => void;
   onEdit: (supply: Supply) => void;
   onDelete: (supply: Supply) => void;
+  onRestore: (supply: Supply) => void;
 }
 
 function formatDate(value: string): string {
@@ -31,6 +32,7 @@ export function SuppliesTable({
   onView,
   onEdit,
   onDelete,
+  onRestore,
 }: SuppliesTableProps) {
   const renderSortLabel = (field: SuppliesTableProps['sortBy'], label: string) =>
     `${label}${sortBy === field ? (sortDir === 'asc' ? ' ASC' : ' DESC') : ''}`;
@@ -51,6 +53,14 @@ export function SuppliesTable({
   return (
     <div className="supplies-table">
       <table>
+        <colgroup>
+          <col className="supplies-table__col supplies-table__col--name" />
+          <col className="supplies-table__col supplies-table__col--description" />
+          <col className="supplies-table__col supplies-table__col--type" />
+          <col className="supplies-table__col supplies-table__col--status" />
+          <col className="supplies-table__col supplies-table__col--date" />
+          <col className="supplies-table__col supplies-table__col--actions" />
+        </colgroup>
         <thead>
           <tr>
             <th>
@@ -76,11 +86,11 @@ export function SuppliesTable({
         <tbody>
           {supplies.map((supply) => (
             <tr key={supply.id}>
-              <td>
+              <td data-label="Nombre">
                 <strong>{supply.nombre}</strong>
               </td>
-              <td>{supply.descripcion || 'Sin descripcion'}</td>
-              <td>
+              <td data-label="Descripcion">{supply.descripcion || 'Sin descripcion'}</td>
+              <td data-label="Tipo">
                 <span
                   className={
                     supply.es_alergeno
@@ -91,7 +101,7 @@ export function SuppliesTable({
                   {supply.es_alergeno ? 'Alergeno' : 'Comun'}
                 </span>
               </td>
-              <td>
+              <td data-label="Estado">
                 <span
                   className={
                     supply.deleted_at
@@ -102,22 +112,28 @@ export function SuppliesTable({
                   {supply.deleted_at ? 'Inactivo' : 'Activo'}
                 </span>
               </td>
-              <td>{formatDate(supply.updated_at)}</td>
-              <td>
+              <td data-label="Actualizado">{formatDate(supply.updated_at)}</td>
+              <td data-label="Acciones">
                 <div className="supplies-table__actions">
                   <Button variant="ghost" onClick={() => onView(supply)}>
                     Detalle
                   </Button>
-                  <Button variant="secondary" onClick={() => onEdit(supply)}>
+                  <Button
+                    variant="secondary"
+                    disabled={Boolean(supply.deleted_at)}
+                    onClick={() => onEdit(supply)}
+                  >
                     Editar
                   </Button>
-                  <Button
-                    variant="danger"
-                    disabled={Boolean(supply.deleted_at)}
-                    onClick={() => onDelete(supply)}
-                  >
-                    Baja
-                  </Button>
+                  {supply.deleted_at ? (
+                    <Button variant="primary" onClick={() => onRestore(supply)}>
+                      Alta
+                    </Button>
+                  ) : (
+                    <Button variant="danger" onClick={() => onDelete(supply)}>
+                      Baja
+                    </Button>
+                  )}
                 </div>
               </td>
             </tr>

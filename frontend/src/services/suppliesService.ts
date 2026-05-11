@@ -1,4 +1,5 @@
 import type { SuppliesQuery, SuppliesResponse, Supply, SupplyFormValues } from '../types/supply';
+import { getStoredAccessToken } from './authService';
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1').replace(
   /\/$/,
@@ -12,9 +13,11 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getStoredAccessToken();
   const response = await fetch(`${apiBaseUrl}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
     ...options,
@@ -83,6 +86,12 @@ export const suppliesService = {
   remove(id: number): Promise<void> {
     return request<void>(`/ingredientes/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  restore(id: number): Promise<Supply> {
+    return request<Supply>(`/ingredientes/${id}/restore`, {
+      method: 'PATCH',
     });
   },
 };

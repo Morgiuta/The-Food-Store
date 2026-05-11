@@ -2,6 +2,13 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
+  overflow-x: clip;
+  transition: grid-template-columns 180ms ease;
+  width: 100%;
+}
+
+.app-layout--sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
 }
 
 .app-layout__main {
@@ -13,6 +20,7 @@
 .app-layout__content {
   flex: 1;
   padding: 28px;
+  min-width: 0;
 }
 
 @media (max-width: 840px) {

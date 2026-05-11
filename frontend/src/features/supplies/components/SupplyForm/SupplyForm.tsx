@@ -82,18 +82,6 @@ export function SupplyForm({
 
   return (
     <form className="supply-form" onSubmit={handleSubmit}>
-      <div className="supply-form__header">
-        <div>
-          <span className="section-kicker">Stock</span>
-          <h2>{isEditing ? 'Editar insumo' : 'Nuevo insumo'}</h2>
-        </div>
-        {isEditing ? (
-          <Button variant="ghost" onClick={onCancelEdit}>
-            Cancelar
-          </Button>
-        ) : null}
-      </div>
-
       <Input
         label="Nombre"
         name="nombre"
@@ -128,9 +116,14 @@ export function SupplyForm({
         <span>Marcar como alergeno</span>
       </label>
 
-      <Button type="submit" disabled={isSubmitDisabled}>
-        {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Crear insumo'}
-      </Button>
+      <div className="supply-form__actions">
+        <Button variant="ghost" onClick={onCancelEdit}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSubmitDisabled}>
+          {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Crear insumo'}
+        </Button>
+      </div>
     </form>
   );
 }

@@ -1,11 +1,6 @@
 .supply-form {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
   display: grid;
   gap: 18px;
-  padding: 20px;
 }
 
 .supply-form__header {
@@ -37,4 +32,21 @@
   accent-color: var(--color-primary);
   height: 18px;
   width: 18px;
+}
+
+.supply-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .supply-form__actions {
+    flex-direction: column-reverse;
+  }
+
+  .supply-form__actions button {
+    width: 100%;
+  }
 }

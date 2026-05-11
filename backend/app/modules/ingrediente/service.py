@@ -63,6 +63,11 @@ class IngredienteService(BaseService):
     def update(self, ingrediente_id: int, data: IngredienteUpdate) -> IngredientePublic:
         with IngredienteUnitOfWork(self._session) as uow:
             ingrediente = self._get_or_404(uow, ingrediente_id)
+            if ingrediente.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No se puede editar un ingrediente inactivo",
+                )
             patch = data.model_dump(exclude_unset=True)
 
             if "nombre" in patch:
@@ -71,6 +76,20 @@ class IngredienteService(BaseService):
             for field, value in patch.items():
                 setattr(ingrediente, field, value)
 
+            ingrediente.updated_at = utcnow()
+            uow.ingredientes.add(ingrediente)
+            result = IngredientePublic.model_validate(ingrediente)
+        return result
+
+    def restore(self, ingrediente_id: int) -> IngredientePublic:
+        with IngredienteUnitOfWork(self._session) as uow:
+            ingrediente = uow.ingredientes.get_by_id(ingrediente_id, include_deleted=True)
+            if not ingrediente:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Ingrediente con id={ingrediente_id} no encontrado",
+                )
+            ingrediente.deleted_at = None
             ingrediente.updated_at = utcnow()
             uow.ingredientes.add(ingrediente)
             result = IngredientePublic.model_validate(ingrediente)

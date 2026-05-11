@@ -7,6 +7,7 @@ Proyecto con backend FastAPI y frontend React + Vite para la primera entrega del
 - Python 3.11+
 - Node.js 18+
 - PostgreSQL configurado segun el archivo `backend/.env`
+- Variables de seguridad configuradas en `backend/.env` segun `backend/.env.example`
 
 ## Ejecutar backend
 
@@ -79,10 +80,12 @@ admin / 1234
 stock / stock
 ```
 
+El login se valida contra el backend con OAuth2 Password Flow. El backend emite un JWT con expiracion corta y el frontend lo envia en cada request como `Authorization: Bearer <token>`.
+
 ## Funcionalidades incluidas
 
-- Login minimo funcional con persistencia local.
-- Navegacion protegida.
+- Login backend con JWT, hashing bcrypt y persistencia local del token.
+- Navegacion y endpoints backend protegidos.
 - Pantalla de Insumos conectada al backend de Ingredientes.
 - Alta, edicion, detalle, baja logica y listado.
 - Busqueda, filtros, paginacion y ordenamiento.

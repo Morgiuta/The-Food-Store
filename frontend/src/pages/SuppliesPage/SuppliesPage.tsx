@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
+import { Modal } from '../../components/ui/Modal/Modal';
+import { ToastViewport, type ToastMessage, type ToastType } from '../../components/ui/Toast/Toast';
 import { SupplyForm } from '../../features/supplies/components/SupplyForm/SupplyForm';
 import { SuppliesTable } from '../../features/supplies/components/SuppliesTable/SuppliesTable';
 import { useSupplies } from '../../hooks/useSupplies';
 import { suppliesService } from '../../services/suppliesService';
 import type { SuppliesQuery, Supply, SupplyFormValues } from '../../types/supply';
 import './SuppliesPage.css';
-
-type Toast = { type: 'success' | 'error'; message: string };
 
 const defaultQuery: SuppliesQuery = {
   search: '',
@@ -64,7 +64,8 @@ export function SuppliesPage() {
   const [query, setQuery] = useState<SuppliesQuery>(defaultQuery);
   const [selectedSupply, setSelectedSupply] = useState<Supply | null>(null);
   const [detailSupply, setDetailSupply] = useState<Supply | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const stableQuery = useMemo(() => query, [query]);
   const {
@@ -78,6 +79,7 @@ export function SuppliesPage() {
     createSupply,
     updateSupply,
     deleteSupply,
+    restoreSupply,
   } = useSupplies(stableQuery);
 
   const totalPages = Math.max(1, Math.ceil(total / query.limit));
@@ -90,57 +92,75 @@ export function SuppliesPage() {
     setQuery((current) => ({ ...current, ...patch, offset: patch.offset ?? 0 }));
   };
 
-  const notify = (nextToast: Toast) => {
-    setToast(nextToast);
-    window.setTimeout(() => setToast(null), 3600);
+  const dismissToast = (id: number) => {
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  };
+
+  const notify = (type: ToastType, message: string) => {
+    const id = Date.now();
+    setToasts((current) => [...current.slice(-2), { id, message, type }]);
+    window.setTimeout(() => dismissToast(id), 4200);
   };
 
   const handleSubmit = async (values: SupplyFormValues) => {
     try {
       if (selectedSupply) {
-        const confirmed = window.confirm(`Guardar cambios en "${selectedSupply.nombre}"?`);
-        if (!confirmed) {
-          return;
-        }
         await updateSupply(selectedSupply.id, values);
         setSelectedSupply(null);
-        notify({ type: 'success', message: 'Insumo actualizado correctamente.' });
+        setIsFormOpen(false);
+        notify('success', 'Insumo actualizado correctamente.');
         return;
       }
 
       await createSupply(values);
-      notify({ type: 'success', message: 'Insumo creado correctamente.' });
+      setIsFormOpen(false);
+      notify('success', 'Insumo creado correctamente.');
     } catch (requestError) {
-      notify({
-        type: 'error',
-        message:
+      notify(
+        'error',
           requestError instanceof Error
             ? requestError.message
             : 'No se pudo guardar el insumo.',
-      });
+      );
     }
   };
 
   const handleDelete = async (supply: Supply) => {
-    const confirmed = window.confirm(
-      `Dar de baja "${supply.nombre}"? No aparecera en listados activos.`,
-    );
-    if (!confirmed) {
-      return;
-    }
-
     try {
       await deleteSupply(supply.id);
-      notify({ type: 'success', message: 'Insumo dado de baja correctamente.' });
+      notify('success', `"${supply.nombre}" fue dado de baja correctamente.`);
     } catch (requestError) {
-      notify({
-        type: 'error',
-        message:
+      notify(
+        'error',
           requestError instanceof Error
             ? requestError.message
             : 'No se pudo dar de baja el insumo.',
-      });
+      );
     }
+  };
+
+  const handleRestore = async (supply: Supply) => {
+    try {
+      await restoreSupply(supply.id);
+      notify('success', `"${supply.nombre}" fue dado de alta correctamente.`);
+    } catch (requestError) {
+      notify(
+        'error',
+          requestError instanceof Error
+            ? requestError.message
+            : 'No se pudo dar de alta el insumo.',
+      );
+    }
+  };
+
+  const handleEdit = (supply: Supply) => {
+    if (supply.deleted_at) {
+      notify('info', 'Los insumos inactivos no se pueden editar.');
+      return;
+    }
+
+    setSelectedSupply(supply);
+    setIsFormOpen(true);
   };
 
   const handleView = async (supply: Supply) => {
@@ -164,9 +184,7 @@ export function SuppliesPage() {
 
   return (
     <section className="supplies-page">
-      {toast ? (
-        <div className={`supplies-toast supplies-toast--${toast.type}`}>{toast.message}</div>
-      ) : null}
+      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
 
       <div className="supplies-page__heading">
         <div>
@@ -191,13 +209,6 @@ export function SuppliesPage() {
       </div>
 
       <div className="supplies-page__content">
-        <SupplyForm
-          selectedSupply={selectedSupply}
-          isSubmitting={isMutating}
-          existingNames={existingNames}
-          onSubmit={handleSubmit}
-          onCancelEdit={() => setSelectedSupply(null)}
-        />
         <section className="supplies-page__list">
           <div className="supplies-page__list-header">
             <div>
@@ -206,7 +217,19 @@ export function SuppliesPage() {
                 Pagina {currentPage} de {totalPages}
               </span>
             </div>
-            <ButtonLikeExport disabled={supplies.length === 0} onClick={() => exportSuppliesToExcel(supplies)} />
+            <div className="supplies-page__list-actions">
+              <button
+                className="supplies-page__new"
+                type="button"
+                onClick={() => {
+                  setSelectedSupply(null);
+                  setIsFormOpen(true);
+                }}
+              >
+                Nuevo insumo
+              </button>
+              <ButtonLikeExport disabled={supplies.length === 0} onClick={() => exportSuppliesToExcel(supplies)} />
+            </div>
           </div>
 
           <div className="supplies-page__toolbar">
@@ -265,8 +288,9 @@ export function SuppliesPage() {
             isLoading={isLoading}
             onSort={handleSort}
             onView={handleView}
-            onEdit={setSelectedSupply}
+            onEdit={handleEdit}
             onDelete={handleDelete}
+            onRestore={handleRestore}
           />
 
           <div className="supplies-page__pagination">
@@ -291,18 +315,31 @@ export function SuppliesPage() {
         </section>
       </div>
 
+      {isFormOpen ? (
+        <Modal
+          kicker="Stock"
+          title={selectedSupply ? 'Editar insumo' : 'Nuevo insumo'}
+          size="lg"
+          onClose={() => {
+            setIsFormOpen(false);
+            setSelectedSupply(null);
+          }}
+        >
+          <SupplyForm
+            selectedSupply={selectedSupply}
+            isSubmitting={isMutating}
+            existingNames={existingNames}
+            onSubmit={handleSubmit}
+            onCancelEdit={() => {
+              setIsFormOpen(false);
+              setSelectedSupply(null);
+            }}
+          />
+        </Modal>
+      ) : null}
+
       {detailSupply ? (
-        <div className="supplies-modal" role="dialog" aria-modal="true">
-          <div className="supplies-modal__panel">
-            <div className="supplies-modal__header">
-              <div>
-                <span className="section-kicker">Detalle</span>
-                <h3>{detailSupply.nombre}</h3>
-              </div>
-              <button type="button" onClick={() => setDetailSupply(null)}>
-                Cerrar
-              </button>
-            </div>
+        <Modal kicker="Detalle" title={detailSupply.nombre} onClose={() => setDetailSupply(null)}>
             <dl className="supplies-modal__grid">
               <div>
                 <dt>Descripcion</dt>
@@ -321,8 +358,7 @@ export function SuppliesPage() {
                 <dd>{new Date(detailSupply.updated_at).toLocaleString('es-AR')}</dd>
               </div>
             </dl>
-          </div>
-        </div>
+        </Modal>
       ) : null}
     </section>
   );
