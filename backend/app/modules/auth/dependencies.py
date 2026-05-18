@@ -2,10 +2,11 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlmodel import select
 
 from app.api.deps import DbSession
 from app.core.security import decode_access_token
-from app.modules.auth.models import User
+from app.modules.auth.models import Permission, Role, RolePermission, User, UserRole
 from app.modules.auth.schemas import TokenData
 from app.modules.auth.service import get_user_by_username
 
@@ -65,3 +66,63 @@ def get_current_active_user(
             detail="Usuario inactivo",
         )
     return current_user
+
+
+def require_role(allowed_roles: list[str]):
+    allowed_roles_set = set(allowed_roles)
+    allowed_roles_text = ", ".join(allowed_roles)
+
+    def role_checker(
+        current_user: Annotated[User, Depends(get_current_active_user)],
+    ) -> User:
+        if current_user.role not in allowed_roles_set:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Permisos insuficientes. Tu rol es '{current_user.role}'. "
+                    f"Se requiere uno de: {allowed_roles_text}"
+                ),
+            )
+
+        return current_user
+
+    return role_checker
+
+
+def require_permission(resource: str, action: str):
+    def permission_checker(
+        current_user: Annotated[User, Depends(get_current_active_user)],
+        session: DbSession,
+    ) -> User:
+        if current_user.id is None:
+            raise credentials_exception
+
+        statement = (
+            select(Permission.id)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .join(Role, Role.id == RolePermission.role_id)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(
+                UserRole.user_id == current_user.id,
+                Role.is_active == True,  # noqa: E712
+                Permission.resource == resource,
+                Permission.action == action,
+            )
+            .limit(1)
+        )
+        if session.exec(statement).first() is not None:
+            return current_user
+
+        legacy_admin_allowed = current_user.role == "ADMIN"
+        if legacy_admin_allowed:
+            return current_user
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Permisos insuficientes. "
+                f"Se requiere permiso '{resource}:{action}'."
+            ),
+        )
+
+    return permission_checker

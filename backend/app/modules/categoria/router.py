@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
+from app.modules.auth.dependencies import require_permission
 from app.modules.categoria.schemas import (
     CategoriaCreate,
     CategoriaList,
@@ -21,6 +22,7 @@ def get_categoria_service(session: DbSession) -> CategoriaService:
 @router.post("/", response_model=CategoriaPublic, status_code=status.HTTP_201_CREATED)
 def create_categoria(
     data: CategoriaCreate,
+    _current_user=Depends(require_permission("categoria", "create")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.create(data)
@@ -30,6 +32,7 @@ def create_categoria(
 def list_categorias(
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    _current_user=Depends(require_permission("categoria", "read")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaList:
     return svc.get_all(offset=offset, limit=limit)
@@ -38,6 +41,7 @@ def list_categorias(
 @router.get("/{categoria_id}", response_model=CategoriaPublic)
 def get_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("categoria", "read")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.get_by_id(categoria_id)
@@ -47,6 +51,7 @@ def get_categoria(
 def update_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
     data: CategoriaUpdate,
+    _current_user=Depends(require_permission("categoria", "update")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.update(categoria_id, data)
@@ -55,6 +60,7 @@ def update_categoria(
 @router.delete("/{categoria_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("categoria", "delete")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> None:
     svc.soft_delete(categoria_id)

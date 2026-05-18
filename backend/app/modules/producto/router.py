@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
+from app.modules.auth.dependencies import require_permission
 from app.modules.producto.schemas import (
     ProductoCreate,
     ProductoList,
@@ -21,6 +22,7 @@ def get_producto_service(session: DbSession) -> ProductoService:
 @router.post("/", response_model=ProductoPublic, status_code=status.HTTP_201_CREATED)
 def create_producto(
     data: ProductoCreate,
+    _current_user=Depends(require_permission("producto", "create")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.create(data)
@@ -30,6 +32,7 @@ def create_producto(
 def list_productos(
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    _current_user=Depends(require_permission("producto", "read")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoList:
     return svc.get_all(offset=offset, limit=limit)
@@ -38,6 +41,7 @@ def list_productos(
 @router.get("/{producto_id}", response_model=ProductoPublic)
 def get_producto(
     producto_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("producto", "read")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.get_by_id(producto_id)
@@ -47,6 +51,7 @@ def get_producto(
 def update_producto(
     producto_id: Annotated[int, Path(gt=0)],
     data: ProductoUpdate,
+    _current_user=Depends(require_permission("producto", "update")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.update(producto_id, data)
@@ -55,6 +60,7 @@ def update_producto(
 @router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_producto(
     producto_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("producto", "delete")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> None:
     svc.soft_delete(producto_id)

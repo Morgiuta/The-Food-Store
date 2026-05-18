@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
+from app.modules.auth.dependencies import require_permission
 from app.modules.ingrediente.schemas import (
     IngredienteCreate,
     IngredienteList,
@@ -22,6 +23,7 @@ def get_ingrediente_service(session: DbSession) -> IngredienteService:
 @router.post("/", response_model=IngredientePublic, status_code=status.HTTP_201_CREATED)
 def create_ingrediente(
     data: IngredienteCreate,
+    _current_user=Depends(require_permission("ingrediente", "create")),
     svc: IngredienteService = Depends(get_ingrediente_service),
 ) -> IngredientePublic:
     return svc.create(data)
@@ -39,6 +41,7 @@ def list_ingredientes(
         Query(pattern="^(id|nombre|es_alergeno|created_at|updated_at)$"),
     ] = "nombre",
     sort_dir: Annotated[str, Query(pattern="^(asc|desc)$")] = "asc",
+    _current_user=Depends(require_permission("ingrediente", "read")),
     svc: IngredienteService = Depends(get_ingrediente_service),
 ) -> IngredienteList:
     params = IngredienteListParams(
@@ -56,6 +59,7 @@ def list_ingredientes(
 @router.get("/{ingrediente_id}", response_model=IngredientePublic)
 def get_ingrediente(
     ingrediente_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("ingrediente", "read")),
     svc: IngredienteService = Depends(get_ingrediente_service),
 ) -> IngredientePublic:
     return svc.get_by_id(ingrediente_id)
@@ -65,6 +69,7 @@ def get_ingrediente(
 def update_ingrediente(
     ingrediente_id: Annotated[int, Path(gt=0)],
     data: IngredienteUpdate,
+    _current_user=Depends(require_permission("ingrediente", "update")),
     svc: IngredienteService = Depends(get_ingrediente_service),
 ) -> IngredientePublic:
     return svc.update(ingrediente_id, data)
@@ -73,6 +78,7 @@ def update_ingrediente(
 @router.patch("/{ingrediente_id}/restore", response_model=IngredientePublic)
 def restore_ingrediente(
     ingrediente_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("ingrediente", "restore")),
     svc: IngredienteService = Depends(get_ingrediente_service),
 ) -> IngredientePublic:
     return svc.restore(ingrediente_id)
@@ -81,6 +87,7 @@ def restore_ingrediente(
 @router.delete("/{ingrediente_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_ingrediente(
     ingrediente_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("ingrediente", "delete")),
     svc: IngredienteService = Depends(get_ingrediente_service),
 ) -> None:
     svc.delete(ingrediente_id)
