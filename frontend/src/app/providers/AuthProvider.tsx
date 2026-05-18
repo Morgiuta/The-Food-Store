@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import type { User } from '../../types/auth';
 import { AuthContext, type AuthContextValue } from '../contexts/AuthContext';
-import { authService, clearAuthSession, getStoredUser } from '../../services/authService';
+import { authService, getStoredUser } from '../../services/authService';
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(() => getStoredUser());
@@ -15,9 +15,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const nextUser = await authService.login(credentials);
         setUser(nextUser);
       },
-      logout: () => {
+      logout: async () => {
+        await authService.logout();
         setUser(null);
-        clearAuthSession();
       },
     }),
     [user],

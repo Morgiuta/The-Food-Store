@@ -1,5 +1,4 @@
 import type { SuppliesQuery, SuppliesResponse, Supply, SupplyFormValues } from '../types/supply';
-import { getStoredAccessToken } from './authService';
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1').replace(
   /\/$/,
@@ -13,14 +12,13 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = getStoredAccessToken();
   const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
-    ...options,
+    credentials: 'include',
   });
 
   if (!response.ok) {

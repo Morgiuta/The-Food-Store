@@ -1,5 +1,4 @@
 import type {
-  AuthToken,
   AuthUserResponse,
   LoginCredentials,
   User,
@@ -10,7 +9,6 @@ const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/
   '',
 );
 
-const tokenStorageKey = 'food-store-access-token';
 const userStorageKey = 'food-store-user';
 
 function mapAuthUser(payload: AuthUserResponse): User {
@@ -30,10 +28,6 @@ async function parseError(response: Response): Promise<string> {
   }
 }
 
-export function getStoredAccessToken(): string | null {
-  return window.localStorage.getItem(tokenStorageKey);
-}
-
 export function getStoredUser(): User | null {
   const rawUser = window.localStorage.getItem(userStorageKey);
 
@@ -49,13 +43,11 @@ export function getStoredUser(): User | null {
   }
 }
 
-export function saveAuthSession(token: string, user: User): void {
-  window.localStorage.setItem(tokenStorageKey, token);
+export function saveAuthSession(user: User): void {
   window.localStorage.setItem(userStorageKey, JSON.stringify(user));
 }
 
 export function clearAuthSession(): void {
-  window.localStorage.removeItem(tokenStorageKey);
   window.localStorage.removeItem(userStorageKey);
 }
 
@@ -71,17 +63,15 @@ export const authService = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      credentials: 'include',
     });
 
     if (!tokenResponse.ok) {
       throw new Error(await parseError(tokenResponse));
     }
 
-    const tokenPayload = (await tokenResponse.json()) as AuthToken;
     const userResponse = await fetch(`${apiBaseUrl}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${tokenPayload.access_token}`,
-      },
+      credentials: 'include',
     });
 
     if (!userResponse.ok) {
@@ -89,7 +79,14 @@ export const authService = {
     }
 
     const user = mapAuthUser((await userResponse.json()) as AuthUserResponse);
-    saveAuthSession(tokenPayload.access_token, user);
+    saveAuthSession(user);
     return user;
+  },
+  async logout(): Promise<void> {
+    await fetch(`${apiBaseUrl}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    clearAuthSession();
   },
 };

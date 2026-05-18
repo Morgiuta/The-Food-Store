@@ -9,11 +9,6 @@ export interface User {
   role: 'ADMIN' | 'STOCK';
 }
 
-export interface AuthToken {
-  access_token: string;
-  token_type: 'bearer';
-}
-
 export interface AuthUserResponse {
   id: number;
   username: string;
