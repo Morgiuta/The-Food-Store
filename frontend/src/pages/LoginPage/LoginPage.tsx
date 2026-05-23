@@ -72,7 +72,7 @@ export function LoginPage() {
           />
 
           <Input
-            label="Contrasena"
+            label="Contraseña"
             name="password"
             placeholder="1234"
             type="password"

@@ -1,139 +1,143 @@
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.modules.auth.models import Permission, Role, RolePermission, User, UserRole
+from app.modules.auth.models import Rol, Usuario, UsuarioRol
 
 
-def get_user_by_username(session: Session, username: str) -> User | None:
-    statement = select(User).where(User.username == username.strip().lower())
-    return session.exec(statement).first()
+ROLE_PERMISSIONS: dict[str, set[tuple[str, str]]] = {
+    "ADMIN": {("*", "*")},
+    "STOCK": {
+        ("categoria", "read"),
+        ("producto", "create"),
+        ("producto", "read"),
+        ("producto", "update"),
+        ("ingrediente", "create"),
+        ("ingrediente", "read"),
+        ("ingrediente", "update"),
+        ("ingrediente", "restore"),
+        ("pedido", "read"),
+        ("pedido", "update"),
+    },
+    "PEDIDOS": {("pedido", "read"), ("pedido", "update")},
+}
 
 
-def authenticate_user(session: Session, username: str, password: str) -> User | None:
-    user = get_user_by_username(session, username)
-    if not user or not verify_password(password, user.hashed_password):
-        return None
-    return user
+def normalize_login(login: str) -> str:
+    return login.strip().lower()
 
 
-def get_role_by_name(session: Session, name: str) -> Role | None:
-    statement = select(Role).where(Role.name == name.strip().upper())
-    return session.exec(statement).first()
-
-
-def get_permission(session: Session, resource: str, action: str) -> Permission | None:
-    statement = select(Permission).where(
-        Permission.resource == resource,
-        Permission.action == action,
+def get_user_by_username(session: Session, username: str) -> Usuario | None:
+    login = normalize_login(username)
+    statement = select(Usuario).where(
+        Usuario.deleted_at.is_(None),
+        Usuario.email == login,
     )
     return session.exec(statement).first()
 
 
-def ensure_demo_users(session: Session) -> None:
-    resources = ("categoria", "producto", "ingrediente", "pedido")
-    actions = ("create", "read", "update", "delete", "restore")
+def authenticate_user(session: Session, username: str, password: str) -> Usuario | None:
+    user = get_user_by_username(session, username)
+    if not user or not verify_password(password, user.password_hash):
+        return None
+    return user
 
+
+def get_role_by_codigo(session: Session, codigo: str) -> Rol | None:
+    statement = select(Rol).where(Rol.codigo == codigo.strip().upper())
+    return session.exec(statement).first()
+
+
+def get_user_role_codes(session: Session, usuario_id: int) -> list[str]:
+    statement = select(UsuarioRol.rol_codigo).where(UsuarioRol.usuario_id == usuario_id)
+    return list(session.exec(statement).all())
+
+
+def user_has_role(session: Session, usuario_id: int, allowed_roles: set[str]) -> bool:
+    current_roles = set(get_user_role_codes(session, usuario_id))
+    return bool(current_roles.intersection(allowed_roles))
+
+
+def user_has_permission(
+    session: Session,
+    usuario_id: int,
+    resource: str,
+    action: str,
+) -> bool:
+    for role_code in get_user_role_codes(session, usuario_id):
+        permissions = ROLE_PERMISSIONS.get(role_code, set())
+        if ("*", "*") in permissions or (resource, action) in permissions:
+            return True
+    return False
+
+
+def get_primary_role(session: Session, usuario_id: int) -> str:
+    roles = get_user_role_codes(session, usuario_id)
+    return roles[0] if roles else "STOCK"
+
+
+def ensure_demo_users(session: Session) -> None:
     roles = {
-        "ADMIN": {
-            "description": "Acceso total al sistema",
-            "permissions": {(resource, action) for resource in resources for action in actions},
-        },
-        "STOCK": {
-            "description": "Gestiona catalogo y stock",
-            "permissions": {
-                ("categoria", "read"),
-                ("producto", "create"),
-                ("producto", "read"),
-                ("producto", "update"),
-                ("ingrediente", "create"),
-                ("ingrediente", "read"),
-                ("ingrediente", "update"),
-                ("ingrediente", "restore"),
-            },
-        },
-        "PEDIDOS": {
-            "description": "Consulta pedidos",
-            "permissions": {("pedido", "read")},
-        },
+        "ADMIN": "Administrador",
+        "STOCK": "Stock",
+        "PEDIDOS": "Pedidos",
     }
 
-    for role_name, role_data in roles.items():
-        role = get_role_by_name(session, role_name)
+    for codigo, nombre in roles.items():
+        role = get_role_by_codigo(session, codigo)
         if role is None:
-            role = Role(name=role_name, description=role_data["description"])
-            session.add(role)
-
-    for resource in resources:
-        for action in actions:
-            permission = get_permission(session, resource, action)
-            if permission is None:
-                session.add(
-                    Permission(
-                        resource=resource,
-                        action=action,
-                        description=f"{action} {resource}",
-                    )
+            session.add(
+                Rol(
+                    codigo=codigo,
+                    nombre=nombre,
+                    descripcion=f"Rol {nombre}",
                 )
+            )
 
     session.commit()
 
-    for role_name, role_data in roles.items():
-        role = get_role_by_name(session, role_name)
-        if role is None or role.id is None:
-            continue
-
-        for resource, action in role_data["permissions"]:
-            permission = get_permission(session, resource, action)
-            if permission is None or permission.id is None:
-                continue
-
-            statement = select(RolePermission).where(
-                RolePermission.role_id == role.id,
-                RolePermission.permission_id == permission.id,
-            )
-            if session.exec(statement).first() is None:
-                session.add(
-                    RolePermission(role_id=role.id, permission_id=permission.id)
-                )
-
     demo_users = [
         {
-            "username": "admin",
-            "full_name": "Food Store Admin",
-            "role": "ADMIN",
+            "email": "admin",
+            "nombre": "Food Store",
+            "apellido": "Admin",
+            "rol_codigo": "ADMIN",
             "password": "1234",
         },
         {
-            "username": "stock",
-            "full_name": "Gestor de Stock",
-            "role": "STOCK",
+            "email": "stock",
+            "nombre": "Gestor",
+            "apellido": "Stock",
+            "rol_codigo": "STOCK",
             "password": "stock",
         },
     ]
 
     for demo_user in demo_users:
-        if get_user_by_username(session, demo_user["username"]):
-            user = get_user_by_username(session, demo_user["username"])
-        else:
-            user = User(
-                username=demo_user["username"],
-                full_name=demo_user["full_name"],
-                role=demo_user["role"],
-                hashed_password=get_password_hash(demo_user["password"]),
+        user = get_user_by_username(session, demo_user["email"])
+        if user is None:
+            user = Usuario(
+                email=demo_user["email"],
+                nombre=demo_user["nombre"],
+                apellido=demo_user["apellido"],
+                password_hash=get_password_hash(demo_user["password"]),
             )
             session.add(user)
             session.commit()
             session.refresh(user)
 
-        role = get_role_by_name(session, demo_user["role"])
-        if user is None or user.id is None or role is None or role.id is None:
+        if user.id is None:
             continue
 
-        statement = select(UserRole).where(
-            UserRole.user_id == user.id,
-            UserRole.role_id == role.id,
+        statement = select(UsuarioRol).where(
+            UsuarioRol.usuario_id == user.id,
+            UsuarioRol.rol_codigo == demo_user["rol_codigo"],
         )
         if session.exec(statement).first() is None:
-            session.add(UserRole(user_id=user.id, role_id=role.id))
+            session.add(
+                UsuarioRol(
+                    usuario_id=user.id,
+                    rol_codigo=demo_user["rol_codigo"],
+                )
+            )
 
     session.commit()

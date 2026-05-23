@@ -2,13 +2,16 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import select
 
 from app.api.deps import DbSession
 from app.core.security import decode_access_token
-from app.modules.auth.models import Permission, Role, RolePermission, User, UserRole
+from app.modules.auth.models import Usuario
 from app.modules.auth.schemas import TokenData
-from app.modules.auth.service import get_user_by_username
+from app.modules.auth.service import (
+    get_user_by_username,
+    user_has_permission,
+    user_has_role,
+)
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
@@ -39,18 +42,20 @@ credentials_exception = HTTPException(
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     session: DbSession,
-) -> User:
+) -> Usuario:
     payload = decode_access_token(token)
     if payload is None:
         raise credentials_exception
 
-    username = payload.get("sub")
-    token_data = TokenData(username=username)
+    token_data = TokenData(
+        email=payload.get("sub"),
+        roles=payload.get("roles", []),
+    )
 
-    if token_data.username is None:
+    if token_data.email is None:
         raise credentials_exception
 
-    user = get_user_by_username(session, token_data.username)
+    user = get_user_by_username(session, token_data.email)
     if user is None:
         raise credentials_exception
 
@@ -58,8 +63,8 @@ def get_current_user(
 
 
 def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> User:
+    current_user: Annotated[Usuario, Depends(get_current_user)],
+) -> Usuario:
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -73,48 +78,33 @@ def require_role(allowed_roles: list[str]):
     allowed_roles_text = ", ".join(allowed_roles)
 
     def role_checker(
-        current_user: Annotated[User, Depends(get_current_active_user)],
-    ) -> User:
-        if current_user.role not in allowed_roles_set:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    f"Permisos insuficientes. Tu rol es '{current_user.role}'. "
-                    f"Se requiere uno de: {allowed_roles_text}"
-                ),
-            )
+        current_user: Annotated[Usuario, Depends(get_current_active_user)],
+        session: DbSession,
+    ) -> Usuario:
+        if current_user.id is not None and user_has_role(
+            session,
+            current_user.id,
+            allowed_roles_set,
+        ):
+            return current_user
 
-        return current_user
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permisos insuficientes. Se requiere uno de: {allowed_roles_text}",
+        )
 
     return role_checker
 
 
 def require_permission(resource: str, action: str):
     def permission_checker(
-        current_user: Annotated[User, Depends(get_current_active_user)],
+        current_user: Annotated[Usuario, Depends(get_current_active_user)],
         session: DbSession,
-    ) -> User:
+    ) -> Usuario:
         if current_user.id is None:
             raise credentials_exception
 
-        statement = (
-            select(Permission.id)
-            .join(RolePermission, RolePermission.permission_id == Permission.id)
-            .join(Role, Role.id == RolePermission.role_id)
-            .join(UserRole, UserRole.role_id == Role.id)
-            .where(
-                UserRole.user_id == current_user.id,
-                Role.is_active == True,  # noqa: E712
-                Permission.resource == resource,
-                Permission.action == action,
-            )
-            .limit(1)
-        )
-        if session.exec(statement).first() is not None:
-            return current_user
-
-        legacy_admin_allowed = current_user.role == "ADMIN"
-        if legacy_admin_allowed:
+        if user_has_permission(session, current_user.id, resource, action):
             return current_user
 
         raise HTTPException(

@@ -4,6 +4,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.categoria.router import router as categoria_router
 from app.modules.ingrediente.router import router as ingrediente_router
 from app.modules.producto.router import router as producto_router
+from app.modules.ventas.router import router as ventas_router
 
 api_router = APIRouter()
 
@@ -22,4 +23,9 @@ api_router.include_router(
     ingrediente_router,
     prefix="/ingredientes",
     tags=["ingredientes"],
+)
+api_router.include_router(
+    ventas_router,
+    prefix="/ventas",
+    tags=["ventas"],
 )

@@ -7,12 +7,15 @@ class Token(SQLModel):
 
 
 class TokenData(SQLModel):
-    username: str | None = None
+    email: str | None = None
+    roles: list[str] = []
 
 
 class UserPublic(SQLModel):
     id: int
-    username: str
+    email: str
+    nombre: str
+    apellido: str
     full_name: str
     role: str
     is_active: bool

@@ -6,9 +6,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.api.deps import DbSession
 from app.core.security import create_access_token
 from app.modules.auth.dependencies import get_current_active_user
-from app.modules.auth.models import User
+from app.modules.auth.models import Usuario
 from app.modules.auth.schemas import UserPublic
-from app.modules.auth.service import authenticate_user
+from app.modules.auth.service import authenticate_user, get_primary_role, get_user_role_codes
 
 router = APIRouter()
 
@@ -27,7 +27,16 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user.username})
+    if user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(
+        data={"sub": user.email, "roles": get_user_role_codes(session, user.id)}
+    )
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -52,6 +61,15 @@ def logout(response: Response) -> dict[str, str]:
 
 @router.get("/me", response_model=UserPublic)
 def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-) -> User:
-    return current_user
+    current_user: Annotated[Usuario, Depends(get_current_active_user)],
+    session: DbSession,
+) -> UserPublic:
+    return UserPublic(
+        id=current_user.id or 0,
+        email=current_user.email,
+        nombre=current_user.nombre,
+        apellido=current_user.apellido,
+        full_name=current_user.full_name,
+        role=get_primary_role(session, current_user.id or 0),
+        is_active=current_user.is_active,
+    )
