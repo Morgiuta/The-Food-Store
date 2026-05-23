@@ -9,9 +9,9 @@ from app.modules.auth.models import (  # noqa: F401
     Usuario,
     UsuarioRol,
 )
-from app.modules.auth.service import ensure_demo_users
 from app.modules.categoria.models import Categoria  # noqa: F401
 from app.modules.ingrediente.models import Ingrediente  # noqa: F401
+from app.modules.producto.models import Producto  # noqa: F401
 from app.modules.producto_categoria.models import ProductoCategoria  # noqa: F401
 from app.modules.producto_ingrediente.models import ProductoIngrediente  # noqa: F401
 from app.modules.ventas.models import (  # noqa: F401
@@ -22,7 +22,7 @@ from app.modules.ventas.models import (  # noqa: F401
     Pago,
     Pedido,
 )
-from app.modules.ventas.service import ensure_ventas_seed_data
+from app.core.seed import seed_required_data
 
 engine = create_engine(settings.database_url, echo=False)
 
@@ -32,9 +32,8 @@ def create_db_and_tables() -> None:
     migrate_legacy_auth_tables()
     ensure_auth_tables()
     ensure_auth_timestamp_columns()
-    seed_ventas_catalogs()
+    seed_formal_data()
     ensure_ingrediente_soft_delete_column()
-    seed_auth_users()
 
 
 def ensure_auth_tables() -> None:
@@ -205,14 +204,9 @@ def ensure_auth_timestamp_columns() -> None:
                 )
 
 
-def seed_auth_users() -> None:
+def seed_formal_data() -> None:
     with Session(engine) as session:
-        ensure_demo_users(session)
-
-
-def seed_ventas_catalogs() -> None:
-    with Session(engine) as session:
-        ensure_ventas_seed_data(session)
+        seed_required_data(session)
 
 
 def ensure_ingrediente_soft_delete_column() -> None:

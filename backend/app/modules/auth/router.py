@@ -7,10 +7,29 @@ from app.api.deps import DbSession
 from app.core.security import create_access_token
 from app.modules.auth.dependencies import get_current_active_user
 from app.modules.auth.models import Usuario
-from app.modules.auth.schemas import UserPublic
-from app.modules.auth.service import authenticate_user, get_primary_role, get_user_role_codes
+from app.modules.auth.schemas import UserPublic, UserRegister
+from app.modules.auth.service import (
+    authenticate_user,
+    get_primary_role,
+    get_user_role_codes,
+    register_client_user,
+)
 
 router = APIRouter()
+
+
+@router.post("/register", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+def register_user(data: UserRegister, session: DbSession) -> UserPublic:
+    user = register_client_user(session, data)
+    return UserPublic(
+        id=user.id or 0,
+        email=user.email,
+        nombre=user.nombre,
+        apellido=user.apellido,
+        full_name=user.full_name,
+        role="CLIENT",
+        is_active=user.is_active,
+    )
 
 
 @router.post("/token")
