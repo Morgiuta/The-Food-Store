@@ -17,7 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import JSON
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.base_model import utcnow
 
@@ -98,6 +98,9 @@ class Pedido(SQLModel, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+
+    detalles: list["DetallePedido"] = Relationship(back_populates="pedido")
+    historial: list["HistorialEstadoPedido"] = Relationship(back_populates="pedido")
 
     __table_args__ = (
         CheckConstraint("subtotal >= 0", name="ck_pedido_subtotal_non_negative"),
@@ -186,6 +189,8 @@ class HistorialEstadoPedido(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
 
+    pedido: Pedido = Relationship(back_populates="historial")
+
 
 class DetallePedido(SQLModel, table=True):
     __tablename__ = "DetallePedido"
@@ -216,6 +221,8 @@ class DetallePedido(SQLModel, table=True):
         default_factory=utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+
+    pedido: Pedido = Relationship(back_populates="detalles")
 
     __table_args__ = (
         CheckConstraint("cantidad >= 1", name="ck_detalle_pedido_cantidad_min"),
