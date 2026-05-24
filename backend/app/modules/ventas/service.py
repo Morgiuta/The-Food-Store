@@ -45,7 +45,9 @@ FORMAS_PAGO_SEED = [
 
 TRANSICIONES_VALIDAS = {
     "PENDIENTE": {"CONFIRMADO", "CANCELADO"},
-    "CONFIRMADO": {"EN_PREP", "CANCELADO"},
+    "CONFIRMADO": {"EN_PROCESO", "EN_PREP", "CANCELADO"},
+    "EN_PROCESO": {"LISTO", "CANCELADO"},
+    "LISTO": {"ENTREGADO"},
     "EN_PREP": {"EN_CAMINO", "CANCELADO"},
     "EN_CAMINO": {"ENTREGADO"},
 }
@@ -162,24 +164,41 @@ class VentasService:
         self.session.commit()
         return self.get_pedido(pedido.id)
 
-    def list_pedidos(self, offset: int = 0, limit: int = 20) -> PedidoList:
+    def list_pedidos(
+        self,
+        offset: int = 0,
+        limit: int = 20,
+        usuario_id: int | None = None,
+    ) -> PedidoList:
+        filters = [Pedido.deleted_at.is_(None)]
+        if usuario_id is not None:
+            filters.append(Pedido.usuario_id == usuario_id)
+
         statement = (
             select(Pedido)
-            .where(Pedido.deleted_at.is_(None))
+            .where(*filters)
             .order_by(Pedido.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
-        total = len(
-            self.session.exec(select(Pedido).where(Pedido.deleted_at.is_(None))).all()
-        )
+        total = len(self.session.exec(select(Pedido).where(*filters)).all())
         return PedidoList(
             data=[self._to_public(pedido) for pedido in self.session.exec(statement)],
             total=total,
         )
 
-    def get_pedido(self, pedido_id: int) -> PedidoPublic:
-        return self._to_public(self._get_pedido_or_404(pedido_id))
+    def get_pedido(
+        self,
+        pedido_id: int,
+        usuario_id: int | None = None,
+    ) -> PedidoPublic:
+        pedido = self._get_pedido_or_404(pedido_id)
+        if usuario_id is not None and pedido.usuario_id != usuario_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pedido con id={pedido_id} no encontrado",
+            )
+        return self._to_public(pedido)
 
     def change_estado(
         self,

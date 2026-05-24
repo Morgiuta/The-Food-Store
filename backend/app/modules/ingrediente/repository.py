@@ -26,6 +26,20 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
             statement
         ).first()
 
+    def list_by_ids(
+        self,
+        ingrediente_ids: list[int],
+        include_deleted: bool = False,
+    ) -> list[Ingrediente]:
+        if not ingrediente_ids:
+            return []
+
+        statement = select(Ingrediente).where(Ingrediente.id.in_(ingrediente_ids))
+        if not include_deleted:
+            statement = statement.where(Ingrediente.deleted_at.is_(None))
+
+        return list(self.session.exec(statement.order_by(Ingrediente.id)).all())
+
     def _apply_filters(self, statement, params: IngredienteListParams):
         if not params.include_deleted:
             statement = statement.where(Ingrediente.deleted_at.is_(None))

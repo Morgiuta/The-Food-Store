@@ -4,13 +4,17 @@ from fastapi import HTTPException, status
 
 from app.core.base_service import BaseService
 from app.core.utils import utcnow
+from app.modules.ingrediente.models import Ingrediente
 from app.modules.producto.models import Producto
 from app.modules.producto.schemas import (
     ProductoCategoriaLink,
     ProductoCreate,
+    ProductoDisponibilidadUpdate,
+    ProductoIngredientePublic,
     ProductoIngredienteLink,
     ProductoList,
     ProductoPublic,
+    ProductoStockUpdate,
     ProductoUpdate,
 )
 from app.modules.producto_categoria.models import ProductoCategoria
@@ -147,7 +151,9 @@ class ProductoService(BaseService):
         producto: Producto,
         categorias: list[ProductoCategoria],
         ingredientes: list[ProductoIngrediente],
+        ingredientes_by_id: dict[int, Ingrediente] | None = None,
     ) -> ProductoPublic:
+        ingredientes_by_id = ingredientes_by_id or {}
         return ProductoPublic(
             id=producto.id,
             nombre=producto.nombre,
@@ -166,14 +172,33 @@ class ProductoService(BaseService):
                 for link in categorias
             ],
             ingredientes=[
-                ProductoIngredienteLink(
+                ProductoIngredientePublic(
                     ingrediente_id=link.ingrediente_id,
+                    nombre=ingredientes_by_id[link.ingrediente_id].nombre,
+                    descripcion=ingredientes_by_id[link.ingrediente_id].descripcion,
+                    es_alergeno=ingredientes_by_id[link.ingrediente_id].es_alergeno,
+                    created_at=ingredientes_by_id[link.ingrediente_id].created_at,
+                    updated_at=ingredientes_by_id[link.ingrediente_id].updated_at,
+                    deleted_at=ingredientes_by_id[link.ingrediente_id].deleted_at,
                     es_removible=link.es_removible,
                     es_opcional=link.es_opcional,
                 )
                 for link in ingredientes
+                if link.ingrediente_id in ingredientes_by_id
             ],
         )
+
+    def _ingredientes_by_id(
+        self,
+        uow: ProductoUnitOfWork,
+        links: list[ProductoIngrediente],
+    ) -> dict[int, Ingrediente]:
+        ingrediente_ids = sorted({link.ingrediente_id for link in links})
+        return {
+            ingrediente.id: ingrediente
+            for ingrediente in uow.ingredientes.list_by_ids(ingrediente_ids)
+            if ingrediente.id is not None
+        }
 
     def create(self, data: ProductoCreate) -> ProductoPublic:
         with ProductoUnitOfWork(self._session) as uow:
@@ -186,14 +211,33 @@ class ProductoService(BaseService):
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto.id),
-                uow.producto_ingredientes.list_by_producto(producto.id),
+                ingredientes := uow.producto_ingredientes.list_by_producto(producto.id),
+                self._ingredientes_by_id(uow, ingredientes),
             )
         return result
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> ProductoList:
+    def get_all(
+        self,
+        page: int = 1,
+        limit: int = 10,
+        categoria_id: int | None = None,
+        disponible: bool | None = None,
+        q: str | None = None,
+    ) -> ProductoList:
         with ProductoUnitOfWork(self._session) as uow:
-            productos = uow.productos.list_active(offset=offset, limit=limit)
-            total = uow.productos.count_active()
+            offset = (page - 1) * limit
+            productos = uow.productos.list_active(
+                offset=offset,
+                limit=limit,
+                categoria_id=categoria_id,
+                disponible=disponible,
+                q=q,
+            )
+            total = uow.productos.count_active(
+                categoria_id=categoria_id,
+                disponible=disponible,
+                q=q,
+            )
             producto_ids = [producto.id for producto in productos if producto.id is not None]
             categorias_map: dict[int, list[ProductoCategoria]] = defaultdict(list)
             ingredientes_map: dict[int, list[ProductoIngrediente]] = defaultdict(list)
@@ -204,26 +248,40 @@ class ProductoService(BaseService):
             for link in uow.producto_ingredientes.list_by_producto_ids(producto_ids):
                 ingredientes_map[link.producto_id].append(link)
 
+            ingredientes_by_id = self._ingredientes_by_id(
+                uow,
+                [
+                    link
+                    for producto_links in ingredientes_map.values()
+                    for link in producto_links
+                ],
+            )
+
             result = ProductoList(
-                data=[
+                items=[
                     self._to_public(
                         producto,
                         categorias_map.get(producto.id, []),
                         ingredientes_map.get(producto.id, []),
+                        ingredientes_by_id,
                     )
                     for producto in productos
                 ],
                 total=total,
+                page=page,
+                limit=limit,
             )
         return result
 
     def get_by_id(self, producto_id: int) -> ProductoPublic:
         with ProductoUnitOfWork(self._session) as uow:
             producto = self._get_or_404(uow, producto_id)
+            ingredientes = uow.producto_ingredientes.list_by_producto(producto_id)
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto_id),
-                uow.producto_ingredientes.list_by_producto(producto_id),
+                ingredientes,
+                self._ingredientes_by_id(uow, ingredientes),
             )
         return result
 
@@ -254,7 +312,42 @@ class ProductoService(BaseService):
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto_id),
-                uow.producto_ingredientes.list_by_producto(producto_id),
+                ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
+                self._ingredientes_by_id(uow, ingredientes),
+            )
+        return result
+
+    def update_disponibilidad(
+        self,
+        producto_id: int,
+        data: ProductoDisponibilidadUpdate,
+    ) -> ProductoPublic:
+        with ProductoUnitOfWork(self._session) as uow:
+            producto = self._get_or_404(uow, producto_id)
+            producto.disponible = data.disponible
+            producto.updated_at = utcnow()
+            uow.productos.add(producto)
+            result = self._to_public(
+                producto,
+                uow.producto_categorias.list_by_producto(producto_id),
+                ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
+                self._ingredientes_by_id(uow, ingredientes),
+            )
+        return result
+
+    def update_stock(self, producto_id: int, data: ProductoStockUpdate) -> ProductoPublic:
+        with ProductoUnitOfWork(self._session) as uow:
+            producto = self._get_or_404(uow, producto_id)
+            producto.stock_cantidad = data.stock_cantidad
+            if data.stock_cantidad == 0:
+                producto.disponible = False
+            producto.updated_at = utcnow()
+            uow.productos.add(producto)
+            result = self._to_public(
+                producto,
+                uow.producto_categorias.list_by_producto(producto_id),
+                ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
+                self._ingredientes_by_id(uow, ingredientes),
             )
         return result
 

@@ -73,9 +73,9 @@ def get_current_active_user(
     return current_user
 
 
-def require_role(allowed_roles: list[str]):
-    allowed_roles_set = set(allowed_roles)
-    allowed_roles_text = ", ".join(allowed_roles)
+def require_roles(*roles: str):
+    allowed_roles_set = {role.strip().upper() for role in roles}
+    allowed_roles_text = ", ".join(sorted(allowed_roles_set))
 
     def role_checker(
         current_user: Annotated[Usuario, Depends(get_current_active_user)],
@@ -94,6 +94,10 @@ def require_role(allowed_roles: list[str]):
         )
 
     return role_checker
+
+
+def require_role(allowed_roles: list[str]):
+    return require_roles(*allowed_roles)
 
 
 def require_permission(resource: str, action: str):

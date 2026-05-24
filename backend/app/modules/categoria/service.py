@@ -64,10 +64,24 @@ class CategoriaService(BaseService):
             result = CategoriaPublic.model_validate(categoria)
         return result
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> CategoriaList:
+    def get_all(
+        self,
+        offset: int = 0,
+        limit: int = 20,
+        parent_id: int | None = None,
+        filter_parent: bool = False,
+    ) -> CategoriaList:
         with CategoriaUnitOfWork(self._session) as uow:
-            categorias = uow.categorias.list_active(offset=offset, limit=limit)
-            total = uow.categorias.count_active()
+            categorias = uow.categorias.list_active(
+                offset=offset,
+                limit=limit,
+                parent_id=parent_id,
+                filter_parent=filter_parent,
+            )
+            total = uow.categorias.count_active(
+                parent_id=parent_id,
+                filter_parent=filter_parent,
+            )
             result = CategoriaList(
                 data=[CategoriaPublic.model_validate(categoria) for categoria in categorias],
                 total=total,
@@ -101,6 +115,14 @@ class CategoriaService(BaseService):
     def soft_delete(self, categoria_id: int) -> None:
         with CategoriaUnitOfWork(self._session) as uow:
             categoria = self._get_or_404(uow, categoria_id)
+            if uow.categorias.has_active_products(categoria_id):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "No se puede eliminar la categoria porque tiene "
+                        "productos activos asociados"
+                    ),
+                )
             categoria.deleted_at = utcnow()
             categoria.updated_at = utcnow()
             uow.categorias.add(categoria)

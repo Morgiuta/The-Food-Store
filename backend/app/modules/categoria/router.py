@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 
 from app.api.deps import DbSession
-from app.modules.auth.dependencies import require_permission
+from app.modules.auth.dependencies import require_roles
 from app.modules.categoria.schemas import (
     CategoriaCreate,
     CategoriaList,
@@ -22,7 +22,7 @@ def get_categoria_service(session: DbSession) -> CategoriaService:
 @router.post("/", response_model=CategoriaPublic, status_code=status.HTTP_201_CREATED)
 def create_categoria(
     data: CategoriaCreate,
-    _current_user=Depends(require_permission("categoria", "create")),
+    _current_user=Depends(require_roles("ADMIN")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.create(data)
@@ -30,18 +30,45 @@ def create_categoria(
 
 @router.get("/", response_model=CategoriaList)
 def list_categorias(
+    request: Request,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    _current_user=Depends(require_permission("categoria", "read")),
+    parent_id: Annotated[str | None, Query()] = None,
+    _current_user=Depends(require_roles("ADMIN", "CLIENT")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaList:
-    return svc.get_all(offset=offset, limit=limit)
+    filter_parent = "parent_id" in request.query_params
+    parent_id_value: int | None = None
+
+    if filter_parent and (
+        parent_id is not None and parent_id.strip().lower() not in ("", "null")
+    ):
+        try:
+            parent_id_value = int(parent_id)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="parent_id debe ser un entero o null",
+            ) from exc
+
+        if parent_id_value <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="parent_id debe ser mayor a 0",
+            )
+
+    return svc.get_all(
+        offset=offset,
+        limit=limit,
+        parent_id=parent_id_value,
+        filter_parent=filter_parent,
+    )
 
 
 @router.get("/{categoria_id}", response_model=CategoriaPublic)
 def get_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_permission("categoria", "read")),
+    _current_user=Depends(require_roles("ADMIN", "CLIENT")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.get_by_id(categoria_id)
@@ -51,7 +78,7 @@ def get_categoria(
 def update_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
     data: CategoriaUpdate,
-    _current_user=Depends(require_permission("categoria", "update")),
+    _current_user=Depends(require_roles("ADMIN")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.update(categoria_id, data)
@@ -60,7 +87,7 @@ def update_categoria(
 @router.delete("/{categoria_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_permission("categoria", "delete")),
+    _current_user=Depends(require_roles("ADMIN")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> None:
     svc.soft_delete(categoria_id)

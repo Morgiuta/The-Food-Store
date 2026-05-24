@@ -3,8 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
-from app.modules.auth.dependencies import get_current_active_user, require_permission
+from app.modules.auth.dependencies import require_roles
 from app.modules.auth.models import Usuario
+from app.modules.auth.service import user_has_role
 from app.modules.ventas.schemas import (
     EstadoPedidoPublic,
     FormaPagoPublic,
@@ -26,7 +27,7 @@ def get_ventas_service(session: DbSession) -> VentasService:
 
 @router.get("/formas-pago", response_model=list[FormaPagoPublic])
 def list_formas_pago(
-    _current_user=Depends(require_permission("pedido", "read")),
+    _current_user=Depends(require_roles("ADMIN", "CLIENT")),
     svc: VentasService = Depends(get_ventas_service),
 ) -> list[FormaPagoPublic]:
     return svc.list_formas_pago()
@@ -34,7 +35,7 @@ def list_formas_pago(
 
 @router.get("/estados", response_model=list[EstadoPedidoPublic])
 def list_estados(
-    _current_user=Depends(require_permission("pedido", "read")),
+    _current_user=Depends(require_roles("ADMIN", "PEDIDOS")),
     svc: VentasService = Depends(get_ventas_service),
 ) -> list[EstadoPedidoPublic]:
     return svc.list_estados()
@@ -43,7 +44,7 @@ def list_estados(
 @router.post("/pedidos", response_model=PedidoPublic, status_code=status.HTTP_201_CREATED)
 def create_pedido(
     data: PedidoCreate,
-    current_user: Annotated[Usuario, Depends(get_current_active_user)],
+    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
     svc: VentasService = Depends(get_ventas_service),
 ) -> PedidoPublic:
     return svc.create_pedido(current_user.id or 0, data)
@@ -51,28 +52,44 @@ def create_pedido(
 
 @router.get("/pedidos", response_model=PedidoList)
 def list_pedidos(
+    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
+    session: DbSession,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    _current_user=Depends(require_permission("pedido", "read")),
     svc: VentasService = Depends(get_ventas_service),
 ) -> PedidoList:
-    return svc.list_pedidos(offset=offset, limit=limit)
+    usuario_id = None
+    if current_user.id is not None and not user_has_role(
+        session,
+        current_user.id,
+        {"ADMIN", "PEDIDOS"},
+    ):
+        usuario_id = current_user.id
+    return svc.list_pedidos(offset=offset, limit=limit, usuario_id=usuario_id)
 
 
 @router.get("/pedidos/{pedido_id}", response_model=PedidoPublic)
 def get_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_permission("pedido", "read")),
+    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
+    session: DbSession,
     svc: VentasService = Depends(get_ventas_service),
 ) -> PedidoPublic:
-    return svc.get_pedido(pedido_id)
+    usuario_id = None
+    if current_user.id is not None and not user_has_role(
+        session,
+        current_user.id,
+        {"ADMIN", "PEDIDOS"},
+    ):
+        usuario_id = current_user.id
+    return svc.get_pedido(pedido_id, usuario_id=usuario_id)
 
 
 @router.post("/pedidos/{pedido_id}/estado", response_model=PedidoPublic)
 def change_estado(
     pedido_id: Annotated[int, Path(gt=0)],
     data: PedidoEstadoUpdate,
-    current_user: Annotated[Usuario, Depends(require_permission("pedido", "update"))],
+    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS"))],
     svc: VentasService = Depends(get_ventas_service),
 ) -> PedidoPublic:
     return svc.change_estado(
@@ -91,7 +108,7 @@ def change_estado(
 def register_pago(
     pedido_id: Annotated[int, Path(gt=0)],
     data: PagoCreate,
-    _current_user=Depends(require_permission("pedido", "update")),
+    _current_user=Depends(require_roles("ADMIN")),
     svc: VentasService = Depends(get_ventas_service),
 ) -> PagoPublic:
     return svc.register_pago(pedido_id, data)

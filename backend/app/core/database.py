@@ -10,6 +10,7 @@ from app.modules.auth.models import (  # noqa: F401
     UsuarioRol,
 )
 from app.modules.categoria.models import Categoria  # noqa: F401
+from app.modules.direcciones.models import Direccion  # noqa: F401
 from app.modules.ingrediente.models import Ingrediente  # noqa: F401
 from app.modules.producto.models import Producto  # noqa: F401
 from app.modules.producto_categoria.models import ProductoCategoria  # noqa: F401

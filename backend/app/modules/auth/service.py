@@ -10,16 +10,10 @@ from app.modules.auth.schemas import UserRegister
 ROLE_PERMISSIONS: dict[str, set[tuple[str, str]]] = {
     "ADMIN": {("*", "*")},
     "STOCK": {
-        ("categoria", "read"),
-        ("producto", "create"),
         ("producto", "read"),
-        ("producto", "update"),
-        ("ingrediente", "create"),
+        ("producto", "stock"),
+        ("producto", "disponibilidad"),
         ("ingrediente", "read"),
-        ("ingrediente", "update"),
-        ("ingrediente", "restore"),
-        ("pedido", "read"),
-        ("pedido", "update"),
     },
     "PEDIDOS": {("pedido", "read"), ("pedido", "update")},
     "CLIENT": {

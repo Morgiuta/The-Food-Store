@@ -1,10 +1,10 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
 from app.shared.schemas.base import PublicSchema
-from app.shared.schemas.pagination import PaginatedResponse
 
 
 class ProductoCategoriaLink(SQLModel):
@@ -16,6 +16,15 @@ class ProductoIngredienteLink(SQLModel):
     ingrediente_id: int
     es_removible: bool = False
     es_opcional: bool = False
+
+
+class ProductoIngredientePublic(ProductoIngredienteLink):
+    nombre: str
+    descripcion: Optional[str]
+    es_alergeno: bool
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime]
 
 
 class ProductoCreate(SQLModel):
@@ -43,6 +52,14 @@ class ProductoUpdate(SQLModel):
     ingredientes: Optional[list[ProductoIngredienteLink]] = None
 
 
+class ProductoDisponibilidadUpdate(SQLModel):
+    disponible: bool
+
+
+class ProductoStockUpdate(SQLModel):
+    stock_cantidad: int = Field(ge=0)
+
+
 class ProductoPublic(PublicSchema):
     id: int
     nombre: str
@@ -54,8 +71,11 @@ class ProductoPublic(PublicSchema):
     tiempo_prep_min: Optional[int]
     disponible: bool
     categorias: list[ProductoCategoriaLink]
-    ingredientes: list[ProductoIngredienteLink]
+    ingredientes: list[ProductoIngredientePublic]
 
 
-class ProductoList(PaginatedResponse[ProductoPublic]):
-    pass
+class ProductoList(SQLModel):
+    items: list[ProductoPublic]
+    total: int
+    page: int
+    limit: int
