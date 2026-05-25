@@ -6,7 +6,7 @@ import { SuppliesTable } from '../../features/supplies/components/SuppliesTable/
 import { useSupplies } from '../../hooks/useSupplies';
 import { suppliesService } from '../../services/suppliesService';
 import type { SuppliesQuery, Supply, SupplyFormValues } from '../../types/supply';
-import './SuppliesPage.css';
+import { Download, Plus } from 'lucide-react';
 
 const defaultQuery: SuppliesQuery = {
   search: '',
@@ -183,80 +183,83 @@ export function SuppliesPage() {
   };
 
   return (
-    <section className="supplies-page">
+    <section className="space-y-6">
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />
 
-      <div className="supplies-page__heading">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
           <span className="section-kicker">Inventario</span>
-          <h2>Insumos</h2>
-          <p>Gestion operativa de insumos basada en ingredientes y alergenos.</p>
+          <h2 className="text-3xl font-black text-charcoal mb-2">Ingredientes</h2>
+          <p className="text-muted">Gestion operativa de ingredientes base para los productos.</p>
         </div>
-        <div className="supplies-page__stats">
-          <div className="supplies-page__summary">
-            <span>Total filtrado</span>
-            <strong>{total}</strong>
+        <div className="flex gap-4">
+          <div className="bg-primary/10 text-primary-dark px-4 py-3 rounded-lg flex flex-col items-center justify-center min-w-[100px]">
+            <span className="text-xs font-bold uppercase tracking-wide">Total</span>
+            <strong className="text-2xl font-black">{total}</strong>
           </div>
-          <div className="supplies-page__summary supplies-page__summary--light">
-            <span>Activos</span>
-            <strong>{activeCount}</strong>
+          <div className="bg-gray-50 border border-gray-100 text-charcoal px-4 py-3 rounded-lg flex flex-col items-center justify-center min-w-[100px]">
+            <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Activos</span>
+            <strong className="text-2xl font-black">{activeCount}</strong>
           </div>
-          <div className="supplies-page__summary supplies-page__summary--light">
-            <span>Alergenos</span>
-            <strong>{allergenCount}</strong>
+          <div className="bg-orange-50 border border-orange-100 text-orange-800 px-4 py-3 rounded-lg flex flex-col items-center justify-center min-w-[100px]">
+            <span className="text-xs font-bold uppercase tracking-wide text-orange-600">Alergenos</span>
+            <strong className="text-2xl font-black">{allergenCount}</strong>
           </div>
         </div>
       </div>
 
-      <div className="supplies-page__content">
-        <section className="supplies-page__list">
-          <div className="supplies-page__list-header">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <section className="p-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-100 pb-6">
             <div>
-              <h3>Listado de insumos</h3>
-              <span>
-                Pagina {currentPage} de {totalPages}
+              <h3 className="text-lg font-bold">Listado de ingredientes</h3>
+              <span className="text-sm text-gray-500">
+                Página {currentPage} de {totalPages}
               </span>
             </div>
-            <div className="supplies-page__list-actions">
+            <div className="flex gap-3">
+              <ButtonLikeExport disabled={supplies.length === 0} onClick={() => exportSuppliesToExcel(supplies)} />
               <button
-                className="supplies-page__new"
+                className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center gap-2"
                 type="button"
                 onClick={() => {
                   setSelectedSupply(null);
                   setIsFormOpen(true);
                 }}
               >
-                Nuevo insumo
+                <Plus size={18} /> Nuevo ingrediente
               </button>
-              <ButtonLikeExport disabled={supplies.length === 0} onClick={() => exportSuppliesToExcel(supplies)} />
             </div>
           </div>
 
-          <div className="supplies-page__toolbar">
-            <label>
-              <span>Busqueda</span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+            <label className="flex flex-col">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Búsqueda</span>
               <input
+                className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                 placeholder="Nombre o descripcion"
                 value={query.search}
                 onChange={(event) => updateQuery({ search: event.target.value })}
               />
             </label>
-            <label>
-              <span>Tipo</span>
+            <label className="flex flex-col">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Tipo</span>
               <select
+                className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
                 value={query.es_alergeno}
                 onChange={(event) =>
                   updateQuery({ es_alergeno: event.target.value as SuppliesQuery['es_alergeno'] })
                 }
               >
                 <option value="all">Todos</option>
-                <option value="true">Alergenos</option>
+                <option value="true">Alérgenos</option>
                 <option value="false">Comunes</option>
               </select>
             </label>
-            <label>
-              <span>Estado</span>
+            <label className="flex flex-col">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Estado</span>
               <select
+                className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
                 value={query.include_deleted ? 'all' : 'active'}
                 onChange={(event) =>
                   updateQuery({ include_deleted: event.target.value === 'all' })
@@ -266,9 +269,10 @@ export function SuppliesPage() {
                 <option value="all">Activos e inactivos</option>
               </select>
             </label>
-            <label>
-              <span>Por pagina</span>
+            <label className="flex flex-col">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
+                className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
                 value={query.limit}
                 onChange={(event) => updateQuery({ limit: Number(event.target.value) })}
               >
@@ -279,7 +283,7 @@ export function SuppliesPage() {
             </label>
           </div>
 
-          {error ? <div className="supplies-page__error">{error}</div> : null}
+          {error ? <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">{error}</div> : null}
 
           <SuppliesTable
             supplies={supplies}
@@ -293,18 +297,20 @@ export function SuppliesPage() {
             onRestore={handleRestore}
           />
 
-          <div className="supplies-page__pagination">
+          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
             <button
+              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               type="button"
               disabled={currentPage === 1 || isLoading}
               onClick={() => updateQuery({ offset: Math.max(0, query.offset - query.limit) })}
             >
               Anterior
             </button>
-            <span>
+            <span className="text-sm font-medium text-gray-500">
               {total === 0 ? '0 resultados' : `${query.offset + 1}-${Math.min(query.offset + query.limit, total)} de ${total}`}
             </span>
             <button
+              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               type="button"
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => updateQuery({ offset: query.offset + query.limit })}
@@ -318,7 +324,7 @@ export function SuppliesPage() {
       {isFormOpen ? (
         <Modal
           kicker="Stock"
-          title={selectedSupply ? 'Editar insumo' : 'Nuevo insumo'}
+          title={selectedSupply ? 'Editar ingrediente' : 'Nuevo ingrediente'}
           size="lg"
           onClose={() => {
             setIsFormOpen(false);
@@ -340,24 +346,33 @@ export function SuppliesPage() {
 
       {detailSupply ? (
         <Modal kicker="Detalle" title={detailSupply.nombre} onClose={() => setDetailSupply(null)}>
-            <dl className="supplies-modal__grid">
-              <div>
-                <dt>Descripcion</dt>
-                <dd>{detailSupply.descripcion || 'Sin descripcion'}</dd>
+            <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg">
+              <div className="col-span-2">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Descripcion</p>
+                <p className="text-charcoal font-medium">{detailSupply.descripcion || 'Sin descripcion'}</p>
               </div>
               <div>
-                <dt>Tipo</dt>
-                <dd>{detailSupply.es_alergeno ? 'Alergeno' : 'Comun'}</dd>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo</p>
+                <p className="text-charcoal font-medium">{detailSupply.es_alergeno ? 'Alérgeno' : 'Común'}</p>
               </div>
               <div>
-                <dt>Estado</dt>
-                <dd>{detailSupply.deleted_at ? 'Inactivo' : 'Activo'}</dd>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Estado</p>
+                <p className="text-charcoal font-medium">
+                  {detailSupply.deleted_at ? 
+                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Inactivo</span> : 
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Activo</span>
+                  }
+                </p>
               </div>
               <div>
-                <dt>Actualizado</dt>
-                <dd>{new Date(detailSupply.updated_at).toLocaleString('es-AR')}</dd>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Stock Actual</p>
+                <p className="text-charcoal font-medium">{detailSupply.stock_actual ?? 0}</p>
               </div>
-            </dl>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Actualizado</p>
+                <p className="text-charcoal font-medium">{new Date(detailSupply.updated_at).toLocaleString('es-AR')}</p>
+              </div>
+            </div>
         </Modal>
       ) : null}
     </section>
@@ -372,8 +387,13 @@ function ButtonLikeExport({
   onClick: () => void;
 }) {
   return (
-    <button className="supplies-page__export" disabled={disabled} type="button" onClick={onClick}>
-      Exportar Excel
+    <button 
+      className="border-2 border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 font-bold py-2 px-4 rounded-md transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" 
+      disabled={disabled} 
+      type="button" 
+      onClick={onClick}
+    >
+      <Download size={18} /> Exportar Excel
     </button>
   );
 }

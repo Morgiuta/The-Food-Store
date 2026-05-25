@@ -1,7 +1,7 @@
 import { Button } from '../../../../components/ui/Button/Button';
 import { EmptyState } from '../../../../components/ui/EmptyState/EmptyState';
 import type { Supply } from '../../../../types/supply';
-import './SuppliesTable.css';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 interface SuppliesTableProps {
   supplies: Supply[];
@@ -34,89 +34,89 @@ export function SuppliesTable({
   onDelete,
   onRestore,
 }: SuppliesTableProps) {
-  const renderSortLabel = (field: SuppliesTableProps['sortBy'], label: string) =>
-    `${label}${sortBy === field ? (sortDir === 'asc' ? ' ASC' : ' DESC') : ''}`;
+  const renderSortIcon = (field: string) => {
+    if (sortBy !== field) return null;
+    return sortDir === 'asc' ? <ChevronUp size={16} className="inline ml-1" /> : <ChevronDown size={16} className="inline ml-1" />;
+  };
 
   if (isLoading) {
-    return <div className="supplies-table__state">Cargando insumos...</div>;
+    return <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg">Cargando ingredientes...</div>;
   }
 
   if (supplies.length === 0) {
     return (
       <EmptyState
-        title="No hay insumos cargados"
-        description="Agrega el primer insumo para empezar a controlar el stock del local."
+        title="No hay ingredientes cargados"
+        description="Agrega el primer ingrediente para empezar a controlar el stock del local."
       />
     );
   }
 
   return (
-    <div className="supplies-table">
-      <table>
-        <colgroup>
-          <col className="supplies-table__col supplies-table__col--name" />
-          <col className="supplies-table__col supplies-table__col--description" />
-          <col className="supplies-table__col supplies-table__col--type" />
-          <col className="supplies-table__col supplies-table__col--status" />
-          <col className="supplies-table__col supplies-table__col--date" />
-          <col className="supplies-table__col supplies-table__col--actions" />
-        </colgroup>
+    <div className="overflow-x-auto">
+      <table className="w-full text-left border-collapse min-w-[800px]">
         <thead>
-          <tr>
-            <th>
-              <button type="button" onClick={() => onSort('nombre')}>
-                {renderSortLabel('nombre', 'Nombre')}
+          <tr className="bg-gray-50 border-y border-gray-200">
+            <th className="p-4 font-bold text-sm text-charcoal w-1/5">
+              <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('nombre')}>
+                Nombre {renderSortIcon('nombre')}
               </button>
             </th>
-            <th>Descripcion</th>
-            <th>
-              <button type="button" onClick={() => onSort('es_alergeno')}>
-                {renderSortLabel('es_alergeno', 'Tipo')}
+            <th className="p-4 font-bold text-sm text-charcoal w-1/4">Descripción</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-32">
+              <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('es_alergeno')}>
+                Tipo {renderSortIcon('es_alergeno')}
               </button>
             </th>
-            <th>Estado</th>
-            <th>
-              <button type="button" onClick={() => onSort('updated_at')}>
-                {renderSortLabel('updated_at', 'Actualizado')}
+            <th className="p-4 font-bold text-sm text-charcoal w-24">Estado</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-32">Stock</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-32">
+              <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('updated_at')}>
+                Actualizado {renderSortIcon('updated_at')}
               </button>
             </th>
-            <th aria-label="Acciones" />
+            <th className="p-4 font-bold text-sm text-charcoal w-48 text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {supplies.map((supply) => (
-            <tr key={supply.id}>
-              <td data-label="Nombre">
-                <strong>{supply.nombre}</strong>
+            <tr key={supply.id} className="hover:bg-gray-50/50 transition-colors">
+              <td className="p-4">
+                <strong className="text-primary-dark">{supply.nombre}</strong>
               </td>
-              <td data-label="Descripcion">{supply.descripcion || 'Sin descripcion'}</td>
-              <td data-label="Tipo">
+              <td className="p-4 text-sm text-gray-600 truncate max-w-[200px]" title={supply.descripcion || undefined}>
+                {supply.descripcion || 'Sin descripción'}
+              </td>
+              <td className="p-4">
                 <span
-                  className={
+                  className={`px-2.5 py-1 text-xs font-bold rounded-full ${
                     supply.es_alergeno
-                      ? 'supplies-table__badge supplies-table__badge--warning'
-                      : 'supplies-table__badge'
-                  }
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
                 >
-                  {supply.es_alergeno ? 'Alergeno' : 'Comun'}
+                  {supply.es_alergeno ? 'Alérgeno' : 'Común'}
                 </span>
               </td>
-              <td data-label="Estado">
+              <td className="p-4">
                 <span
-                  className={
+                  className={`px-2.5 py-1 text-xs font-bold rounded-full ${
                     supply.deleted_at
-                      ? 'supplies-table__badge supplies-table__badge--inactive'
-                      : 'supplies-table__badge supplies-table__badge--active'
-                  }
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}
                 >
                   {supply.deleted_at ? 'Inactivo' : 'Activo'}
                 </span>
               </td>
-              <td data-label="Actualizado">{formatDate(supply.updated_at)}</td>
-              <td data-label="Acciones">
-                <div className="supplies-table__actions">
+              <td className="p-4 font-medium text-charcoal">
+                {supply.stock_actual ?? 0}
+              </td>
+              <td className="p-4 text-sm text-gray-500">{formatDate(supply.updated_at)}</td>
+              <td className="p-4">
+                <div className="flex items-center justify-end gap-2">
                   <Button variant="ghost" onClick={() => onView(supply)}>
-                    Detalle
+                    Ver
                   </Button>
                   <Button
                     variant="secondary"

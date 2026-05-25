@@ -1,13 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { suppliesService } from '../services/suppliesService';
-import type { SuppliesQuery, Supply, SupplyFormValues } from '../types/supply';
+import type { SuppliesQuery, SupplyFormValues } from '../types/supply';
 
 export function useSupplies(query: SuppliesQuery) {
-  const [supplies, setSupplies] = useState<Supply[]>([]);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMutating, setIsMutating] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Fetch list
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['supplies', query],
+    queryFn: () => suppliesService.getAll(query),
+    staleTime: 5000,
+  });
+
+  const supplies = data?.data || [];
+  const total = data?.total || 0;
 
   const activeCount = useMemo(
     () => supplies.filter((supply) => !supply.deleted_at).length,
@@ -19,82 +26,46 @@ export function useSupplies(query: SuppliesQuery) {
     [supplies],
   );
 
-  const loadSupplies = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await suppliesService.getAll(query);
-      setSupplies(response.data);
-      setTotal(response.total);
-    } catch (requestError) {
-      setSupplies([]);
-      setTotal(0);
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'No se pudo cargar el listado de insumos.',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [query]);
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (values: SupplyFormValues) => suppliesService.create(values),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplies'] }),
+  });
 
-  useEffect(() => {
-    void loadSupplies();
-  }, [loadSupplies]);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, values }: { id: number; values: SupplyFormValues }) => 
+      suppliesService.update(id, values),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplies'] }),
+  });
 
-  const createSupply = async (values: SupplyFormValues) => {
-    setIsMutating(true);
-    try {
-      await suppliesService.create(values);
-      await loadSupplies();
-    } finally {
-      setIsMutating(false);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => suppliesService.remove(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplies'] }),
+  });
 
-  const updateSupply = async (id: number, values: SupplyFormValues) => {
-    setIsMutating(true);
-    try {
-      await suppliesService.update(id, values);
-      await loadSupplies();
-    } finally {
-      setIsMutating(false);
-    }
-  };
+  const restoreMutation = useMutation({
+    mutationFn: (id: number) => suppliesService.restore(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplies'] }),
+  });
 
-  const deleteSupply = async (id: number) => {
-    setIsMutating(true);
-    try {
-      await suppliesService.remove(id);
-      await loadSupplies();
-    } finally {
-      setIsMutating(false);
-    }
-  };
-
-  const restoreSupply = async (id: number) => {
-    setIsMutating(true);
-    try {
-      await suppliesService.restore(id);
-      await loadSupplies();
-    } finally {
-      setIsMutating(false);
-    }
-  };
+  const isMutating = 
+    createMutation.isPending || 
+    updateMutation.isPending || 
+    deleteMutation.isPending || 
+    restoreMutation.isPending;
 
   return {
     supplies,
     total,
     activeCount,
     allergenCount,
-    error,
+    error: error instanceof Error ? error.message : null,
     isLoading,
     isMutating,
-    reload: loadSupplies,
-    createSupply,
-    updateSupply,
-    deleteSupply,
-    restoreSupply,
+    reload: refetch,
+    createSupply: createMutation.mutateAsync,
+    updateSupply: async (id: number, values: SupplyFormValues) => updateMutation.mutateAsync({ id, values }),
+    deleteSupply: deleteMutation.mutateAsync,
+    restoreSupply: restoreMutation.mutateAsync,
   };
 }

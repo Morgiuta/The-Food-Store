@@ -31,12 +31,12 @@ export function Header({ isSidebarOpen, onMenuToggle }: HeaderProps) {
         </div>
       </div>
       <div className="header__actions">
-        <span className="header__user">
-          {user?.name} - {user?.role}
-        </span>
-        <Button variant="secondary" onClick={logout}>
-          Cerrar sesion
-        </Button>
+        <div className="header__user">
+          <span className="header__username">{user?.name}</span>
+          <Button variant="ghost" className="header__logout" onClick={logout}>
+            Cerrar sesion
+          </Button>
+        </div>
       </div>
     </header>
   );

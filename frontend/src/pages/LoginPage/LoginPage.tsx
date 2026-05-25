@@ -1,15 +1,12 @@
 import { FormEvent, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button/Button';
-import { Input } from '../../components/ui/Input/Input';
-import { useAuth } from '../../hooks/useAuth';
 import type { LoginCredentials } from '../../types/auth';
-import './LoginPage.css';
+import { useAuthStore } from '../../store/authStore';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, login } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [credentials, setCredentials] = useState<LoginCredentials>({
@@ -17,10 +14,10 @@ export function LoginPage() {
     password: '',
   });
 
-  const from = location.state?.from?.pathname ?? '/';
+  const from = location.state?.from?.pathname ?? '/admin';
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -31,11 +28,11 @@ export function LoginPage() {
     try {
       await login(credentials);
       navigate(from, { replace: true });
-    } catch (loginError) {
+    } catch (loginError: any) {
       setError(
-        loginError instanceof Error
-          ? loginError.message
-          : 'No se pudo iniciar sesion.',
+        loginError?.response?.data?.detail ??
+        loginError?.message ??
+        'No se pudo iniciar sesión.'
       );
     } finally {
       setIsSubmitting(false);
@@ -43,51 +40,63 @@ export function LoginPage() {
   };
 
   return (
-    <main className="login-page">
-      <section className="login-page__panel">
-        <div className="login-page__brand">
-          <span className="login-page__logo">FS</span>
+    <main className="min-h-screen bg-bg flex items-center justify-center p-4">
+      <section className="bg-surface w-full max-w-md rounded-lg shadow-soft p-8">
+        <div className="flex items-center gap-4 mb-8">
+          <span className="bg-primary text-white font-bold text-2xl h-12 w-12 flex items-center justify-center rounded-lg">FS</span>
           <div>
-            <span>Food Store</span>
-            <strong>Gestion de hamburgueseria</strong>
+            <h1 className="text-xl font-bold leading-tight">Food Store</h1>
+            <p className="text-sm text-muted">Gestión de hamburguesería</p>
           </div>
         </div>
 
-        <form className="login-page__form" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <span className="section-kicker">Acceso interno</span>
-            <h1>Ingresar al panel</h1>
-            <p>Credenciales demo: admin/1234 o stock/stock.</p>
+            <h2 className="text-2xl font-bold mt-1">Ingresar al panel</h2>
+            <p className="text-sm text-muted mt-1">Credenciales por defecto: admin@admin.com / admin123</p>
           </div>
 
-          <Input
-            label="Usuario"
-            name="username"
-            placeholder="admin"
-            value={credentials.username}
-            autoComplete="username"
-            onChange={(event) =>
-              setCredentials((current) => ({ ...current, username: event.target.value }))
-            }
-          />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-charcoal mb-1">Email de Usuario</label>
+              <input
+                className="w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                name="username"
+                placeholder="admin@admin.com"
+                value={credentials.username}
+                autoComplete="username"
+                onChange={(event) =>
+                  setCredentials((current) => ({ ...current, username: event.target.value }))
+                }
+              />
+            </div>
 
-          <Input
-            label="Contraseña"
-            name="password"
-            placeholder="1234"
-            type="password"
-            value={credentials.password}
-            autoComplete="current-password"
-            onChange={(event) =>
-              setCredentials((current) => ({ ...current, password: event.target.value }))
-            }
-          />
+            <div>
+              <label className="block text-sm font-medium text-charcoal mb-1">Contraseña</label>
+              <input
+                className="w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                name="password"
+                placeholder="****"
+                type="password"
+                value={credentials.password}
+                autoComplete="current-password"
+                onChange={(event) =>
+                  setCredentials((current) => ({ ...current, password: event.target.value }))
+                }
+              />
+            </div>
+          </div>
 
-          {error ? <div className="login-page__error">{error}</div> : null}
+          {error && <div className="p-3 bg-red-100 text-red-700 text-sm rounded-md">{error}</div>}
 
-          <Button type="submit" disabled={isSubmitting}>
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 px-4 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
             {isSubmitting ? 'Validando...' : 'Entrar'}
-          </Button>
+          </button>
         </form>
       </section>
     </main>

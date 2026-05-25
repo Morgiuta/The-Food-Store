@@ -1,43 +1,5 @@
 import type { SuppliesQuery, SuppliesResponse, Supply, SupplyFormValues } from '../types/supply';
-
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1').replace(
-  /\/$/,
-  '',
-);
-
-class ApiError extends Error {
-  constructor(message: string, readonly status?: number) {
-    super(message);
-  }
-}
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    let message = 'No se pudo completar la operacion.';
-    try {
-      const payload = await response.json();
-      message = payload.detail ?? payload.message ?? message;
-    } catch {
-      message = response.statusText || message;
-    }
-    throw new ApiError(message, response.status);
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
-}
+import { api } from './api';
 
 function buildQuery(params: SuppliesQuery): string {
   const query = new URLSearchParams();
@@ -59,37 +21,32 @@ function buildQuery(params: SuppliesQuery): string {
 }
 
 export const suppliesService = {
-  getAll(params: SuppliesQuery): Promise<SuppliesResponse> {
-    return request<SuppliesResponse>(`/ingredientes?${buildQuery(params)}`);
+  async getAll(params: SuppliesQuery): Promise<SuppliesResponse> {
+    const { data } = await api.get<SuppliesResponse>(`/ingredientes?${buildQuery(params)}`);
+    return data;
   },
 
-  getById(id: number): Promise<Supply> {
-    return request<Supply>(`/ingredientes/${id}`);
+  async getById(id: number): Promise<Supply> {
+    const { data } = await api.get<Supply>(`/ingredientes/${id}`);
+    return data;
   },
 
-  create(input: SupplyFormValues): Promise<Supply> {
-    return request<Supply>('/ingredientes/', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+  async create(input: SupplyFormValues): Promise<Supply> {
+    const { data } = await api.post<Supply>('/ingredientes/', input);
+    return data;
   },
 
-  update(id: number, input: SupplyFormValues): Promise<Supply> {
-    return request<Supply>(`/ingredientes/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(input),
-    });
+  async update(id: number, input: SupplyFormValues): Promise<Supply> {
+    const { data } = await api.patch<Supply>(`/ingredientes/${id}`, input);
+    return data;
   },
 
-  remove(id: number): Promise<void> {
-    return request<void>(`/ingredientes/${id}`, {
-      method: 'DELETE',
-    });
+  async remove(id: number): Promise<void> {
+    await api.delete(`/ingredientes/${id}`);
   },
 
-  restore(id: number): Promise<Supply> {
-    return request<Supply>(`/ingredientes/${id}/restore`, {
-      method: 'PATCH',
-    });
+  async restore(id: number): Promise<Supply> {
+    const { data } = await api.patch<Supply>(`/ingredientes/${id}/restore`);
+    return data;
   },
 };

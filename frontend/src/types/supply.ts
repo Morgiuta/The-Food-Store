@@ -3,6 +3,7 @@ export interface Supply {
   nombre: string;
   descripcion: string | null;
   es_alergeno: boolean;
+  stock_actual: number;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -12,6 +13,7 @@ export interface SupplyFormValues {
   nombre: string;
   descripcion: string;
   es_alergeno: boolean;
+  stock_actual: number;
 }
 
 export interface SuppliesQuery {
