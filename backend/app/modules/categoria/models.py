@@ -33,6 +33,11 @@ class Categoria(SQLModel, table=True):
     )
 
     productos_categoria: list["ProductoCategoria"] = Relationship(back_populates="categoria")
+    parent: Optional["Categoria"] = Relationship(
+        back_populates="subcategorias",
+        sa_relationship_kwargs={"remote_side": "Categoria.id"},
+    )
+    subcategorias: list["Categoria"] = Relationship(back_populates="parent")
 
     __table_args__ = (UniqueConstraint("nombre", name="uq_categoria_nombre"),)
 

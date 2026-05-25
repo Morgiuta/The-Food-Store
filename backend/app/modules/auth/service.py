@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
+from app.core.unit_of_work import UnitOfWork
 from app.modules.auth.models import Usuario, UsuarioRol
 from app.modules.auth.schemas import UserRegister
 
@@ -52,7 +53,10 @@ def authenticate_user(session: Session, username: str, password: str) -> Usuario
 
 
 def get_user_role_codes(session: Session, usuario_id: int) -> list[str]:
-    statement = select(UsuarioRol.rol_codigo).where(UsuarioRol.usuario_id == usuario_id)
+    statement = select(UsuarioRol.rol_codigo).where(
+        UsuarioRol.usuario_id == usuario_id,
+        UsuarioRol.deleted_at.is_(None),
+    )
     return list(session.exec(statement).all())
 
 
@@ -104,27 +108,25 @@ def register_client_user(session: Session, data: UserRegister) -> Usuario:
             detail="Ya existe un usuario con ese email",
         )
 
-    user = Usuario(
-        nombre=nombre,
-        apellido=apellido,
-        email=email,
-        password_hash=get_password_hash(data.password),
-    )
-    session.add(user)
-    session.flush()
-
-    if user.id is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudo crear el usuario",
-        )
-
-    session.add(UsuarioRol(usuario_id=user.id, rol_codigo="CLIENT"))
-
     try:
-        session.commit()
+        with UnitOfWork(session):
+            user = Usuario(
+                nombre=nombre,
+                apellido=apellido,
+                email=email,
+                password_hash=get_password_hash(data.password),
+            )
+            session.add(user)
+            session.flush()
+
+            if user.id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="No se pudo crear el usuario",
+                )
+
+            session.add(UsuarioRol(usuario_id=user.id, rol_codigo="CLIENT"))
     except IntegrityError as exc:
-        session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Ya existe un usuario con ese email",

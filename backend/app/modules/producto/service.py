@@ -146,6 +146,22 @@ class ProductoService(BaseService):
 
         uow.producto_ingredientes.session.flush()
 
+    def recalcular_stock(self, uow: ProductoUnitOfWork, producto: Producto) -> None:
+        links = uow.producto_ingredientes.list_by_producto(producto.id)
+        if not links:
+            return
+        
+        ingredientes_by_id = self._ingredientes_by_id(uow, links)
+        posibles = []
+        for link in links:
+            ingrediente = ingredientes_by_id.get(link.ingrediente_id)
+            if ingrediente and link.cantidad_requerida > 0:
+                posibles.append(int(ingrediente.stock_actual / link.cantidad_requerida))
+        
+        if posibles:
+            producto.stock_cantidad = min(posibles)
+            self._apply_stock_rule(producto)
+
     def _to_public(
         self,
         producto: Producto,
@@ -208,6 +224,8 @@ class ProductoService(BaseService):
             uow.productos.add(producto)
             self._sync_categorias(uow, producto.id, data.categorias)
             self._sync_ingredientes(uow, producto.id, data.ingredientes)
+            self.recalcular_stock(uow, producto)
+            uow.productos.session.flush()
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto.id),
@@ -308,6 +326,9 @@ class ProductoService(BaseService):
 
             if ingredientes_payload is not None:
                 self._sync_ingredientes(uow, producto_id, ingredientes_payload)
+                
+            self.recalcular_stock(uow, producto)
+            uow.productos.session.flush()
 
             result = self._to_public(
                 producto,

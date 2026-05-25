@@ -1,6 +1,7 @@
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Numeric
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -20,6 +21,10 @@ class ProductoIngrediente(SQLModel, table=True):
     es_opcional: bool = Field(
         default=False,
         sa_column=Column(Boolean, nullable=False, default=False),
+    )
+    cantidad_requerida: Decimal = Field(
+        default=Decimal("1.00"),
+        sa_column=Column(Numeric(10, 2), nullable=False, default=1),
     )
 
     producto: "Producto" = Relationship(back_populates="productos_ingrediente")

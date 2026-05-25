@@ -1,5 +1,9 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal, Optional
+
+from sqlmodel import Field, SQLModel
+
 
 from sqlmodel import Field, SQLModel
 
@@ -11,12 +15,14 @@ class IngredienteCreate(SQLModel):
     nombre: str = Field(min_length=1, max_length=100)
     descripcion: Optional[str] = None
     es_alergeno: bool = False
+    stock_actual: Decimal = Field(default=Decimal("0.00"), ge=0)
 
 
 class IngredienteUpdate(SQLModel):
     nombre: Optional[str] = Field(default=None, min_length=1, max_length=100)
     descripcion: Optional[str] = None
     es_alergeno: Optional[bool] = None
+    stock_actual: Optional[Decimal] = Field(default=None, ge=0)
 
 
 class IngredientePublic(PublicSchema):
@@ -24,6 +30,7 @@ class IngredientePublic(PublicSchema):
     nombre: str
     descripcion: Optional[str]
     es_alergeno: bool
+    stock_actual: Decimal
     created_at: datetime
     updated_at: datetime
     deleted_at: Optional[datetime]

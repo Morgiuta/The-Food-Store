@@ -169,7 +169,10 @@ class PedidoRepository:
     def get_role_codes(self, usuario_id: int) -> list[str]:
         return list(
             self.session.exec(
-                select(UsuarioRol.rol_codigo).where(UsuarioRol.usuario_id == usuario_id)
+                select(UsuarioRol.rol_codigo).where(
+                    UsuarioRol.usuario_id == usuario_id,
+                    UsuarioRol.deleted_at.is_(None),
+                )
             ).all()
         )
 

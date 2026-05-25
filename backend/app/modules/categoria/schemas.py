@@ -33,3 +33,9 @@ class CategoriaPublic(PublicSchema):
 
 class CategoriaList(PaginatedResponse[CategoriaPublic]):
     pass
+
+
+class CategoriaTree(CategoriaPublic):
+    children: list["CategoriaTree"] = []
+
+CategoriaTree.model_rebuild()

@@ -19,8 +19,8 @@ ROLES_SEED = [
 ESTADOS_PEDIDO_SEED = [
     ("PENDIENTE", "Pendiente", 1, False),
     ("CONFIRMADO", "Confirmado", 2, False),
-    ("EN_PROCESO", "En proceso", 3, False),
-    ("LISTO", "Listo", 4, False),
+    ("EN_PREP", "En preparacion", 3, False),
+    ("EN_CAMINO", "En camino", 4, False),
     ("ENTREGADO", "Entregado", 5, True),
     ("CANCELADO", "Cancelado", 6, True),
 ]
@@ -47,7 +47,8 @@ def seed_roles(session: Session) -> None:
 
 def seed_estados_pedido(session: Session) -> None:
     for codigo, descripcion, orden, es_terminal in ESTADOS_PEDIDO_SEED:
-        if session.get(EstadoPedido, codigo) is None:
+        estado = session.get(EstadoPedido, codigo)
+        if estado is None:
             session.add(
                 EstadoPedido(
                     codigo=codigo,
@@ -56,6 +57,11 @@ def seed_estados_pedido(session: Session) -> None:
                     es_terminal=es_terminal,
                 )
             )
+        else:
+            estado.descripcion = descripcion
+            estado.orden = orden
+            estado.es_terminal = es_terminal
+            session.add(estado)
 
 
 def seed_formas_pago(session: Session) -> None:

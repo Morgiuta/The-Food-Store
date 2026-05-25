@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from app.core.base_service import BaseService
+from app.core.unit_of_work import UnitOfWork
 from app.core.utils import utcnow
 from app.modules.admin.repository import UsuarioRepository
 from app.modules.admin.schemas import (
@@ -65,37 +66,35 @@ class UsuarioService(BaseService):
         usuario = self._get_or_404(repo, usuario_id)
         patch = data.model_dump(exclude_unset=True)
 
-        if "email" in patch:
-            email = normalize_login(patch["email"])
-            if not email:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="El email es obligatorio",
-                )
-            existing = repo.get_by_email_any_status(email)
-            if existing and existing.id != usuario.id:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Ya existe un usuario con ese email",
-                )
-            usuario.email = email
-
-        if "nombre" in patch:
-            nombre = patch["nombre"].strip()
-            if not nombre:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="El nombre es obligatorio",
-                )
-            usuario.nombre = nombre
-
-        usuario.updated_at = utcnow()
-        repo.add(usuario)
-
         try:
-            self._session.commit()
+            with UnitOfWork(self._session):
+                if "email" in patch:
+                    email = normalize_login(patch["email"])
+                    if not email:
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="El email es obligatorio",
+                        )
+                    existing = repo.get_by_email_any_status(email)
+                    if existing and existing.id != usuario.id:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail="Ya existe un usuario con ese email",
+                        )
+                    usuario.email = email
+
+                if "nombre" in patch:
+                    nombre = patch["nombre"].strip()
+                    if not nombre:
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="El nombre es obligatorio",
+                        )
+                    usuario.nombre = nombre
+
+                usuario.updated_at = utcnow()
+                repo.add(usuario)
         except IntegrityError as exc:
-            self._session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Ya existe un usuario con ese email",
@@ -106,10 +105,10 @@ class UsuarioService(BaseService):
     def soft_delete(self, usuario_id: int) -> None:
         repo = self._repo()
         usuario = self._get_or_404(repo, usuario_id)
-        usuario.deleted_at = utcnow()
-        usuario.updated_at = utcnow()
-        repo.add(usuario)
-        self._session.commit()
+        with UnitOfWork(self._session):
+            usuario.deleted_at = utcnow()
+            usuario.updated_at = utcnow()
+            repo.add(usuario)
 
     def assign_rol(self, usuario_id: int, data: UsuarioRolUpdate) -> UsuarioPublic:
         repo = self._repo()
@@ -121,8 +120,8 @@ class UsuarioService(BaseService):
                 detail=f"Rol '{data.rol_nombre}' no encontrado",
             )
 
-        repo.replace_usuario_rol(usuario.id or 0, rol.codigo)
-        usuario.updated_at = utcnow()
-        repo.add(usuario)
-        self._session.commit()
+        with UnitOfWork(self._session):
+            repo.replace_usuario_rol(usuario.id or 0, rol.codigo)
+            usuario.updated_at = utcnow()
+            repo.add(usuario)
         return self._to_public(repo, usuario)

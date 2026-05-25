@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -23,7 +23,7 @@ from app.core.base_model import utcnow
 
 
 class FormaPago(SQLModel, table=True):
-    __tablename__ = "FormaPago"
+    __tablename__ = "formas_pago"
 
     codigo: str = Field(sa_column=Column(String(20), primary_key=True))
     descripcion: str = Field(sa_column=Column(String(80), nullable=False))
@@ -31,32 +31,56 @@ class FormaPago(SQLModel, table=True):
         default=True,
         sa_column=Column(Boolean, nullable=False, default=True),
     )
+    deleted_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+    pedidos: list["Pedido"] = Relationship(back_populates="forma_pago")
 
 
 class EstadoPedido(SQLModel, table=True):
-    __tablename__ = "EstadoPedido"
+    __tablename__ = "estados_pedido"
 
     codigo: str = Field(sa_column=Column(String(20), primary_key=True))
     descripcion: str = Field(sa_column=Column(String(80), nullable=False))
     orden: int = Field(sa_column=Column(Integer, nullable=False))
     es_terminal: bool = Field(sa_column=Column(Boolean, nullable=False))
+    deleted_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+    pedidos: list["Pedido"] = Relationship(back_populates="estado")
+    historial_desde: list["HistorialEstadoPedido"] = Relationship(
+        back_populates="estado_desde_rel",
+        sa_relationship_kwargs={
+            "foreign_keys": "[HistorialEstadoPedido.estado_desde]",
+        },
+    )
+    historial_hacia: list["HistorialEstadoPedido"] = Relationship(
+        back_populates="estado_hacia_rel",
+        sa_relationship_kwargs={
+            "foreign_keys": "[HistorialEstadoPedido.estado_hacia]",
+        },
+    )
 
 
 class Pedido(SQLModel, table=True):
-    __tablename__ = "Pedido"
+    __tablename__ = "pedidos"
 
     id: Optional[int] = Field(
         default=None,
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
     usuario_id: int = Field(
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), nullable=False),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), nullable=False),
     )
     direccion_id: int | None = Field(
         default=None,
         sa_column=Column(
             BigInteger,
-            ForeignKey("DireccionEntrega.id", ondelete="SET NULL"),
+            ForeignKey("direcciones_entrega.id", ondelete="SET NULL"),
             nullable=True,
         ),
     )
@@ -64,14 +88,14 @@ class Pedido(SQLModel, table=True):
         default="PENDIENTE",
         sa_column=Column(
             String(20),
-            ForeignKey("EstadoPedido.codigo"),
+            ForeignKey("estados_pedido.codigo"),
             nullable=False,
         ),
     )
     forma_pago_codigo: str = Field(
         sa_column=Column(
             String(20),
-            ForeignKey("FormaPago.codigo"),
+            ForeignKey("formas_pago.codigo"),
             nullable=False,
         ),
     )
@@ -101,6 +125,10 @@ class Pedido(SQLModel, table=True):
 
     detalles: list["DetallePedido"] = Relationship(back_populates="pedido")
     historial: list["HistorialEstadoPedido"] = Relationship(back_populates="pedido")
+    pagos: list["Pago"] = Relationship(back_populates="pedido")
+    usuario: "Usuario" = Relationship(back_populates="pedidos")
+    estado: EstadoPedido = Relationship(back_populates="pedidos")
+    forma_pago: FormaPago = Relationship(back_populates="pedidos")
 
     __table_args__ = (
         CheckConstraint("subtotal >= 0", name="ck_pedido_subtotal_non_negative"),
@@ -111,14 +139,14 @@ class Pedido(SQLModel, table=True):
 
 
 class Pago(SQLModel, table=True):
-    __tablename__ = "Pago"
+    __tablename__ = "pagos"
 
     id: Optional[int] = Field(
         default=None,
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
     pedido_id: int = Field(
-        sa_column=Column(BigInteger, ForeignKey("Pedido.id"), nullable=False),
+        sa_column=Column(BigInteger, ForeignKey("pedidos.id"), nullable=False),
     )
     mp_payment_id: int | None = Field(
         default=None,
@@ -148,10 +176,16 @@ class Pago(SQLModel, table=True):
         default_factory=utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+    deleted_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+    pedido: Pedido = Relationship(back_populates="pagos")
 
 
 class HistorialEstadoPedido(SQLModel, table=True):
-    __tablename__ = "HistorialEstadoPedido"
+    __tablename__ = "historial_estados_pedido"
 
     id: Optional[int] = Field(
         default=None,
@@ -160,7 +194,7 @@ class HistorialEstadoPedido(SQLModel, table=True):
     pedido_id: int = Field(
         sa_column=Column(
             BigInteger,
-            ForeignKey("Pedido.id", ondelete="CASCADE"),
+            ForeignKey("pedidos.id", ondelete="CASCADE"),
             nullable=False,
         ),
     )
@@ -168,20 +202,20 @@ class HistorialEstadoPedido(SQLModel, table=True):
         default=None,
         sa_column=Column(
             String(20),
-            ForeignKey("EstadoPedido.codigo"),
+            ForeignKey("estados_pedido.codigo"),
             nullable=True,
         ),
     )
     estado_hacia: str = Field(
         sa_column=Column(
             String(20),
-            ForeignKey("EstadoPedido.codigo"),
+            ForeignKey("estados_pedido.codigo"),
             nullable=False,
         ),
     )
     usuario_id: int | None = Field(
         default=None,
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), nullable=True),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), nullable=True),
     )
     motivo: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
     created_at: datetime = Field(
@@ -190,15 +224,28 @@ class HistorialEstadoPedido(SQLModel, table=True):
     )
 
     pedido: Pedido = Relationship(back_populates="historial")
+    usuario: Optional["Usuario"] = Relationship(back_populates="historial_pedidos")
+    estado_desde_rel: Optional[EstadoPedido] = Relationship(
+        back_populates="historial_desde",
+        sa_relationship_kwargs={
+            "foreign_keys": "[HistorialEstadoPedido.estado_desde]",
+        },
+    )
+    estado_hacia_rel: EstadoPedido = Relationship(
+        back_populates="historial_hacia",
+        sa_relationship_kwargs={
+            "foreign_keys": "[HistorialEstadoPedido.estado_hacia]",
+        },
+    )
 
 
 class DetallePedido(SQLModel, table=True):
-    __tablename__ = "DetallePedido"
+    __tablename__ = "detalle_pedidos"
 
     pedido_id: int = Field(
         sa_column=Column(
             BigInteger,
-            ForeignKey("Pedido.id", ondelete="CASCADE"),
+            ForeignKey("pedidos.id", ondelete="CASCADE"),
             primary_key=True,
         ),
     )
@@ -221,8 +268,13 @@ class DetallePedido(SQLModel, table=True):
         default_factory=utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+    deleted_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
     pedido: Pedido = Relationship(back_populates="detalles")
+    producto: "Producto" = Relationship(back_populates="detalles_pedido")
 
     __table_args__ = (
         CheckConstraint("cantidad >= 1", name="ck_detalle_pedido_cantidad_min"),
@@ -235,3 +287,8 @@ class DetallePedido(SQLModel, table=True):
             name="ck_detalle_pedido_subtotal_snapshot_non_negative",
         ),
     )
+
+
+if TYPE_CHECKING:
+    from app.modules.auth.models import Usuario
+    from app.modules.producto.models import Producto

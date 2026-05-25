@@ -43,3 +43,11 @@ class ProductoIngredienteRepository(BaseRepository[ProductoIngrediente]):
                 .order_by(ProductoIngrediente.producto_id, ProductoIngrediente.ingrediente_id)
             ).all()
         )
+
+    def list_by_ingrediente(self, ingrediente_id: int) -> list[ProductoIngrediente]:
+        return list(
+            self.session.exec(
+                select(ProductoIngrediente)
+                .where(ProductoIngrediente.ingrediente_id == ingrediente_id)
+            ).all()
+        )

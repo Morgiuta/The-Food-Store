@@ -44,6 +44,7 @@ class Producto(SQLModel, table=True):
 
     productos_categoria: list["ProductoCategoria"] = Relationship(back_populates="producto")
     productos_ingrediente: list["ProductoIngrediente"] = Relationship(back_populates="producto")
+    detalles_pedido: list["DetallePedido"] = Relationship(back_populates="producto")
 
     __table_args__ = (
         CheckConstraint("precio_base >= 0", name="ck_producto_precio_base_non_negative"),
@@ -58,3 +59,4 @@ class Producto(SQLModel, table=True):
 if TYPE_CHECKING:
     from app.modules.producto_categoria.models import ProductoCategoria
     from app.modules.producto_ingrediente.models import ProductoIngrediente
+    from app.modules.ventas.models import DetallePedido

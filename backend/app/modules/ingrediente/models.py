@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Numeric, String, Text, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.utils import utcnow
@@ -16,6 +17,10 @@ class Ingrediente(SQLModel, table=True):
     es_alergeno: bool = Field(
         default=False,
         sa_column=Column(Boolean, nullable=False, default=False),
+    )
+    stock_actual: Decimal = Field(
+        default=Decimal("0.00"),
+        sa_column=Column(Numeric(10, 2), nullable=False, default=0),
     )
     created_at: datetime = Field(
         default_factory=utcnow,

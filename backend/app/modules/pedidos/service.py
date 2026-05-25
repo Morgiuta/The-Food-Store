@@ -18,14 +18,28 @@ from app.modules.ventas.schemas import (
     PedidoCreate,
     PedidoPublic,
 )
-from app.modules.ventas.service import MP_STATUS_TO_ESTADO, TRANSICIONES_VALIDAS
+
+TRANSICIONES_VALIDAS = {
+    "PENDIENTE": {"CONFIRMADO", "CANCELADO"},
+    "CONFIRMADO": {"EN_PREP", "CANCELADO"},
+    "EN_PREP": {"EN_CAMINO", "CANCELADO"},
+    "EN_CAMINO": {"ENTREGADO"},
+}
+
+MP_STATUS_TO_ESTADO = {
+    "approved": "CONFIRMADO",
+    "rejected": "CANCELADO",
+    "cancelled": "CANCELADO",
+    "refunded": "CANCELADO",
+    "charged_back": "CANCELADO",
+}
 
 
 AVANCE_ESTADOS_VALIDOS = {
     "PENDIENTE": "CONFIRMADO",
-    "CONFIRMADO": "EN_PROCESO",
-    "EN_PROCESO": "LISTO",
-    "LISTO": "ENTREGADO",
+    "CONFIRMADO": "EN_PREP",
+    "EN_PREP": "EN_CAMINO",
+    "EN_CAMINO": "ENTREGADO",
 }
 
 ESTADOS_CANCELABLES = {"PENDIENTE", "CONFIRMADO"}
@@ -165,12 +179,12 @@ class PedidosService:
         usuario_id: int | None,
         motivo: str | None = None,
     ) -> PedidoPublic:
-        pedido = self._get_pedido_or_404(pedido_id)
-        estado_hacia = estado_hacia.strip().upper()
-        self._validate_transition(pedido.estado_codigo, estado_hacia, motivo)
-        pedido.updated_at = utcnow()
-        self.pedidos.update_estado(pedido, estado_hacia, usuario_id, motivo)
-        self.session.commit()
+        with PedidosUnitOfWork(self.session) as uow:
+            pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
+            estado_hacia = estado_hacia.strip().upper()
+            self._validate_transition(pedido.estado_codigo, estado_hacia, motivo, uow.pedidos)
+            pedido.updated_at = utcnow()
+            uow.pedidos.update_estado(pedido, estado_hacia, usuario_id, motivo)
         return self.get_pedido(pedido_id)
 
     def avanzar_estado(
@@ -179,27 +193,27 @@ class PedidosService:
         nuevo_estado: str,
         usuario_id: int | None,
     ) -> PedidoPublic:
-        pedido = self._get_pedido_or_404(pedido_id)
-        nuevo_estado = nuevo_estado.strip().upper()
-        esperado = AVANCE_ESTADOS_VALIDOS.get(pedido.estado_codigo)
+        with PedidosUnitOfWork(self.session) as uow:
+            pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
+            nuevo_estado = nuevo_estado.strip().upper()
+            esperado = AVANCE_ESTADOS_VALIDOS.get(pedido.estado_codigo)
 
-        if esperado != nuevo_estado:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=(
-                    "Transicion invalida: "
-                    f"{pedido.estado_codigo} -> {nuevo_estado}"
-                ),
+            if esperado != nuevo_estado:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(
+                        "Transicion invalida: "
+                        f"{pedido.estado_codigo} -> {nuevo_estado}"
+                    ),
+                )
+
+            pedido.updated_at = utcnow()
+            uow.pedidos.update_estado(
+                pedido=pedido,
+                estado_hacia=nuevo_estado,
+                usuario_id=usuario_id,
+                motivo=None,
             )
-
-        pedido.updated_at = utcnow()
-        self.pedidos.update_estado(
-            pedido=pedido,
-            estado_hacia=nuevo_estado,
-            usuario_id=usuario_id,
-            motivo=None,
-        )
-        self.session.commit()
         return self.get_pedido(pedido_id)
 
     def cancelar_pedido(
@@ -207,70 +221,74 @@ class PedidosService:
         pedido_id: int,
         usuario_id: int,
     ) -> PedidoPublic:
-        pedido = self._get_pedido_or_404(pedido_id)
+        with PedidosUnitOfWork(self.session) as uow:
+            pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
 
-        if not self.is_admin(usuario_id) and pedido.usuario_id != usuario_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No puede cancelar un pedido de otro usuario",
+            if not self.is_admin(usuario_id) and pedido.usuario_id != usuario_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No puede cancelar un pedido de otro usuario",
+                )
+
+            if pedido.estado_codigo not in ESTADOS_CANCELABLES:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(
+                        "Solo se puede cancelar un pedido en estado "
+                        "PENDIENTE o CONFIRMADO"
+                    ),
+                )
+
+            pedido.updated_at = utcnow()
+            uow.pedidos.update_estado(
+                pedido=pedido,
+                estado_hacia="CANCELADO",
+                usuario_id=usuario_id,
+                motivo="Cancelacion del pedido",
             )
-
-        if pedido.estado_codigo not in ESTADOS_CANCELABLES:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=(
-                    "Solo se puede cancelar un pedido en estado "
-                    "PENDIENTE o CONFIRMADO"
-                ),
-            )
-
-        pedido.updated_at = utcnow()
-        self.pedidos.update_estado(
-            pedido=pedido,
-            estado_hacia="CANCELADO",
-            usuario_id=usuario_id,
-            motivo="Cancelacion del pedido",
-        )
-        self.session.commit()
         return self.get_pedido(pedido_id)
 
     def register_pago(self, pedido_id: int, data: PagoCreate) -> PagoPublic:
-        pedido = self._get_pedido_or_404(pedido_id)
-
-        existing = self.pedidos.get_pago_by_idempotency_key(data.idempotency_key)
-        if existing is not None:
-            return self._pago_to_public(existing)
-
-        pago = Pago(
-            pedido_id=pedido.id,
-            mp_payment_id=data.mp_payment_id,
-            mp_status=data.mp_status,
-            mp_status_detail=data.mp_status_detail,
-            external_reference=data.external_reference,
-            idempotency_key=data.idempotency_key,
-            transaction_amount=data.transaction_amount,
-            payment_method=data.payment_method,
-        )
-        self.pedidos.add_pago(pago)
-
-        next_estado = MP_STATUS_TO_ESTADO.get(data.mp_status)
-        if next_estado is not None and pedido.estado_codigo != next_estado:
-            try:
-                self._validate_transition(pedido.estado_codigo, next_estado, data.mp_status_detail)
-                pedido.updated_at = utcnow()
-                self.pedidos.update_estado(
-                    pedido,
-                    next_estado,
-                    usuario_id=None,
-                    motivo=data.mp_status_detail or f"Pago {data.mp_status}",
-                )
-            except HTTPException:
-                pass
-
         try:
-            self.session.commit()
+            with PedidosUnitOfWork(self.session) as uow:
+                pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
+
+                existing = uow.pedidos.get_pago_by_idempotency_key(data.idempotency_key)
+                if existing is not None:
+                    return self._pago_to_public(existing)
+
+                pago = Pago(
+                    pedido_id=pedido.id,
+                    mp_payment_id=data.mp_payment_id,
+                    mp_status=data.mp_status,
+                    mp_status_detail=data.mp_status_detail,
+                    external_reference=data.external_reference,
+                    idempotency_key=data.idempotency_key,
+                    transaction_amount=data.transaction_amount,
+                    payment_method=data.payment_method,
+                )
+                uow.pedidos.add_pago(pago)
+
+                next_estado = MP_STATUS_TO_ESTADO.get(data.mp_status)
+                if next_estado is not None and pedido.estado_codigo != next_estado:
+                    try:
+                        self._validate_transition(
+                            pedido.estado_codigo,
+                            next_estado,
+                            data.mp_status_detail,
+                            uow.pedidos,
+                        )
+                        pedido.updated_at = utcnow()
+                        uow.pedidos.update_estado(
+                            pedido,
+                            next_estado,
+                            usuario_id=None,
+                            motivo=data.mp_status_detail or f"Pago {data.mp_status}",
+                        )
+                    except HTTPException:
+                        pass
+
         except IntegrityError as exc:
-            self.session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="El pago ya fue registrado",
@@ -370,8 +388,13 @@ class PedidosService:
             subtotal += productos[detalle.producto_id].precio_base * detalle.cantidad
         return subtotal
 
-    def _get_pedido_or_404(self, pedido_id: int) -> Pedido:
-        pedido = self.pedidos.get_by_id(pedido_id)
+    def _get_pedido_or_404(
+        self,
+        pedido_id: int,
+        repo: PedidoRepository | None = None,
+    ) -> Pedido:
+        repo = repo or self.pedidos
+        pedido = repo.get_by_id(pedido_id)
         if pedido is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -384,9 +407,11 @@ class PedidosService:
         estado_desde: str,
         estado_hacia: str,
         motivo: str | None,
+        repo: PedidoRepository | None = None,
     ) -> None:
-        estado_actual = self.pedidos.get_estado(estado_desde)
-        estado_destino = self.pedidos.get_estado(estado_hacia)
+        repo = repo or self.pedidos
+        estado_actual = repo.get_estado(estado_desde)
+        estado_destino = repo.get_estado(estado_hacia)
         if estado_actual is None or estado_destino is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

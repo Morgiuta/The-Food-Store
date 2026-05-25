@@ -24,6 +24,7 @@ class UsuarioRepository(BaseRepository[Usuario]):
         normalized = rol_nombre.strip()
         return self.session.exec(
             select(Rol).where(
+                Rol.deleted_at.is_(None),
                 or_(
                     func.lower(Rol.nombre) == normalized.lower(),
                     func.upper(Rol.codigo) == normalized.upper(),
@@ -45,6 +46,8 @@ class UsuarioRepository(BaseRepository[Usuario]):
                 statement.join(UsuarioRol, UsuarioRol.usuario_id == Usuario.id)
                 .join(Rol, Rol.codigo == UsuarioRol.rol_codigo)
                 .where(
+                    UsuarioRol.deleted_at.is_(None),
+                    Rol.deleted_at.is_(None),
                     or_(
                         func.lower(Rol.nombre) == normalized.lower(),
                         func.upper(Rol.codigo) == normalized.upper(),
@@ -70,6 +73,8 @@ class UsuarioRepository(BaseRepository[Usuario]):
                 .join(Rol, Rol.codigo == UsuarioRol.rol_codigo)
                 .where(
                     Usuario.deleted_at.is_(None),
+                    UsuarioRol.deleted_at.is_(None),
+                    Rol.deleted_at.is_(None),
                     or_(
                         func.lower(Rol.nombre) == normalized.lower(),
                         func.upper(Rol.codigo) == normalized.upper(),
@@ -84,14 +89,21 @@ class UsuarioRepository(BaseRepository[Usuario]):
             self.session.exec(
                 select(Rol)
                 .join(UsuarioRol, UsuarioRol.rol_codigo == Rol.codigo)
-                .where(UsuarioRol.usuario_id == usuario_id)
+                .where(
+                    UsuarioRol.usuario_id == usuario_id,
+                    UsuarioRol.deleted_at.is_(None),
+                    Rol.deleted_at.is_(None),
+                )
                 .order_by(Rol.codigo)
             ).all()
         )
 
     def replace_usuario_rol(self, usuario_id: int, rol_codigo: str) -> None:
         current_roles = self.session.exec(
-            select(UsuarioRol).where(UsuarioRol.usuario_id == usuario_id)
+            select(UsuarioRol).where(
+                UsuarioRol.usuario_id == usuario_id,
+                UsuarioRol.deleted_at.is_(None)
+            )
         ).all()
         for current_role in current_roles:
             self.session.delete(current_role)

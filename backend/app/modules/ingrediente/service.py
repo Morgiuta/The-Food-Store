@@ -11,6 +11,8 @@ from app.modules.ingrediente.schemas import (
     IngredienteUpdate,
 )
 from app.modules.ingrediente.unit_of_work import IngredienteUnitOfWork
+from app.modules.producto.service import ProductoService
+from app.modules.producto.unit_of_work import ProductoUnitOfWork
 
 
 class IngredienteService(BaseService):
@@ -78,6 +80,20 @@ class IngredienteService(BaseService):
 
             ingrediente.updated_at = utcnow()
             uow.ingredientes.add(ingrediente)
+            uow.ingredientes.session.flush()
+
+            if "stock_actual" in patch:
+                with ProductoUnitOfWork(self._session) as prod_uow:
+                    prod_svc = ProductoService(self._session)
+                    links = prod_uow.producto_ingredientes.list_by_ingrediente(ingrediente.id)
+                    producto_ids = list(set(link.producto_id for link in links))
+                    for pid in producto_ids:
+                        producto = prod_uow.productos.get_active_by_id(pid)
+                        if producto:
+                            prod_svc.recalcular_stock(prod_uow, producto)
+                            prod_uow.productos.add(producto)
+                    prod_uow.productos.session.flush()
+
             result = IngredientePublic.model_validate(ingrediente)
         return result
 

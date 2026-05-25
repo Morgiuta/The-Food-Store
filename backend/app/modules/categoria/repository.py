@@ -49,6 +49,14 @@ class CategoriaRepository(BaseRepository[Categoria]):
             ).all()
         )
 
+    def get_all_active(self) -> list[Categoria]:
+        statement = select(Categoria).where(Categoria.deleted_at.is_(None))
+        return list(
+            self.session.exec(
+                statement.order_by(Categoria.parent_id, Categoria.orden_display, Categoria.id)
+            ).all()
+        )
+
     def count_active(
         self,
         parent_id: int | None = None,

@@ -36,7 +36,7 @@ def list_productos(
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     categoria_id: Annotated[int | None, Query(gt=0)] = None,
     disponible: Annotated[bool | None, Query()] = None,
-    q: Annotated[str | None, Query(min_length=1, max_length=150)] = None,
+    q: Annotated[str | None, Query(max_length=150)] = None,
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoList:
     return svc.get_all(

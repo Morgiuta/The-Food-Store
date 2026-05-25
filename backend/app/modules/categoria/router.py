@@ -8,6 +8,7 @@ from app.modules.categoria.schemas import (
     CategoriaCreate,
     CategoriaList,
     CategoriaPublic,
+    CategoriaTree,
     CategoriaUpdate,
 )
 from app.modules.categoria.service import CategoriaService
@@ -34,7 +35,6 @@ def list_categorias(
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     parent_id: Annotated[str | None, Query()] = None,
-    _current_user=Depends(require_roles("ADMIN", "CLIENT")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaList:
     filter_parent = "parent_id" in request.query_params
@@ -65,10 +65,16 @@ def list_categorias(
     )
 
 
+@router.get("/tree", response_model=list[CategoriaTree])
+def get_categorias_tree(
+    svc: CategoriaService = Depends(get_categoria_service),
+) -> list[CategoriaTree]:
+    return svc.get_tree()
+
+
 @router.get("/{categoria_id}", response_model=CategoriaPublic)
 def get_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN", "CLIENT")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.get_by_id(categoria_id)

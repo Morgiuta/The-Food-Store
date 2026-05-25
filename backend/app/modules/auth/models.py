@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -13,23 +13,29 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.base_model import utcnow
 
 
 class Rol(SQLModel, table=True):
-    __tablename__ = "Rol"
+    __tablename__ = "roles"
 
     codigo: str = Field(
         sa_column=Column(String(20), primary_key=True),
     )
     nombre: str = Field(sa_column=Column(String(50), nullable=False))
     descripcion: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    deleted_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+    usuarios: list["UsuarioRol"] = Relationship(back_populates="rol")
 
 
 class Usuario(SQLModel, table=True):
-    __tablename__ = "Usuario"
+    __tablename__ = "usuarios"
 
     id: Optional[int] = Field(
         default=None,
@@ -74,19 +80,37 @@ class Usuario(SQLModel, table=True):
     def is_active(self) -> bool:
         return self.deleted_at is None
 
+    roles: list["UsuarioRol"] = Relationship(
+        back_populates="usuario",
+        sa_relationship_kwargs={
+            "foreign_keys": "[UsuarioRol.usuario_id]",
+        },
+    )
+    roles_asignados: list["UsuarioRol"] = Relationship(
+        back_populates="asignado_por",
+        sa_relationship_kwargs={
+            "foreign_keys": "[UsuarioRol.asignado_por_id]",
+        },
+    )
+    refresh_tokens: list["RefreshToken"] = Relationship(back_populates="usuario")
+    direcciones_entrega: list["DireccionEntrega"] = Relationship(back_populates="usuario")
+    pedidos: list["Pedido"] = Relationship(back_populates="usuario")
+    historial_pedidos: list["HistorialEstadoPedido"] = Relationship(back_populates="usuario")
+    direcciones: list["Direccion"] = Relationship(back_populates="usuario")
+
 
 class UsuarioRol(SQLModel, table=True):
-    __tablename__ = "UsuarioRol"
+    __tablename__ = "usuario_roles"
 
     usuario_id: int = Field(
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), primary_key=True),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), primary_key=True),
     )
     rol_codigo: str = Field(
-        sa_column=Column(String(20), ForeignKey("Rol.codigo"), primary_key=True),
+        sa_column=Column(String(20), ForeignKey("roles.codigo"), primary_key=True),
     )
     asignado_por_id: int | None = Field(
         default=None,
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), nullable=True),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), nullable=True),
     )
     expires_at: datetime | None = Field(
         default=None,
@@ -96,17 +120,35 @@ class UsuarioRol(SQLModel, table=True):
         default_factory=utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+    deleted_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+    usuario: Usuario = Relationship(
+        back_populates="roles",
+        sa_relationship_kwargs={
+            "foreign_keys": "[UsuarioRol.usuario_id]",
+        },
+    )
+    rol: Rol = Relationship(back_populates="usuarios")
+    asignado_por: Usuario | None = Relationship(
+        back_populates="roles_asignados",
+        sa_relationship_kwargs={
+            "foreign_keys": "[UsuarioRol.asignado_por_id]",
+        },
+    )
 
 
 class RefreshToken(SQLModel, table=True):
-    __tablename__ = "RefreshToken"
+    __tablename__ = "refresh_tokens"
 
     id: Optional[int] = Field(
         default=None,
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
     usuario_id: int = Field(
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), nullable=False),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), nullable=False),
     )
     token_hash: str = Field(
         sa_column=Column(CHAR(64), nullable=False, unique=True),
@@ -121,16 +163,18 @@ class RefreshToken(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
 
+    usuario: Usuario = Relationship(back_populates="refresh_tokens")
+
 
 class DireccionEntrega(SQLModel, table=True):
-    __tablename__ = "DireccionEntrega"
+    __tablename__ = "direcciones_entrega"
 
     id: Optional[int] = Field(
         default=None,
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
     usuario_id: int = Field(
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), nullable=False),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), nullable=False),
     )
     alias: str | None = Field(default=None, sa_column=Column(String(50)))
     linea1: str = Field(sa_column=Column(Text, nullable=False))
@@ -169,7 +213,14 @@ class DireccionEntrega(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
 
+    usuario: Usuario = Relationship(back_populates="direcciones_entrega")
+
 
 User = Usuario
 Role = Rol
 UserRole = UsuarioRol
+
+
+if TYPE_CHECKING:
+    from app.modules.direcciones.models import Direccion
+    from app.modules.ventas.models import HistorialEstadoPedido, Pedido

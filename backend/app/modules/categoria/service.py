@@ -7,6 +7,7 @@ from app.modules.categoria.schemas import (
     CategoriaCreate,
     CategoriaList,
     CategoriaPublic,
+    CategoriaTree,
     CategoriaUpdate,
 )
 from app.modules.categoria.unit_of_work import CategoriaUnitOfWork
@@ -87,6 +88,29 @@ class CategoriaService(BaseService):
                 total=total,
             )
         return result
+
+    def get_tree(self) -> list[CategoriaTree]:
+        with CategoriaUnitOfWork(self._session) as uow:
+            categorias = uow.categorias.get_all_active()
+
+        tree_nodes = {
+            cat.id: CategoriaTree.model_validate(cat)
+            for cat in categorias
+        }
+
+        roots: list[CategoriaTree] = []
+        for cat in categorias:
+            node = tree_nodes[cat.id]
+            if cat.parent_id is None:
+                roots.append(node)
+            else:
+                parent_node = tree_nodes.get(cat.parent_id)
+                if parent_node:
+                    parent_node.children.append(node)
+                else:
+                    roots.append(node)
+
+        return roots
 
     def get_by_id(self, categoria_id: int) -> CategoriaPublic:
         with CategoriaUnitOfWork(self._session) as uow:

@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.modules.auth.models import Usuario
 
 
 class Direccion(SQLModel, table=True):
@@ -13,7 +15,7 @@ class Direccion(SQLModel, table=True):
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
     usuario_id: int = Field(
-        sa_column=Column(BigInteger, ForeignKey("Usuario.id"), nullable=False),
+        sa_column=Column(BigInteger, ForeignKey("usuarios.id"), nullable=False),
     )
     calle: str = Field(sa_column=Column(String(120), nullable=False))
     numero: str = Field(sa_column=Column(String(20), nullable=False))
@@ -28,3 +30,5 @@ class Direccion(SQLModel, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+
+    usuario: Usuario = Relationship(back_populates="direcciones")
