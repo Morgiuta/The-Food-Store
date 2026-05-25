@@ -2,11 +2,12 @@ import { FormEvent, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import type { LoginCredentials } from '../../types/auth';
 import { useAuthStore } from '../../store/authStore';
+import { getErrorMessage } from '../../utils/errors';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, login } = useAuthStore();
+  const { isAuthenticated, login, user } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [credentials, setCredentials] = useState<LoginCredentials>({
@@ -17,7 +18,7 @@ export function LoginPage() {
   const from = location.state?.from?.pathname ?? '/admin';
 
   if (isAuthenticated) {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to={user?.role === 'CLIENT' ? '/' : '/admin'} replace />;
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -27,13 +28,10 @@ export function LoginPage() {
 
     try {
       await login(credentials);
-      navigate(from, { replace: true });
-    } catch (loginError: any) {
-      setError(
-        loginError?.response?.data?.detail ??
-        loginError?.message ??
-        'No se pudo iniciar sesión.'
-      );
+      const currentUser = useAuthStore.getState().user;
+      navigate(currentUser?.role === 'CLIENT' && from === '/admin' ? '/' : from, { replace: true });
+    } catch (loginError: unknown) {
+      setError(getErrorMessage(loginError, 'No se pudo iniciar sesión.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -98,6 +96,12 @@ export function LoginPage() {
             {isSubmitting ? 'Validando...' : 'Entrar'}
           </button>
         </form>
+        <p className="mt-6 text-center text-sm text-muted">
+          Queres comprar online?{' '}
+          <a href="/registro" className="font-bold text-primary-dark hover:underline">
+            Crear cuenta
+          </a>
+        </p>
       </section>
     </main>
   );

@@ -1,23 +1,58 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage/LoginPage';
+import { RegisterPage } from '../pages/RegisterPage/RegisterPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminLayout } from '../layouts/AdminLayout/AdminLayout';
+import { StoreLayout } from '../layouts/StoreLayout/StoreLayout';
 import { HomePage } from '../pages/HomePage/HomePage';
 import { SuppliesPage } from '../pages/SuppliesPage/SuppliesPage';
 import { CategoriasPage } from '../pages/CategoriasPage/CategoriasPage';
 import { ProductosPage } from '../pages/ProductosPage/ProductosPage';
 import { PedidosPage } from '../pages/PedidosPage/PedidosPage';
 import { UsuariosPage } from '../pages/UsuariosPage/UsuariosPage';
+import { StoreHomePage } from '../pages/StoreHomePage/StoreHomePage';
+import { CartPage } from '../pages/CartPage/CartPage';
+import { CheckoutPage } from '../pages/CheckoutPage/CheckoutPage';
+import { AddressesPage } from '../pages/AddressesPage/AddressesPage';
+import { MyOrdersPage } from '../pages/MyOrdersPage/MyOrdersPage';
 
 export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegisterPage />} />
       
-      {/* RUTAS DEL MÓDULO STORE (Públicas y Privadas de cliente) */}
-      <Route path="/" element={<div className="p-8"><h1 className="text-2xl font-bold">Store Home</h1><p>Módulo de tienda en construcción...</p><a href="/admin" className="text-primary hover:underline">Ir al Panel de Admin</a></div>} />
+      {/* RUTAS DEL MODULO STORE */}
+      <Route path="/" element={<StoreLayout />}>
+        <Route index element={<StoreHomePage />} />
+        <Route path="carrito" element={<CartPage />} />
+        <Route
+          path="checkout"
+          element={
+            <ProtectedRoute allowedRoles={['CLIENT']}>
+              <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="direcciones"
+          element={
+            <ProtectedRoute allowedRoles={['CLIENT']}>
+              <AddressesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="mis-pedidos"
+          element={
+            <ProtectedRoute allowedRoles={['CLIENT']}>
+              <MyOrdersPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
       
-      {/* RUTAS DEL MÓDULO ADMINISTRACIÓN */}
+      {/* RUTAS DEL MODULO ADMINISTRACION */}
       <Route
         path="/admin"
         element={

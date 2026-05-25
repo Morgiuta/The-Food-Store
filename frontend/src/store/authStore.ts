@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, LoginCredentials } from '../types/auth';
+import type { User, LoginCredentials, RegisterCredentials } from '../types/auth';
 import { authService } from '../services/authService';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -18,6 +19,11 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         const user = await authService.login(credentials);
+        set({ user, isAuthenticated: true });
+      },
+
+      register: async (credentials) => {
+        const user = await authService.register(credentials);
         set({ user, isAuthenticated: true });
       },
 

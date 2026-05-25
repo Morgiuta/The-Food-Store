@@ -13,7 +13,7 @@ export function useSupplies(query: SuppliesQuery) {
     staleTime: 5000,
   });
 
-  const supplies = data?.data || [];
+  const supplies = useMemo(() => data?.data || [], [data?.data]);
   const total = data?.total || 0;
 
   const activeCount = useMemo(

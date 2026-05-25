@@ -81,6 +81,11 @@ export function PedidosPage() {
           <p className="text-muted">Visualización en tiempo real. Autorefresh activado.</p>
         </div>
         <div className="flex gap-3">
+           {isLoading && (
+             <div className="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 text-gray-500">
+                Cargando...
+             </div>
+           )}
            <div className={`text-xs font-bold px-3 py-1.5 rounded-full border ${isFetching ? 'border-green-300 bg-green-50 text-green-700 animate-pulse' : 'border-gray-200 text-gray-500'}`}>
               {isFetching ? 'Actualizando...' : 'Online'}
            </div>

@@ -3,16 +3,26 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterCredentials {
+  nombre: string;
+  email: string;
+  password: string;
+}
+
+export type UserRole = 'ADMIN' | 'STOCK' | 'PEDIDOS' | 'CLIENT';
+
 export interface User {
   id: number;
   name: string;
-  role: 'ADMIN' | 'STOCK';
+  role: UserRole;
 }
 
 export interface AuthUserResponse {
   id: number;
-  username: string;
+  email: string;
+  nombre: string;
+  apellido: string;
   full_name: string;
-  role: 'ADMIN' | 'STOCK';
+  role: UserRole;
   is_active: boolean;
 }

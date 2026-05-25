@@ -13,7 +13,7 @@ export function useCategorias(query: CategoriasQuery) {
     staleTime: 5000,
   });
 
-  const categorias = data?.data || [];
+  const categorias = useMemo(() => data?.data || [], [data?.data]);
   const total = data?.total || 0;
 
   const activeCount = useMemo(

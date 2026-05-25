@@ -1,4 +1,4 @@
-import type { UsuarioPublic, UsuarioListResponse, UsuariosQuery, UsuarioUpdate, UsuarioRolUpdate } from '../types/usuario';
+import type { UsuarioPublic, UsuarioListResponse, UsuariosQuery, UsuarioUpdate } from '../types/usuario';
 import { api } from './api';
 
 function buildQuery(params: UsuariosQuery): string {

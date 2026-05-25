@@ -1,6 +1,6 @@
 import { formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, CheckCircle, Package, Truck, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, Package, Truck, XCircle, type LucideIcon } from 'lucide-react';
 import type { Pedido } from '../../../../types/pedido';
 
 interface PedidoCardProps {
@@ -9,7 +9,7 @@ interface PedidoCardProps {
   onAdvance: (pedido: Pedido, e: React.MouseEvent) => void;
 }
 
-const statusConfig: Record<string, { color: string; icon: React.FC<any>; label: string; next?: string }> = {
+const statusConfig: Record<string, { color: string; icon: LucideIcon; label: string; next?: string }> = {
   PENDIENTE: { color: 'border-red-500 bg-red-50 text-red-700', icon: Clock, label: 'Pendiente', next: 'PREPARANDO' },
   PREPARANDO: { color: 'border-orange-500 bg-orange-50 text-orange-700', icon: Package, label: 'En Preparación', next: 'EN_CAMINO' },
   EN_CAMINO: { color: 'border-blue-500 bg-blue-50 text-blue-700', icon: Truck, label: 'En Camino', next: 'ENTREGADO' },

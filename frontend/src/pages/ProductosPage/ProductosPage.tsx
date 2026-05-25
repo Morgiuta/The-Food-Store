@@ -8,6 +8,7 @@ import { useCategoriasTree } from '../../hooks/useCategorias';
 import { useSupplies } from '../../hooks/useSupplies';
 import type { ProductosQuery, Producto, ProductoFormValues } from '../../types/producto';
 import { Plus, Search } from 'lucide-react';
+import type { CategoriaTree } from '../../types/categoria';
 
 const defaultQuery: ProductosQuery = {
   page: 1,
@@ -105,7 +106,7 @@ export function ProductosPage() {
     try {
        await toggleDisponibilidad(prod.id, !prod.disponible);
        notify('success', `El producto ahora está ${!prod.disponible ? 'disponible' : 'pausado'}.`);
-    } catch (e) {
+    } catch {
        notify('error', 'No se pudo cambiar la disponibilidad del producto.');
     }
   };
@@ -119,7 +120,7 @@ export function ProductosPage() {
     setDetailProducto(prod);
   };
 
-  const getFlatOptions = (tree: any[], prefix = ''): { id: number, label: string }[] => {
+  const getFlatOptions = (tree: CategoriaTree[], prefix = ''): { id: number, label: string }[] => {
     let options: { id: number, label: string }[] = [];
     tree.forEach(node => {
       options.push({ id: node.id, label: `${prefix}${node.nombre}` });

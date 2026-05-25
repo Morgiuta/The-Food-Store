@@ -5,7 +5,7 @@ export interface DetallePedidoPublic {
   nombre_snapshot: string;
   precio_snapshot: number;
   subtotal_snapshot: number;
-  personalizacion: Record<string, any> | null;
+  personalizacion: Record<string, unknown> | null;
   created_at: string;
 }
 

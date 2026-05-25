@@ -17,6 +17,8 @@ export default {
         },
         bg: '#fff8ef',
         charcoal: '#1f1b16',
+        muted: '#75685b',
+        border: '#ead7c2',
         cheddar: '#fbbf24',
         ketchup: '#b91c1c',
         lettuce: '#3f7d20',
