@@ -84,13 +84,22 @@ El login se valida contra el backend con OAuth2 Password Flow. El backend emite 
 
 ## Funcionalidades incluidas
 
+**Seguridad y Autenticación**
 - Login backend con JWT, hashing bcrypt y persistencia local del token.
-- Navegacion y endpoints backend protegidos.
-- Pantalla de Insumos conectada al backend de Ingredientes.
-- Alta, edicion, detalle, baja logica y listado.
-- Busqueda, filtros, paginacion y ordenamiento.
-- Validaciones, confirmaciones, notificaciones y estados de carga/error.
-- Exportacion a Excel del listado visible.
+- Navegación protegida y control de acceso basado en roles (`ADMIN`, `STOCK`, `PEDIDOS`, `CLIENT`).
+
+**Módulos del Administrador (Dashboard)**
+1. **Insumos / Ingredientes**: Gestión de stock y materias primas. Exportación a Excel.
+2. **Categorías**: Clasificación de productos (Hamburguesas, Bebidas, etc.).
+3. **Productos**: Construcción de catálogo y recetas. Permite enlazar categorías y elegir los insumos requeridos para fabricar cada producto.
+4. **Gestor de Pedidos**: Tablero operativo (tipo Kanban) en tiempo real con *auto-refresco* cada 15s. Incluye un ticket de comanda detallado.
+5. **Personal y Usuarios**: Panel de control para asignar roles y gestionar clientes o empleados.
+
+**Arquitectura y UX**
+- Construido con React 18, Vite y TypeScript estricto.
+- Estado asíncrono gestionado robustamente mediante **React Query** (caché, invalidación y re-fetching).
+- Diseño moderno con **TailwindCSS**, notificaciones (Toasts), modales y validaciones en tiempo real.
+- Búsqueda, filtros y paginación en todos los módulos.
 
 ## Verificaciones utiles
 
