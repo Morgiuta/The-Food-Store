@@ -37,6 +37,7 @@ def list_productos(
     categoria_id: Annotated[int | None, Query(gt=0)] = None,
     disponible: Annotated[bool | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=150)] = None,
+    include_deleted: Annotated[bool, Query()] = False,
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoList:
     return svc.get_all(
@@ -45,6 +46,7 @@ def list_productos(
         categoria_id=categoria_id,
         disponible=disponible,
         q=q,
+        include_deleted=include_deleted,
     )
 
 
@@ -104,3 +106,12 @@ def delete_producto(
     svc: ProductoService = Depends(get_producto_service),
 ) -> None:
     svc.soft_delete(producto_id)
+
+
+@router.patch("/{producto_id}/restore", response_model=ProductoPublic)
+def restore_producto(
+    producto_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_roles("ADMIN")),
+    svc: ProductoService = Depends(get_producto_service),
+) -> ProductoPublic:
+    return svc.restore(producto_id)

@@ -23,6 +23,8 @@ class UserPublic(SQLModel):
 
 class UserRegister(SQLModel):
     nombre: str = Field(min_length=1, max_length=160)
+    apellido: str = Field(min_length=1, max_length=80)
+    celular: str | None = Field(default=None, max_length=20)
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=128)
 

@@ -35,6 +35,7 @@ def list_categorias(
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     parent_id: Annotated[str | None, Query()] = None,
+    include_deleted: Annotated[bool, Query()] = False,
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaList:
     filter_parent = "parent_id" in request.query_params
@@ -62,14 +63,16 @@ def list_categorias(
         limit=limit,
         parent_id=parent_id_value,
         filter_parent=filter_parent,
+        include_deleted=include_deleted,
     )
 
 
 @router.get("/tree", response_model=list[CategoriaTree])
 def get_categorias_tree(
+    include_deleted: Annotated[bool, Query()] = False,
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> list[CategoriaTree]:
-    return svc.get_tree()
+    return svc.get_tree(include_deleted=include_deleted)
 
 
 @router.get("/{categoria_id}", response_model=CategoriaPublic)
@@ -97,3 +100,12 @@ def delete_categoria(
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> None:
     svc.soft_delete(categoria_id)
+
+
+@router.patch("/{categoria_id}/restore", response_model=CategoriaPublic)
+def restore_categoria(
+    categoria_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_roles("ADMIN")),
+    svc: CategoriaService = Depends(get_categoria_service),
+) -> CategoriaPublic:
+    return svc.restore(categoria_id)

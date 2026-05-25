@@ -15,7 +15,7 @@ from app.modules.categoria.unit_of_work import CategoriaUnitOfWork
 
 class CategoriaService(BaseService):
     def _get_or_404(self, uow: CategoriaUnitOfWork, categoria_id: int) -> Categoria:
-        categoria = uow.categorias.get_active_by_id(categoria_id)
+        categoria = uow.categorias.get_by_id(categoria_id)
         if not categoria:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -71,6 +71,7 @@ class CategoriaService(BaseService):
         limit: int = 20,
         parent_id: int | None = None,
         filter_parent: bool = False,
+        include_deleted: bool = False,
     ) -> CategoriaList:
         with CategoriaUnitOfWork(self._session) as uow:
             categorias = uow.categorias.list_active(
@@ -78,10 +79,12 @@ class CategoriaService(BaseService):
                 limit=limit,
                 parent_id=parent_id,
                 filter_parent=filter_parent,
+                include_deleted=include_deleted,
             )
             total = uow.categorias.count_active(
                 parent_id=parent_id,
                 filter_parent=filter_parent,
+                include_deleted=include_deleted,
             )
             result = CategoriaList(
                 data=[CategoriaPublic.model_validate(categoria) for categoria in categorias],
@@ -89,9 +92,9 @@ class CategoriaService(BaseService):
             )
         return result
 
-    def get_tree(self) -> list[CategoriaTree]:
+    def get_tree(self, include_deleted: bool = False) -> list[CategoriaTree]:
         with CategoriaUnitOfWork(self._session) as uow:
-            categorias = uow.categorias.get_all_active()
+            categorias = uow.categorias.get_all_active(include_deleted=include_deleted)
 
         tree_nodes = {
             cat.id: CategoriaTree.model_validate(cat)
@@ -121,6 +124,11 @@ class CategoriaService(BaseService):
     def update(self, categoria_id: int, data: CategoriaUpdate) -> CategoriaPublic:
         with CategoriaUnitOfWork(self._session) as uow:
             categoria = self._get_or_404(uow, categoria_id)
+            if categoria.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No se puede editar una categoria inactiva",
+                )
             patch = data.model_dump(exclude_unset=True)
 
             if "nombre" in patch:
@@ -139,6 +147,11 @@ class CategoriaService(BaseService):
     def soft_delete(self, categoria_id: int) -> None:
         with CategoriaUnitOfWork(self._session) as uow:
             categoria = self._get_or_404(uow, categoria_id)
+            if categoria.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="La categoria ya se encuentra dada de baja",
+                )
             if uow.categorias.has_active_products(categoria_id):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
@@ -150,3 +163,17 @@ class CategoriaService(BaseService):
             categoria.deleted_at = utcnow()
             categoria.updated_at = utcnow()
             uow.categorias.add(categoria)
+
+    def restore(self, categoria_id: int) -> CategoriaPublic:
+        with CategoriaUnitOfWork(self._session) as uow:
+            categoria = self._get_or_404(uow, categoria_id)
+            if categoria.deleted_at is None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="La categoria ya se encuentra activa",
+                )
+            categoria.deleted_at = None
+            categoria.updated_at = utcnow()
+            uow.categorias.add(categoria)
+            result = CategoriaPublic.model_validate(categoria)
+        return result

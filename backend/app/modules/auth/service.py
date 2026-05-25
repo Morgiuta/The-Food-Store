@@ -94,7 +94,8 @@ def split_full_name(full_name: str) -> tuple[str, str]:
 
 def register_client_user(session: Session, data: UserRegister) -> Usuario:
     email = normalize_login(data.email)
-    nombre, apellido = split_full_name(data.nombre)
+    nombre = data.nombre.strip()
+    apellido = data.apellido.strip()
 
     if not nombre:
         raise HTTPException(
@@ -114,6 +115,7 @@ def register_client_user(session: Session, data: UserRegister) -> Usuario:
                 nombre=nombre,
                 apellido=apellido,
                 email=email,
+                celular=data.celular.strip() if data.celular else None,
                 password_hash=get_password_hash(data.password),
             )
             session.add(user)

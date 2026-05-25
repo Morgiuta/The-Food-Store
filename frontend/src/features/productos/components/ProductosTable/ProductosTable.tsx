@@ -44,14 +44,14 @@ export function ProductosTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[900px]">
+      <table className="w-full text-left border-collapse table-fixed">
         <thead>
           <tr className="bg-gray-50 border-y border-gray-200">
-            <th className="p-4 font-bold text-sm text-charcoal w-1/3">Producto</th>
-            <th className="p-4 font-bold text-sm text-charcoal">Precio</th>
-            <th className="p-4 font-bold text-sm text-charcoal">Stock U.</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-32 text-center">Disponibilidad</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-48 text-right" aria-label="Acciones">Acciones</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[35%]">Producto</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Precio</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Stock U.</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%] text-center">Disponibilidad</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[20%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -73,7 +73,7 @@ export function ProductosTable({
                     </div>
                   )}
                   <div>
-                    <strong className="text-charcoal block mb-0.5">{prod.nombre}</strong>
+                    <strong className="text-charcoal block mb-0.5 truncate max-w-[150px] sm:max-w-[200px]" title={prod.nombre}>{prod.nombre}</strong>
                     <div className="flex items-center gap-2 text-xs">
                       {principalCategory ? (
                         <span className="text-gray-500">Cat ID: {principalCategory.categoria_id}</span>
@@ -96,9 +96,16 @@ export function ProductosTable({
                 {formatCurrency(prod.precio_base)}
               </td>
               <td className="p-4">
-                <span className={`font-bold ${prod.stock_cantidad <= 5 ? 'text-red-500' : 'text-gray-600'}`}>
-                  {prod.stock_cantidad}
-                </span>
+                <div className="flex flex-col items-start gap-1">
+                  <span className={`font-bold ${prod.stock_cantidad <= 5 ? 'text-red-500' : 'text-gray-600'}`}>
+                    {prod.stock_cantidad}
+                  </span>
+                  {prod.stock_cantidad < 10 && !isDeleted && (
+                    <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                      ¡Poco Stock!
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="p-4">
                 <div className="flex justify-center">

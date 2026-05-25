@@ -93,11 +93,11 @@ export function PedidosPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4">
-        <div className="flex gap-6 min-w-max h-full">
+      <div className="flex-1 pb-4">
+        <div className="flex gap-4 h-full">
           
           {/* Pendientes Column */}
-          <div className="w-80 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex-1 min-w-0 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
              <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-100/50 rounded-t-lg">
                 <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">Nuevos</h3>
                 <span className="bg-red-100 text-red-700 font-black text-xs px-2 py-0.5 rounded-full">{pendientes.length}</span>
@@ -110,7 +110,7 @@ export function PedidosPage() {
           </div>
 
           {/* Preparando Column */}
-          <div className="w-80 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex-1 min-w-0 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
              <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-100/50 rounded-t-lg">
                 <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">En Preparación</h3>
                 <span className="bg-orange-100 text-orange-700 font-black text-xs px-2 py-0.5 rounded-full">{preparando.length}</span>
@@ -123,7 +123,7 @@ export function PedidosPage() {
           </div>
 
           {/* En Camino Column */}
-          <div className="w-80 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex-1 min-w-0 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
              <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-100/50 rounded-t-lg">
                 <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">En Camino / Lista</h3>
                 <span className="bg-blue-100 text-blue-700 font-black text-xs px-2 py-0.5 rounded-full">{enCamino.length}</span>
@@ -136,7 +136,7 @@ export function PedidosPage() {
           </div>
 
           {/* Completados Column */}
-          <div className="w-80 flex flex-col bg-gray-50 rounded-lg border border-gray-200 opacity-60 hover:opacity-100 transition-opacity">
+          <div className="flex-1 min-w-0 flex flex-col bg-gray-50 rounded-lg border border-gray-200 opacity-60 hover:opacity-100 transition-opacity">
              <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-100/50 rounded-t-lg">
                 <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">Finalizados</h3>
                 <span className="bg-gray-200 text-gray-700 font-black text-xs px-2 py-0.5 rounded-full">{terminales.length}</span>

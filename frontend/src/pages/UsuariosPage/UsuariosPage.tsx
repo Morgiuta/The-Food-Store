@@ -33,7 +33,7 @@ export function UsuariosPage() {
   const totalPages = Math.max(1, Math.ceil(total / query.limit));
 
   const updateQuery = (patch: Partial<UsuariosQuery>) => {
-    setQuery((current) => ({ ...current, ...patch, page: patch.page ?? current.page }));
+    setQuery((current) => ({ ...current, ...patch }));
   };
 
   const dismissToast = (id: number) => {
@@ -93,7 +93,7 @@ export function UsuariosPage() {
   };
 
   return (
-    <section className="space-y-6 animate-in fade-in duration-300 h-full flex flex-col">
+    <section className="space-y-6 animate-in fade-in duration-300 pb-8">
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -110,8 +110,8 @@ export function UsuariosPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
-        <section className="p-6 flex-1 flex flex-col">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <section className="p-6">
           <div className="flex flex-wrap gap-4 mb-6 bg-gray-50 p-4 rounded-lg items-end">
             <label className="flex flex-col flex-1 min-w-[200px]">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Filtrar por Rol</span>
@@ -146,7 +146,7 @@ export function UsuariosPage() {
 
           {error ? <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">{error}</div> : null}
 
-          <div className="flex-1">
+          <div>
              <UsuariosTable
                 usuarios={usuarios}
                 isLoading={isLoading}

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -29,6 +30,9 @@ class CategoriaPublic(PublicSchema):
     descripcion: Optional[str]
     imagen_url: Optional[str]
     orden_display: int
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime]
 
 
 class CategoriaList(PaginatedResponse[CategoriaPublic]):

@@ -101,7 +101,7 @@ export function RegisterPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-bold text-charcoal">Contrasena</label>
+            <label className="mb-1 block text-sm font-bold text-charcoal">Contraseña</label>
             <input
               className="w-full rounded-md border border-border p-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
               type="password"

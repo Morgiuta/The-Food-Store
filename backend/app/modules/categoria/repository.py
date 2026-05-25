@@ -33,8 +33,11 @@ class CategoriaRepository(BaseRepository[Categoria]):
         limit: int = 20,
         parent_id: int | None = None,
         filter_parent: bool = False,
+        include_deleted: bool = False,
     ) -> list[Categoria]:
-        statement = select(Categoria).where(Categoria.deleted_at.is_(None))
+        statement = select(Categoria)
+        if not include_deleted:
+            statement = statement.where(Categoria.deleted_at.is_(None))
         if filter_parent:
             if parent_id is None:
                 statement = statement.where(Categoria.parent_id.is_(None))
@@ -49,8 +52,10 @@ class CategoriaRepository(BaseRepository[Categoria]):
             ).all()
         )
 
-    def get_all_active(self) -> list[Categoria]:
-        statement = select(Categoria).where(Categoria.deleted_at.is_(None))
+    def get_all_active(self, include_deleted: bool = False) -> list[Categoria]:
+        statement = select(Categoria)
+        if not include_deleted:
+            statement = statement.where(Categoria.deleted_at.is_(None))
         return list(
             self.session.exec(
                 statement.order_by(Categoria.parent_id, Categoria.orden_display, Categoria.id)
@@ -61,8 +66,11 @@ class CategoriaRepository(BaseRepository[Categoria]):
         self,
         parent_id: int | None = None,
         filter_parent: bool = False,
+        include_deleted: bool = False,
     ) -> int:
-        statement = select(func.count(Categoria.id)).where(Categoria.deleted_at.is_(None))
+        statement = select(func.count(Categoria.id))
+        if not include_deleted:
+            statement = statement.where(Categoria.deleted_at.is_(None))
         if filter_parent:
             if parent_id is None:
                 statement = statement.where(Categoria.parent_id.is_(None))

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, ShoppingCart } from 'lucide-react';
+import { Search, ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useCategorias } from '../../hooks/useCategorias';
 import { useProductos } from '../../hooks/useProductos';
@@ -17,7 +17,7 @@ export function StoreHomePage() {
     disponible: true,
     q: search.trim() || undefined,
   });
-  const addItem = useCartStore((state) => state.addItem);
+  const { items, addItem, updateQuantity, removeItem } = useCartStore();
 
   const categoriasById = useMemo(
     () => new Map(categorias.map((categoria) => [categoria.id, categoria.nombre])),
@@ -109,8 +109,13 @@ export function StoreHomePage() {
                 key={producto.id}
                 className="flex flex-col h-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
               >
-                <div className="flex-1">
-                  <div className="aspect-[4/3] bg-surface-warm">
+                <div className="flex-1 flex flex-col">
+                  <div className="aspect-[4/3] bg-surface-warm relative">
+                    {producto.stock_cantidad < 10 && (
+                      <span className="absolute top-3 right-3 shadow-sm text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-100 px-2.5 py-1 rounded-full z-10">
+                        ¡Aprovecha que vuelan!
+                      </span>
+                    )}
                     {producto.imagen_url ? (
                       <img
                         src={producto.imagen_url}
@@ -123,7 +128,7 @@ export function StoreHomePage() {
                       </div>
                     )}
                   </div>
-                  <div className="p-4">
+                  <div className="p-4 flex flex-col flex-1">
                     <div className="mb-2 flex items-start justify-between gap-3">
                       <h2 className="text-lg font-black leading-tight">{producto.nombre}</h2>
                       <span className="rounded-md bg-surface-warm px-2 py-1 text-sm font-black text-primary-dark">
@@ -133,7 +138,7 @@ export function StoreHomePage() {
                     <p className="min-h-10 text-sm font-medium text-muted">
                       {producto.descripcion || 'Producto disponible para entrega.'}
                     </p>
-                    <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="mt-auto pt-4 flex items-center justify-between gap-3">
                       <span className="text-xs font-bold uppercase text-muted">
                         {principal ? categoriasById.get(principal.categoria_id) || 'Categoria' : 'Catalogo'}
                       </span>
@@ -142,15 +147,39 @@ export function StoreHomePage() {
                   </div>
                 </div>
                 <div className="p-4 pt-0">
-                  <button
-                    type="button"
-                    onClick={() => addItem(producto, 1)}
-                    disabled={!producto.disponible || producto.stock_cantidad <= 0}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <ShoppingCart size={17} />
-                    Agregar
-                  </button>
+                  {(() => {
+                    const cartItem = items.find((i) => i.producto.id === producto.id);
+                    return !cartItem ? (
+                      <button
+                        type="button"
+                        onClick={() => addItem(producto, 1)}
+                        disabled={!producto.disponible || producto.stock_cantidad <= 0}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <ShoppingCart size={17} />
+                        Agregar
+                      </button>
+                    ) : (
+                      <div className="flex w-full items-center justify-between rounded-md bg-surface-warm p-1">
+                        <button
+                          type="button"
+                          onClick={() => cartItem.cantidad > 1 ? updateQuantity(producto.id, cartItem.cantidad - 1) : removeItem(producto.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded bg-white text-charcoal shadow-sm hover:text-primary transition-colors"
+                        >
+                          {cartItem.cantidad > 1 ? <Minus size={16} /> : <Trash2 size={16} className="text-red-500 hover:text-red-600" />}
+                        </button>
+                        <span className="font-black text-charcoal">{cartItem.cantidad}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(producto.id, cartItem.cantidad + 1)}
+                          disabled={cartItem.cantidad >= producto.stock_cantidad}
+                          className="flex h-8 w-8 items-center justify-center rounded bg-white text-charcoal shadow-sm hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </article>
             );

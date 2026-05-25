@@ -1,4 +1,4 @@
-import { Clock, Package, LayoutGrid, CircleDollarSign, ChevronRight } from 'lucide-react';
+import { Clock, Package, CircleDollarSign, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useDashboard } from '../../hooks/useDashboard';
@@ -65,22 +65,7 @@ export function HomePage() {
           </div>
         </article>
 
-        {/* Metric 3: Categorías */}
-        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-purple-100 text-purple-600 shrink-0">
-            <LayoutGrid size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Categorías</p>
-            {isLoadingMetrics ? (
-              <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md"></div>
-            ) : (
-              <p className="text-3xl font-black text-charcoal">{metrics?.totalCategorias}</p>
-            )}
-          </div>
-        </article>
-
-        {/* Metric 4: Ingresos del Día */}
+        {/* Metric 3: Ingresos del Día */}
         <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
           <div className="p-3 rounded-xl bg-emerald-100 text-emerald-600 shrink-0">
             <CircleDollarSign size={24} />
@@ -91,6 +76,21 @@ export function HomePage() {
               <div className="h-8 w-24 bg-gray-200 animate-pulse rounded-md"></div>
             ) : (
               <p className="text-3xl font-black text-charcoal">{formatCurrency(metrics?.ingresosDia || 0)}</p>
+            )}
+          </div>
+        </article>
+
+        {/* Metric 5: Productos bajo stock */}
+        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+          <div className="p-3 rounded-xl bg-red-100 text-red-600 shrink-0">
+            <Package size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Stock Bajo</p>
+            {isLoadingMetrics ? (
+              <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md"></div>
+            ) : (
+              <p className="text-3xl font-black text-charcoal">{metrics?.productosBajoStock}</p>
             )}
           </div>
         </article>
@@ -106,13 +106,13 @@ export function HomePage() {
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-bold">
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4 text-right">Total</th>
+                <th className="px-6 py-4 w-[15%]">ID</th>
+                <th className="px-6 py-4 w-[40%]">Cliente</th>
+                <th className="px-6 py-4 w-[25%]">Estado</th>
+                <th className="px-6 py-4 w-[20%] text-right">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

@@ -60,7 +60,8 @@ def list_pedidos(
     current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
     session: DbSession,
     offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 20,
+    solo_hoy: Annotated[bool, Query()] = False,
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoList:
     if current_user.id is not None and not user_has_role(
@@ -75,18 +76,19 @@ def list_pedidos(
                     current_user.id,
                     offset=offset,
                     limit=limit,
+                    solo_hoy=solo_hoy,
                 )
             ],
-            total=svc.pedidos.count_by_usuario(current_user.id),
+            total=svc.pedidos.count_by_usuario(current_user.id, solo_hoy=solo_hoy),
             page=(offset // limit) + 1,
             limit=limit,
         )
     return PedidoList(
         items=[
             svc.get_pedido(pedido.id or 0)
-            for pedido in svc.pedidos.get_all(offset=offset, limit=limit)
+            for pedido in svc.pedidos.get_all(offset=offset, limit=limit, solo_hoy=solo_hoy)
         ],
-        total=svc.pedidos.count_all(),
+        total=svc.pedidos.count_all(solo_hoy=solo_hoy),
         page=(offset // limit) + 1,
         limit=limit,
     )

@@ -16,6 +16,8 @@ export type UserRole = 'ADMIN' | 'STOCK' | 'PEDIDOS' | 'CLIENT';
 export interface User {
   id: number;
   name: string;
+  nombre?: string;
+  apellido?: string;
   role: UserRole;
 }
 

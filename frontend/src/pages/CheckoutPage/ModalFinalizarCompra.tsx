@@ -3,7 +3,7 @@ import { useFormasPago } from '../../hooks/useFormasPago';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { Button } from '../../components/ui/Button/Button';
 import { Wallet, CreditCard, Banknote, HelpCircle } from 'lucide-react';
-import type { CartItem } from '../../types/pedido';
+import type { CartItem } from '../../store/cartStore';
 
 interface ModalFinalizarCompraProps {
   isOpen: boolean;

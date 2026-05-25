@@ -35,14 +35,14 @@ export function CategoriasTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[800px]">
+      <table className="w-full text-left border-collapse table-fixed">
         <thead>
           <tr className="bg-gray-50 border-y border-gray-200">
-            <th className="p-4 font-bold text-sm text-charcoal w-16 text-center">Orden</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-1/4">Nombre</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-1/4">Descripción</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-36">Estado</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-40 text-right" aria-label="Acciones">Acciones</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%] text-center">Orden</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[30%]">Nombre</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[25%]">Descripción</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Estado</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[20%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">

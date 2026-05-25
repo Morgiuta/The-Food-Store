@@ -24,8 +24,10 @@ class ProductoRepository(BaseRepository[Producto]):
         categoria_id: int | None = None,
         disponible: bool | None = None,
         q: str | None = None,
+        include_deleted: bool = False,
     ):
-        statement = statement.where(Producto.deleted_at.is_(None))
+        if not include_deleted:
+            statement = statement.where(Producto.deleted_at.is_(None))
 
         if categoria_id is not None:
             statement = statement.join(
@@ -54,12 +56,14 @@ class ProductoRepository(BaseRepository[Producto]):
         categoria_id: int | None = None,
         disponible: bool | None = None,
         q: str | None = None,
+        include_deleted: bool = False,
     ) -> list[Producto]:
         statement = self._apply_public_filters(
             select(Producto),
             categoria_id=categoria_id,
             disponible=disponible,
             q=q,
+            include_deleted=include_deleted,
         )
         return list(
             self.session.exec(statement.order_by(Producto.id).offset(offset).limit(limit)).all()
@@ -70,11 +74,13 @@ class ProductoRepository(BaseRepository[Producto]):
         categoria_id: int | None = None,
         disponible: bool | None = None,
         q: str | None = None,
+        include_deleted: bool = False,
     ) -> int:
         statement = self._apply_public_filters(
             select(func.count(func.distinct(Producto.id))),
             categoria_id=categoria_id,
             disponible=disponible,
             q=q,
+            include_deleted=include_deleted,
         )
         return int(self.session.exec(statement).one())

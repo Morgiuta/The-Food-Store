@@ -8,6 +8,7 @@ interface SuppliesTableProps {
   sortBy: string;
   sortDir: 'asc' | 'desc';
   isLoading?: boolean;
+  lowStockIds?: Set<number>;
   onSort: (field: 'id' | 'nombre' | 'es_alergeno' | 'created_at' | 'updated_at') => void;
   onView: (supply: Supply) => void;
   onEdit: (supply: Supply) => void;
@@ -28,6 +29,7 @@ export function SuppliesTable({
   sortBy,
   sortDir,
   isLoading = false,
+  lowStockIds,
   onSort,
   onView,
   onEdit,
@@ -54,28 +56,28 @@ export function SuppliesTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[800px]">
+      <table className="w-full text-left border-collapse table-fixed">
         <thead>
           <tr className="bg-gray-50 border-y border-gray-200">
-            <th className="p-4 font-bold text-sm text-charcoal w-1/5">
+            <th className="p-4 font-bold text-sm text-charcoal w-[20%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('nombre')}>
                 Nombre {renderSortIcon('nombre')}
               </button>
             </th>
-            <th className="p-4 font-bold text-sm text-charcoal w-1/4">Descripción</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-32">
+            <th className="p-4 font-bold text-sm text-charcoal w-[25%]">Descripción</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('es_alergeno')}>
                 Tipo {renderSortIcon('es_alergeno')}
               </button>
             </th>
-            <th className="p-4 font-bold text-sm text-charcoal w-24">Estado</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-32">Stock</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-32">
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Estado</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Stock</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('updated_at')}>
-                Actualizado {renderSortIcon('updated_at')}
+                Act. {renderSortIcon('updated_at')}
               </button>
             </th>
-            <th className="p-4 font-bold text-sm text-charcoal w-48 text-right" aria-label="Acciones">Acciones</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -110,7 +112,14 @@ export function SuppliesTable({
                 </span>
               </td>
               <td className="p-4 font-medium text-charcoal">
-                {supply.stock_actual ?? 0}
+                <div className="flex flex-col items-start gap-1">
+                  <span>{supply.stock_actual ?? 0}</span>
+                  {lowStockIds?.has(supply.id) && !supply.deleted_at && (
+                    <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                      ¡Poco Stock!
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="p-4 text-sm text-gray-500">{formatDate(supply.updated_at)}</td>
               <td className="p-4">

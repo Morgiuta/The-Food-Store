@@ -4,6 +4,7 @@ import { ToastViewport, type ToastMessage, type ToastType } from '../../componen
 import { SupplyForm } from '../../features/supplies/components/SupplyForm/SupplyForm';
 import { SuppliesTable } from '../../features/supplies/components/SuppliesTable/SuppliesTable';
 import { useSupplies } from '../../hooks/useSupplies';
+import { useProductos } from '../../hooks/useProductos';
 import { suppliesService } from '../../services/suppliesService';
 import type { SuppliesQuery, Supply, SupplyFormValues } from '../../types/supply';
 import { Download, Plus } from 'lucide-react';
@@ -81,6 +82,27 @@ export function SuppliesPage() {
     deleteSupply,
     restoreSupply,
   } = useSupplies(stableQuery);
+
+  const { productos } = useProductos({ page: 1, limit: 1000 });
+
+  const lowStockIds = useMemo(() => {
+    const ids = new Set<number>();
+    productos.forEach((p) => {
+      if (!p.ingredientes || p.ingredientes.length === 0) return;
+      p.ingredientes.forEach((ing) => {
+        if (ing.cantidad_requerida > 0) {
+          const supply = supplies.find((s) => s.id === ing.ingrediente_id);
+          if (supply) {
+            const canMake = (supply.stock_actual || 0) / ing.cantidad_requerida;
+            if (canMake < 10) {
+              ids.add(supply.id);
+            }
+          }
+        }
+      });
+    });
+    return ids;
+  }, [productos, supplies]);
 
   const totalPages = Math.max(1, Math.ceil(total / query.limit));
   const currentPage = Math.floor(query.offset / query.limit) + 1;
@@ -290,6 +312,7 @@ export function SuppliesPage() {
             sortBy={query.sort_by}
             sortDir={query.sort_dir}
             isLoading={isLoading}
+            lowStockIds={lowStockIds}
             onSort={handleSort}
             onView={handleView}
             onEdit={handleEdit}

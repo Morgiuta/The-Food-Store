@@ -23,52 +23,65 @@ class PedidoRepository:
             return None
         return pedido
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> list[Pedido]:
+    def get_all(self, offset: int = 0, limit: int = 20, solo_hoy: bool = False) -> list[Pedido]:
+        stmt = select(Pedido).where(Pedido.deleted_at.is_(None))
+        if solo_hoy:
+            from datetime import datetime, time
+            start_of_day = datetime.combine(datetime.now().date(), time.min)
+            stmt = stmt.where(Pedido.updated_at >= start_of_day)
+            
         return list(
             self.session.exec(
-                select(Pedido)
-                .where(Pedido.deleted_at.is_(None))
-                .order_by(Pedido.created_at.desc())
+                stmt.order_by(Pedido.created_at.desc())
                 .offset(offset)
                 .limit(limit)
             ).all()
         )
 
-    def count_all(self) -> int:
-        return int(
-            self.session.exec(
-                select(func.count(Pedido.id)).where(Pedido.deleted_at.is_(None))
-            ).one()
-        )
+    def count_all(self, solo_hoy: bool = False) -> int:
+        stmt = select(func.count(Pedido.id)).where(Pedido.deleted_at.is_(None))
+        if solo_hoy:
+            from datetime import datetime, time
+            start_of_day = datetime.combine(datetime.now().date(), time.min)
+            stmt = stmt.where(Pedido.updated_at >= start_of_day)
+            
+        return int(self.session.exec(stmt).one())
 
     def get_by_usuario(
         self,
         usuario_id: int,
         offset: int = 0,
         limit: int = 20,
+        solo_hoy: bool = False,
     ) -> list[Pedido]:
+        stmt = select(Pedido).where(
+            Pedido.deleted_at.is_(None),
+            Pedido.usuario_id == usuario_id,
+        )
+        if solo_hoy:
+            from datetime import datetime, time
+            start_of_day = datetime.combine(datetime.now().date(), time.min)
+            stmt = stmt.where(Pedido.updated_at >= start_of_day)
+            
         return list(
             self.session.exec(
-                select(Pedido)
-                .where(
-                    Pedido.deleted_at.is_(None),
-                    Pedido.usuario_id == usuario_id,
-                )
-                .order_by(Pedido.created_at.desc())
+                stmt.order_by(Pedido.created_at.desc())
                 .offset(offset)
                 .limit(limit)
             ).all()
         )
 
-    def count_by_usuario(self, usuario_id: int) -> int:
-        return int(
-            self.session.exec(
-                select(func.count(Pedido.id)).where(
-                    Pedido.deleted_at.is_(None),
-                    Pedido.usuario_id == usuario_id,
-                )
-            ).one()
+    def count_by_usuario(self, usuario_id: int, solo_hoy: bool = False) -> int:
+        stmt = select(func.count(Pedido.id)).where(
+            Pedido.deleted_at.is_(None),
+            Pedido.usuario_id == usuario_id,
         )
+        if solo_hoy:
+            from datetime import datetime, time
+            start_of_day = datetime.combine(datetime.now().date(), time.min)
+            stmt = stmt.where(Pedido.updated_at >= start_of_day)
+            
+        return int(self.session.exec(stmt).one())
 
     def create(self, pedido: Pedido) -> Pedido:
         self.session.add(pedido)

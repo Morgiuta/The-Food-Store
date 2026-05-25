@@ -71,6 +71,9 @@ class ProductoPublic(PublicSchema):
     stock_cantidad: int
     tiempo_prep_min: Optional[int]
     disponible: bool
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime]
     categorias: list[ProductoCategoriaLink]
     ingredientes: list[ProductoIngredientePublic]
 

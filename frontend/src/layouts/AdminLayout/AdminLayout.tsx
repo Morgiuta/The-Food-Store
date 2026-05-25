@@ -83,12 +83,12 @@ export function AdminLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto h-screen bg-gray-50 flex flex-col">
+      <main className="flex-1 min-w-0 overflow-x-hidden h-screen bg-gray-50 flex flex-col">
         <header className="h-20 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm shrink-0">
           <div className="flex-1"></div>
           <div className="flex items-center gap-6">
              <a 
-               href={import.meta.env.VITE_STORE_URL || 'http://localhost:5174'} 
+               href={import.meta.env.VITE_STORE_URL || 'http://localhost:5173'} 
                target="_blank" 
                rel="noopener noreferrer"
                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors"
@@ -106,7 +106,7 @@ export function AdminLayout() {
              </div>
           </div>
         </header>
-        <div className="p-8 flex-1">
+        <div className="p-8 flex-1 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </div>
       </main>

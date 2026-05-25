@@ -40,15 +40,15 @@ export function UsuariosTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[800px]">
+      <table className="w-full text-left border-collapse table-fixed">
         <thead>
           <tr className="bg-gray-50 border-y border-gray-200">
-            <th className="p-4 font-bold text-sm text-charcoal w-16 text-center">ID</th>
-            <th className="p-4 font-bold text-sm text-charcoal">Usuario</th>
-            <th className="p-4 font-bold text-sm text-charcoal">Contacto</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-48">Roles</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-32">Registro</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-32 text-right" aria-label="Acciones">Acciones</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%] text-center">ID</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[25%]">Usuario</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[25%]">Contacto</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Roles</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Registro</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
