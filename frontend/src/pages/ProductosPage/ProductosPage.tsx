@@ -36,11 +36,12 @@ export function ProductosPage() {
     updateProducto,
     toggleDisponibilidad,
     deleteProducto,
+    restoreProducto,
   } = useProductos(stableQuery);
 
   const { tree: categoriasTree } = useCategoriasTree();
-  // We need to fetch all active supplies for the ingredients list (offset 0, high limit)
-  const { supplies } = useSupplies({ offset: 0, limit: 1000, es_alergeno: 'all', include_deleted: false, sort_by: 'nombre', sort_dir: 'asc', search: '' });
+  // We need to fetch all active supplies for the ingredients list (offset 0, high limit up to 100)
+  const { supplies } = useSupplies({ offset: 0, limit: 100, es_alergeno: 'all', include_deleted: false, sort_by: 'nombre', sort_dir: 'asc', search: '' });
 
   const totalPages = Math.max(1, Math.ceil(total / query.limit));
 
@@ -99,6 +100,20 @@ export function ProductosPage() {
                 : 'No se pudo dar de baja el producto.',
         );
         }
+    }
+  };
+
+  const handleRestore = async (prod: Producto) => {
+    try {
+      await restoreProducto(prod.id);
+      notify('success', `"${prod.nombre}" fue restaurado correctamente.`);
+    } catch (requestError) {
+      notify(
+        'error',
+        requestError instanceof Error
+            ? requestError.message
+            : 'No se pudo restaurar el producto.',
+      );
     }
   };
 
@@ -213,6 +228,20 @@ export function ProductosPage() {
                 <option value="false">Solo Pausados</option>
               </select>
             </label>
+            <label className="flex flex-col flex-1 min-w-[200px]">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Estado (Bajas)</span>
+              <select
+                className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary outline-none bg-white"
+                value={query.include_deleted ? 'true' : 'false'}
+                onChange={(e) => {
+                    const val = e.target.value === 'true';
+                    updateQuery({ include_deleted: val, page: 1 });
+                }}
+              >
+                <option value="false">Solo Activos</option>
+                <option value="true">Incluir Dados de Baja</option>
+              </select>
+            </label>
             <label className="flex flex-col w-32">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
@@ -237,6 +266,7 @@ export function ProductosPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onToggleDisponibilidad={handleToggleDisponibilidad}
+                onRestore={handleRestore}
              />
           </div>
 

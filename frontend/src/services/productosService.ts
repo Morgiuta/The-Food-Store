@@ -15,6 +15,9 @@ function buildQuery(params: ProductosQuery): string {
   if (params.q) {
     query.set('q', params.q);
   }
+  if (params.include_deleted !== undefined) {
+    query.set('include_deleted', String(params.include_deleted));
+  }
 
   return query.toString();
 }
@@ -64,5 +67,10 @@ export const productosService = {
 
   async remove(id: number): Promise<void> {
     await api.delete(`/productos/${id}`);
+  },
+
+  async restore(id: number): Promise<Producto> {
+    const { data } = await api.patch<Producto>(`/productos/${id}/restore`);
+    return data;
   },
 };

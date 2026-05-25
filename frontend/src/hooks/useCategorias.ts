@@ -47,10 +47,19 @@ export function useCategorias(query: CategoriasQuery) {
     },
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: (id: number) => categoriasService.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categorias'] });
+      queryClient.invalidateQueries({ queryKey: ['categorias-tree'] });
+    },
+  });
+
   const isMutating = 
     createMutation.isPending || 
     updateMutation.isPending || 
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    restoreMutation.isPending;
 
   return {
     categorias,
@@ -63,6 +72,7 @@ export function useCategorias(query: CategoriasQuery) {
     createCategoria: createMutation.mutateAsync,
     updateCategoria: async (id: number, values: CategoriaFormValues) => updateMutation.mutateAsync({ id, values }),
     deleteCategoria: deleteMutation.mutateAsync,
+    restoreCategoria: restoreMutation.mutateAsync,
   };
 }
 

@@ -54,12 +54,20 @@ export function useProductos(query: ProductosQuery) {
     },
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: (id: number) => productosService.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+    },
+  });
+
   const isMutating = 
     createMutation.isPending || 
     updateMutation.isPending || 
     toggleDisponibilidadMutation.isPending ||
     updateStockMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    restoreMutation.isPending;
 
   return {
     productos,
@@ -73,5 +81,6 @@ export function useProductos(query: ProductosQuery) {
     toggleDisponibilidad: async (id: number, disponible: boolean) => toggleDisponibilidadMutation.mutateAsync({ id, disponible }),
     updateStock: async (id: number, stock_cantidad: number) => updateStockMutation.mutateAsync({ id, stock_cantidad }),
     deleteProducto: deleteMutation.mutateAsync,
+    restoreProducto: restoreMutation.mutateAsync,
   };
 }

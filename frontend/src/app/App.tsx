@@ -35,7 +35,7 @@ export function App() {
           }
         />
         <Route
-          path="direcciones"
+          path="mis-direcciones"
           element={
             <ProtectedRoute allowedRoles={['CLIENT']}>
               <AddressesPage />

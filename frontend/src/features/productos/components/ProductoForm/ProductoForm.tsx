@@ -186,19 +186,6 @@ export function ProductoForm({
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-charcoal mb-2">Stock Disponible</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${submitAttempted && errors.stock_cantidad ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-                  name="stock_cantidad"
-                  value={values.stock_cantidad}
-                  onChange={(e) => setValues(v => ({ ...v, stock_cantidad: Number(e.target.value) }))}
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-bold text-charcoal mb-2">Tiempo Prep. (Mins) - Opcional</label>
                 <input
                   type="number"

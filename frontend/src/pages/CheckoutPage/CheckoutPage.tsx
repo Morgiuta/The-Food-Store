@@ -5,6 +5,7 @@ import { pedidosService } from '../../services/pedidosService';
 import { getCartSubtotal, useCartStore } from '../../store/cartStore';
 import { useDirecciones } from '../../hooks/useDirecciones';
 import { getErrorMessage } from '../../utils/errors';
+import { ModalFinalizarCompra } from './ModalFinalizarCompra';
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ export function CheckoutPage() {
   const [direccionId, setDireccionId] = useState<number | null>(null);
   const [notas, setNotas] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const subtotal = getCartSubtotal(items);
   const envio = items.length > 0 ? 50 : 0;
 
@@ -23,10 +26,10 @@ export function CheckoutPage() {
   );
 
   const createPedidoMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (formaPagoCodigo: string) =>
       pedidosService.create({
         direccion_id: direccionId ?? principal?.id ?? null,
-        forma_pago_codigo: 'EFECTIVO',
+        forma_pago_codigo: formaPagoCodigo,
         descuento: 0,
         costo_envio: envio,
         notas: notas.trim() || null,
@@ -39,26 +42,32 @@ export function CheckoutPage() {
     onSuccess: () => {
       clearCart();
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      setIsModalOpen(false);
       navigate('/mis-pedidos', { replace: true });
     },
   });
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
     if (items.length === 0) {
-      setError('El carrito esta vacio.');
+      setError('El carrito está vacío.');
       return;
     }
 
     if (!direccionId && !principal) {
-      setError('Agrega una direccion de entrega antes de confirmar.');
+      setError('Agrega una dirección de entrega antes de continuar.');
       return;
     }
 
+    // Instead of creating the order, open the payment modal
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmOrder = async (formaPagoCodigo: string) => {
     try {
-      await createPedidoMutation.mutateAsync();
+      await createPedidoMutation.mutateAsync(formaPagoCodigo);
     } catch (checkoutError: unknown) {
       setError(getErrorMessage(checkoutError, 'No se pudo crear el pedido.'));
     }
@@ -86,8 +95,8 @@ export function CheckoutPage() {
           <div className="space-y-5">
             <section className="rounded-lg border border-border bg-surface p-5">
               <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="text-lg font-black">Direccion de entrega</h2>
-                <Link to="/direcciones" className="text-sm font-black text-primary-dark hover:underline">
+                <h2 className="text-lg font-black">Dirección de entrega</h2>
+                <Link to="/mis-direcciones" className="text-sm font-black text-primary-dark hover:underline">
                   Gestionar
                 </Link>
               </div>
@@ -96,12 +105,12 @@ export function CheckoutPage() {
                 <p className="font-bold text-muted">Cargando direcciones...</p>
               ) : direcciones.length === 0 ? (
                 <div className="rounded-md bg-surface-warm p-4">
-                  <p className="font-bold text-muted">Todavia no tenes direcciones guardadas.</p>
+                  <p className="font-bold text-muted">Todavía no tenés direcciones guardadas.</p>
                   <Link
-                    to="/direcciones"
+                    to="/mis-direcciones"
                     className="mt-3 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-black text-white"
                   >
-                    Agregar direccion
+                    Agregar dirección
                   </Link>
                 </div>
               ) : (
@@ -123,7 +132,7 @@ export function CheckoutPage() {
                         onChange={() => setDireccionId(direccion.id)}
                       />
                       <div className="flex items-center justify-between gap-3">
-                        <strong>{direccion.alias || 'Direccion'}</strong>
+                        <strong>{direccion.alias || 'Dirección'}</strong>
                         {direccion.es_principal && (
                           <span className="rounded-md bg-lettuce px-2 py-1 text-xs font-black text-white">
                             Principal
@@ -168,7 +177,7 @@ export function CheckoutPage() {
                 <span>${subtotal}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted">Envio</span>
+                <span className="text-muted">Envío</span>
                 <span>${envio}</span>
               </div>
               <div className="flex justify-between text-base font-black">
@@ -177,18 +186,26 @@ export function CheckoutPage() {
               </div>
             </div>
 
-            {error && <div className="mt-4 rounded-md bg-red-100 p-3 text-sm text-red-700">{error}</div>}
-
             <button
               type="submit"
-              disabled={createPedidoMutation.isPending}
-              className="mt-5 w-full rounded-md bg-primary px-4 py-3 font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-5 w-full rounded-md bg-primary px-4 py-3 font-black text-white hover:bg-primary-dark"
             >
-              {createPedidoMutation.isPending ? 'Confirmando...' : 'Confirmar pedido'}
+              Elegir forma de pago
             </button>
           </aside>
         </form>
       )}
+
+      <ModalFinalizarCompra 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        items={items}
+        subtotal={subtotal}
+        envio={envio}
+        isMutating={createPedidoMutation.isPending}
+        onConfirm={handleConfirmOrder}
+        error={error}
+      />
     </section>
   );
 }

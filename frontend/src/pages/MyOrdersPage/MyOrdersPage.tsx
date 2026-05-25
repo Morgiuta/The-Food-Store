@@ -1,20 +1,24 @@
 import { format } from 'date-fns';
-import { RefreshCcw, XCircle } from 'lucide-react';
+import { Eye, RefreshCcw, XCircle } from 'lucide-react';
+import { useState } from 'react';
 import { usePedidos } from '../../hooks/usePedidos';
+import type { Pedido } from '../../types/pedido';
+import { ClientOrderModal } from './ClientOrderModal';
 
 const cancelables = new Set(['PENDIENTE', 'CONFIRMADO']);
 
 const estadoStyles: Record<string, string> = {
-  PENDIENTE: 'bg-cheddar text-charcoal',
-  CONFIRMADO: 'bg-primary text-white',
-  EN_PREP: 'bg-surface-warm text-primary-dark',
-  EN_CAMINO: 'bg-lettuce text-white',
-  ENTREGADO: 'bg-charcoal text-white',
-  CANCELADO: 'bg-ketchup text-white',
+  PENDIENTE: 'bg-yellow-400 text-yellow-900', // amarillo
+  CONFIRMADO: 'bg-blue-500 text-white', // azul
+  EN_PREP: 'bg-orange-500 text-white', // naranja (EN_PROCESO)
+  EN_CAMINO: 'bg-green-400 text-green-900', // verde claro (LISTO)
+  ENTREGADO: 'bg-green-600 text-white', // verde
+  CANCELADO: 'bg-gray-500 text-white', // gris
 };
 
 export function MyOrdersPage() {
   const { pedidos, isLoading, isFetching, error, reload, cancelarPedido, isMutating } = usePedidos();
+  const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8">
@@ -92,21 +96,47 @@ export function MyOrdersPage() {
                     ? `Ultimo movimiento: ${pedido.historial[pedido.historial.length - 1].estado_hacia}`
                     : 'Sin historial'}
                 </div>
-                {cancelables.has(pedido.estado_codigo) && (
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => cancelarPedido(pedido.id)}
-                    disabled={isMutating}
-                    className="inline-flex items-center gap-2 rounded-md border border-ketchup px-4 py-2 text-sm font-black text-ketchup hover:bg-red-50 disabled:opacity-60"
+                    onClick={() => setSelectedPedido(pedido)}
+                    className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-black text-charcoal hover:border-primary"
                   >
-                    <XCircle size={16} />
-                    Cancelar pedido
+                    <Eye size={16} />
+                    Ver detalle
                   </button>
-                )}
+                  {cancelables.has(pedido.estado_codigo) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('¿Seguro que deseas cancelar este pedido?')) {
+                          cancelarPedido(pedido.id);
+                        }
+                      }}
+                      disabled={isMutating}
+                      className="inline-flex items-center gap-2 rounded-md border border-ketchup px-4 py-2 text-sm font-black text-ketchup hover:bg-red-50 disabled:opacity-60"
+                    >
+                      <XCircle size={16} />
+                      Cancelar pedido
+                    </button>
+                  )}
+                </div>
               </div>
             </article>
           ))}
         </div>
+      )}
+
+      {selectedPedido && (
+        <ClientOrderModal
+          pedido={selectedPedido}
+          isMutating={isMutating}
+          onClose={() => setSelectedPedido(null)}
+          onCancel={(p) => {
+            cancelarPedido(p.id);
+            setSelectedPedido(null);
+          }}
+        />
       )}
     </section>
   );

@@ -19,18 +19,42 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+const statusConfig: Record<string, { label: string; buttonColor: string; next?: string }> = {
+  PENDIENTE: { 
+    buttonColor: 'bg-yellow-500 hover:bg-yellow-600 text-charcoal',
+    label: 'Pendiente', 
+    next: 'CONFIRMADO' 
+  },
+  CONFIRMADO: { 
+    buttonColor: 'bg-blue-600 hover:bg-blue-700 text-white',
+    label: 'Confirmado', 
+    next: 'EN_PREP' 
+  },
+  EN_PREP: { 
+    buttonColor: 'bg-orange-500 hover:bg-orange-600 text-white',
+    label: 'En Preparación', 
+    next: 'EN_CAMINO' 
+  },
+  EN_CAMINO: { 
+    buttonColor: 'bg-green-500 hover:bg-green-600 text-white',
+    label: 'En Camino', 
+    next: 'ENTREGADO' 
+  },
+  ENTREGADO: { 
+    buttonColor: 'bg-green-600 hover:bg-green-700 text-white',
+    label: 'Entregado' 
+  },
+  CANCELADO: { 
+    buttonColor: 'bg-gray-600 hover:bg-gray-700 text-white',
+    label: 'Cancelado' 
+  },
+};
+
 export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCancel }: PedidoDetailModalProps) {
   const isTerminal = pedido.estado_codigo === 'ENTREGADO' || pedido.estado_codigo === 'CANCELADO';
   
-  const statusConfig: Record<string, { label: string; next?: string }> = {
-    PENDIENTE: { label: 'Pendiente', next: 'PREPARANDO' },
-    PREPARANDO: { label: 'En Preparación', next: 'EN_CAMINO' },
-    EN_CAMINO: { label: 'En Camino', next: 'ENTREGADO' },
-    ENTREGADO: { label: 'Entregado' },
-    CANCELADO: { label: 'Cancelado' },
-  };
-
-  const nextStateLabel = statusConfig[statusConfig[pedido.estado_codigo]?.next || '']?.label || 'Siguiente';
+  const currentConfig = statusConfig[pedido.estado_codigo];
+  const nextConfig = currentConfig?.next ? statusConfig[currentConfig.next] : null;
 
   return (
     <Modal kicker="Gestor de Comandas" title={`Orden #${pedido.id}`} size="lg" onClose={onClose}>
@@ -97,12 +121,13 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
               <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 mb-2">Estado Actual</h4>
               <p className={`font-black text-lg ${
-                 pedido.estado_codigo === 'PENDIENTE' ? 'text-red-600' :
-                 pedido.estado_codigo === 'PREPARANDO' ? 'text-orange-600' :
-                 pedido.estado_codigo === 'EN_CAMINO' ? 'text-blue-600' :
+                 pedido.estado_codigo === 'PENDIENTE' ? 'text-yellow-600' :
+                 pedido.estado_codigo === 'CONFIRMADO' ? 'text-blue-600' :
+                 pedido.estado_codigo === 'EN_PREP' ? 'text-orange-600' :
+                 pedido.estado_codigo === 'EN_CAMINO' ? 'text-green-500' :
                  pedido.estado_codigo === 'ENTREGADO' ? 'text-green-600' :
                  'text-gray-600'
-              }`}>{statusConfig[pedido.estado_codigo]?.label || pedido.estado_codigo}</p>
+              }`}>{currentConfig?.label || pedido.estado_codigo}</p>
               
               <div className="mt-4 pt-4 border-t border-gray-200 text-sm">
                  <p className="text-gray-500 mb-1">Forma de Pago:</p>
@@ -125,14 +150,14 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
               </div>
            </div>
 
-           {!isTerminal && (
+           {!isTerminal && nextConfig && (
              <div className="mt-auto space-y-2 pt-4">
                 <Button 
-                   className="w-full py-3 text-lg" 
+                   className={`w-full py-3 text-lg border-transparent ${nextConfig.buttonColor}`} 
                    disabled={isMutating}
                    onClick={() => onAdvance(pedido)}
                 >
-                   {isMutating ? 'Actualizando...' : `Avanzar a ${nextStateLabel}`}
+                   {isMutating ? 'Actualizando...' : nextConfig.label}
                 </Button>
                 <Button 
                    variant="ghost" 

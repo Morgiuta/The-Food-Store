@@ -9,6 +9,7 @@ interface ProductosTableProps {
   onEdit: (producto: Producto) => void;
   onDelete: (producto: Producto) => void;
   onToggleDisponibilidad: (producto: Producto) => void;
+  onRestore: (producto: Producto) => void;
 }
 
 function formatCurrency(value: number): string {
@@ -25,6 +26,7 @@ export function ProductosTable({
   onEdit,
   onDelete,
   onToggleDisponibilidad,
+  onRestore,
 }: ProductosTableProps) {
   
   if (isLoading) {
@@ -57,8 +59,10 @@ export function ProductosTable({
             const isAvailable = prod.disponible;
             const principalCategory = prod.categorias.find(c => c.es_principal);
 
+            const isDeleted = Boolean(prod.deleted_at);
+
             return (
-            <tr key={prod.id} className="hover:bg-gray-50/50 transition-colors">
+            <tr key={prod.id} className={`hover:bg-gray-50/50 transition-colors ${isDeleted ? 'opacity-60 bg-red-50/30' : ''}`}>
               <td className="p-4">
                 <div className="flex items-center gap-4">
                   {prod.imagen_url ? (
@@ -80,6 +84,11 @@ export function ProductosTable({
                          <span className="bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold">Receta: {prod.ingredientes.length}</span>
                       )}
                     </div>
+                    {isDeleted && (
+                      <span className="mt-1 inline-block bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide">
+                        Dado de baja
+                      </span>
+                    )}
                   </div>
                 </div>
               </td>
@@ -95,9 +104,10 @@ export function ProductosTable({
                 <div className="flex justify-center">
                   <button
                     onClick={() => onToggleDisponibilidad(prod)}
+                    disabled={isDeleted}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                       isAvailable ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
+                    } ${isDeleted ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -117,15 +127,23 @@ export function ProductosTable({
                   <Button variant="ghost" onClick={() => onView(prod)}>
                     Ver
                   </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => onEdit(prod)}
-                  >
-                    Editar
-                  </Button>
-                  <Button variant="danger" onClick={() => onDelete(prod)}>
-                    Baja
-                  </Button>
+                  {!isDeleted ? (
+                    <>
+                      <Button
+                        variant="secondary"
+                        onClick={() => onEdit(prod)}
+                      >
+                        Editar
+                      </Button>
+                      <Button variant="danger" onClick={() => onDelete(prod)}>
+                        Baja
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="success" onClick={() => onRestore(prod)}>
+                      Alta
+                    </Button>
+                  )}
                 </div>
               </td>
             </tr>

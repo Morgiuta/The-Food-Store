@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Search, ShoppingCart } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useCategorias } from '../../hooks/useCategorias';
 import { useProductos } from '../../hooks/useProductos';
 import { useCartStore } from '../../store/cartStore';
 
 export function StoreHomePage() {
   const [categoriaId, setCategoriaId] = useState<number | undefined>(undefined);
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const search = searchParams.get('q') || '';
   const { categorias } = useCategorias({ offset: 0, limit: 100 });
   const { productos, isLoading, error } = useProductos({
     page: 1,
@@ -22,31 +24,47 @@ export function StoreHomePage() {
     [categorias],
   );
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
-        <div>
-          <span className="section-kicker">Store</span>
-          <h1 className="mt-2 text-4xl font-black leading-tight text-charcoal md:text-5xl">
-            Hamburguesas, bebidas y combos para pedir ahora
-          </h1>
-          <p className="mt-3 max-w-2xl text-base font-medium text-muted">
-            Elegi productos disponibles, arma tu carrito y confirma el pedido con entrega a domicilio.
-          </p>
-        </div>
+  const selectedCategoria = useMemo(
+    () => categorias.find((c) => c.id === categoriaId),
+    [categorias, categoriaId]
+  );
 
-        <div className="rounded-lg border border-border bg-surface p-3 shadow-soft">
-          <div className="flex items-center gap-2 rounded-md border border-border bg-white px-3 py-2">
-            <Search size={18} className="text-muted" />
-            <input
-              className="w-full bg-transparent text-sm font-semibold outline-none"
-              placeholder="Buscar producto"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
+  const fallbackImage = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1965&auto=format&fit=crop';
+  const heroImage = (selectedCategoria && selectedCategoria.imagen_url) || fallbackImage;
+
+  return (
+    <div className="relative min-h-screen">
+      {/* Category Background Hero */}
+      {heroImage && (
+        <div 
+          className="absolute inset-x-0 top-0 h-[60vh] z-0 animate-in fade-in duration-700"
+          style={{
+            backgroundImage: `url(${heroImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {/* Gradient to fade into the background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-bg/90 to-bg"></div>
         </div>
-      </div>
+      )}
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-8">
+        <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+          <div className="transition-colors duration-500">
+            <span className="section-kicker text-white/90 bg-white/20 border-white/30">
+              {selectedCategoria ? selectedCategoria.nombre : 'Store'}
+            </span>
+            <h1 className="mt-2 text-4xl font-black leading-tight md:text-5xl text-white drop-shadow-md">
+              {selectedCategoria ? `Todo en ${selectedCategoria.nombre}` : 'Todos nuestros productos'}
+            </h1>
+            <p className="mt-3 max-w-2xl text-base font-medium text-white/80 drop-shadow">
+              {selectedCategoria?.descripcion || 'Elegí productos disponibles, armá tu carrito y confirmá el pedido con entrega a domicilio.'}
+            </p>
+          </div>
+
+          <div className="hidden lg:block"></div>
+        </div>
 
       <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
         <button
@@ -83,48 +101,52 @@ export function StoreHomePage() {
           Cargando productos...
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {productos.map((producto) => {
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+          {productos.filter(p => p.stock_cantidad > 0).map((producto) => {
             const principal = producto.categorias.find((categoria) => categoria.es_principal);
             return (
               <article
                 key={producto.id}
-                className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
+                className="flex flex-col h-full overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
               >
-                <div className="aspect-[4/3] bg-surface-warm">
-                  {producto.imagen_url ? (
-                    <img
-                      src={producto.imagen_url}
-                      alt={producto.nombre}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary to-cheddar text-4xl font-black text-white">
-                      FS
+                <div className="flex-1">
+                  <div className="aspect-[4/3] bg-surface-warm">
+                    {producto.imagen_url ? (
+                      <img
+                        src={producto.imagen_url}
+                        alt={producto.nombre}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary to-cheddar text-4xl font-black text-white">
+                        FS
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <h2 className="text-lg font-black leading-tight">{producto.nombre}</h2>
+                      <span className="rounded-md bg-surface-warm px-2 py-1 text-sm font-black text-primary-dark">
+                        ${producto.precio_base}
+                      </span>
                     </div>
-                  )}
+                    <p className="min-h-10 text-sm font-medium text-muted">
+                      {producto.descripcion || 'Producto disponible para entrega.'}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className="text-xs font-bold uppercase text-muted">
+                        {principal ? categoriasById.get(principal.categoria_id) || 'Categoria' : 'Catalogo'}
+                      </span>
+                      <span className="text-xs font-bold text-lettuce">Stock {producto.stock_cantidad}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-4">
-                  <div className="mb-2 flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-black leading-tight">{producto.nombre}</h2>
-                    <span className="rounded-md bg-surface-warm px-2 py-1 text-sm font-black text-primary-dark">
-                      ${producto.precio_base}
-                    </span>
-                  </div>
-                  <p className="min-h-10 text-sm font-medium text-muted">
-                    {producto.descripcion || 'Producto disponible para entrega.'}
-                  </p>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-xs font-bold uppercase text-muted">
-                      {principal ? categoriasById.get(principal.categoria_id) || 'Categoria' : 'Catalogo'}
-                    </span>
-                    <span className="text-xs font-bold text-lettuce">Stock {producto.stock_cantidad}</span>
-                  </div>
+                <div className="p-4 pt-0">
                   <button
                     type="button"
                     onClick={() => addItem(producto, 1)}
                     disabled={!producto.disponible || producto.stock_cantidad <= 0}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <ShoppingCart size={17} />
                     Agregar
@@ -136,11 +158,12 @@ export function StoreHomePage() {
         </div>
       )}
 
-      {!isLoading && productos.length === 0 && (
+      {!isLoading && productos.filter(p => p.stock_cantidad > 0).length === 0 && (
         <div className="rounded-lg border border-border bg-surface p-8 text-center font-bold text-muted">
           No hay productos disponibles para esos filtros.
         </div>
       )}
     </section>
+    </div>
   );
 }

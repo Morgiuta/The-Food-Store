@@ -19,15 +19,8 @@ export const authService = {
     const { data: userPayload } = await api.get<AuthUserResponse>('/auth/me');
     return mapAuthUser(userPayload);
   },
-  async register(input: RegisterCredentials): Promise<User> {
+  async register(input: RegisterCredentials): Promise<void> {
     await api.post('/auth/register', input);
-    await api.post('/auth/login', {
-      email: input.email,
-      password: input.password,
-    });
-
-    const { data: userPayload } = await api.get<AuthUserResponse>('/auth/me');
-    return mapAuthUser(userPayload);
   },
   async logout(): Promise<void> {
     await api.post('/auth/logout');

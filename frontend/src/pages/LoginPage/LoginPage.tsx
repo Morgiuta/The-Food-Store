@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import type { LoginCredentials } from '../../types/auth';
 import { useAuthStore } from '../../store/authStore';
@@ -16,6 +16,15 @@ export function LoginPage() {
   });
 
   const from = location.state?.from?.pathname ?? '/admin';
+  const mensaje = location.state?.mensaje;
+  const [showBanner, setShowBanner] = useState(!!mensaje);
+
+  useEffect(() => {
+    if (showBanner) {
+      const timer = setTimeout(() => setShowBanner(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showBanner]);
 
   if (isAuthenticated) {
     return <Navigate to={user?.role === 'CLIENT' ? '/' : '/admin'} replace />;
@@ -55,6 +64,12 @@ export function LoginPage() {
             <p className="text-sm text-muted mt-1">Credenciales por defecto: admin@admin.com / admin123</p>
           </div>
 
+          {showBanner && (
+            <div className="p-3 bg-green-100 text-green-800 text-sm font-medium rounded-md">
+              {mensaje}
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-charcoal mb-1">Email de Usuario</label>
@@ -64,9 +79,10 @@ export function LoginPage() {
                 placeholder="admin@admin.com"
                 value={credentials.username}
                 autoComplete="username"
-                onChange={(event) =>
-                  setCredentials((current) => ({ ...current, username: event.target.value }))
-                }
+                onChange={(event) => {
+                  setCredentials((current) => ({ ...current, username: event.target.value }));
+                  setShowBanner(false);
+                }}
               />
             </div>
 
@@ -79,9 +95,10 @@ export function LoginPage() {
                 type="password"
                 value={credentials.password}
                 autoComplete="current-password"
-                onChange={(event) =>
-                  setCredentials((current) => ({ ...current, password: event.target.value }))
-                }
+                onChange={(event) => {
+                  setCredentials((current) => ({ ...current, password: event.target.value }));
+                  setShowBanner(false);
+                }}
               />
             </div>
           </div>

@@ -31,6 +31,7 @@ export function CategoriasPage() {
     createCategoria,
     updateCategoria,
     deleteCategoria,
+    restoreCategoria,
   } = useCategorias(stableQuery);
 
   const { tree: categoriasTree } = useCategoriasTree();
@@ -91,6 +92,20 @@ export function CategoriasPage() {
                 : 'No se pudo dar de baja la categoría.',
         );
         }
+    }
+  };
+
+  const handleRestore = async (cat: Categoria) => {
+    try {
+      await restoreCategoria(cat.id);
+      notify('success', `"${cat.nombre}" fue dada de alta correctamente.`);
+    } catch (requestError) {
+      notify(
+        'error',
+        requestError instanceof Error
+          ? requestError.message
+          : 'No se pudo dar de alta la categoría.',
+      );
     }
   };
 
@@ -169,6 +184,18 @@ export function CategoriasPage() {
                 <option value="null">Solo Categorías Principales</option>
               </select>
             </label>
+            <label className="flex flex-col flex-1 min-w-[200px]">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Estado (Bajas)</span>
+              <select
+                className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
+                value={query.include_deleted ? 'all' : 'active'}
+                onChange={(e) => updateQuery({ include_deleted: e.target.value === 'all' })}
+              >
+                <option value="active">Solo Activas</option>
+                <option value="all">Incluir Dadas de Baja</option>
+              </select>
+            </label>
+            
             <label className="flex flex-col w-32">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
@@ -191,6 +218,7 @@ export function CategoriasPage() {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRestore={handleRestore}
           />
 
           <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">

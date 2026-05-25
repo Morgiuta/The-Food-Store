@@ -8,6 +8,7 @@ interface CategoriasTableProps {
   onView: (categoria: Categoria) => void;
   onEdit: (categoria: Categoria) => void;
   onDelete: (categoria: Categoria) => void;
+  onRestore: (categoria: Categoria) => void;
 }
 
 export function CategoriasTable({
@@ -16,6 +17,7 @@ export function CategoriasTable({
   onView,
   onEdit,
   onDelete,
+  onRestore,
 }: CategoriasTableProps) {
   
   if (isLoading) {
@@ -39,13 +41,15 @@ export function CategoriasTable({
             <th className="p-4 font-bold text-sm text-charcoal w-16 text-center">Orden</th>
             <th className="p-4 font-bold text-sm text-charcoal w-1/4">Nombre</th>
             <th className="p-4 font-bold text-sm text-charcoal w-1/4">Descripción</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-24">Estado</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-48 text-right" aria-label="Acciones">Acciones</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-36">Estado</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-40 text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {categorias.map((cat) => (
-            <tr key={cat.id} className="hover:bg-gray-50/50 transition-colors">
+          {categorias.map((cat) => {
+            const isDeleted = Boolean(cat.deleted_at);
+            return (
+            <tr key={cat.id} className={`hover:bg-gray-50/50 transition-colors ${isDeleted ? 'opacity-50 bg-red-50/20' : ''}`}>
               <td className="p-4 text-center font-bold text-gray-400">
                 {cat.orden_display}
               </td>
@@ -69,13 +73,13 @@ export function CategoriasTable({
               </td>
               <td className="p-4">
                 <span
-                  className={`px-2.5 py-1 text-xs font-bold rounded-full ${
-                    cat.deleted_at
+                  className={`whitespace-nowrap px-2.5 py-1 text-xs font-bold rounded-full ${
+                    isDeleted
                       ? 'bg-red-100 text-red-800'
                       : 'bg-green-100 text-green-800'
                   }`}
                 >
-                  {cat.deleted_at ? 'Inactiva' : 'Activa'}
+                  {isDeleted ? 'DADA DE BAJA' : 'Activa'}
                 </span>
               </td>
               <td className="p-4">
@@ -83,22 +87,27 @@ export function CategoriasTable({
                   <Button variant="ghost" onClick={() => onView(cat)}>
                     Ver
                   </Button>
-                  <Button
-                    variant="secondary"
-                    disabled={Boolean(cat.deleted_at)}
-                    onClick={() => onEdit(cat)}
-                  >
-                    Editar
-                  </Button>
-                  {!cat.deleted_at && (
-                    <Button variant="danger" onClick={() => onDelete(cat)}>
-                      Baja
+                  {!isDeleted ? (
+                    <>
+                      <Button
+                        variant="secondary"
+                        onClick={() => onEdit(cat)}
+                      >
+                        Editar
+                      </Button>
+                      <Button variant="danger" onClick={() => onDelete(cat)}>
+                        Baja
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="success" onClick={() => onRestore(cat)}>
+                      Alta
                     </Button>
                   )}
                 </div>
               </td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
     </div>

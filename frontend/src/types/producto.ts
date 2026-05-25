@@ -29,6 +29,9 @@ export interface Producto {
   stock_cantidad: number;
   tiempo_prep_min: number | null;
   disponible: boolean;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
   categorias: ProductoCategoriaLink[];
   ingredientes: ProductoIngredientePublic[];
 }
@@ -51,6 +54,7 @@ export interface ProductosQuery {
   limit: number;
   categoria_id?: number;
   disponible?: boolean;
+  include_deleted?: boolean;
   q?: string;
 }
 

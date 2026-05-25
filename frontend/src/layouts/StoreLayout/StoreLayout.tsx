@@ -1,5 +1,6 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LogOut, Menu, ShoppingCart, UserRound } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom';
+import { LogOut, Menu, ShoppingCart, UserCircle, Package, MapPin, Search } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -9,6 +10,23 @@ export function StoreLayout() {
     state.items.reduce((total, item) => total + item.cantidad, 0),
   );
   const { user, isAuthenticated, logout } = useAuthStore();
+  
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get('q') || '';
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -29,37 +47,30 @@ export function StoreLayout() {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-2 text-sm font-bold md:flex">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `rounded-md px-3 py-2 ${isActive ? 'bg-surface-warm text-primary-dark' : 'text-charcoal hover:bg-surface-warm'}`
-              }
-            >
-              Catalogo
-            </NavLink>
-            <NavLink
-              to="/mis-pedidos"
-              className={({ isActive }) =>
-                `rounded-md px-3 py-2 ${isActive ? 'bg-surface-warm text-primary-dark' : 'text-charcoal hover:bg-surface-warm'}`
-              }
-            >
-              Mis pedidos
-            </NavLink>
-            <NavLink
-              to="/direcciones"
-              className={({ isActive }) =>
-                `rounded-md px-3 py-2 ${isActive ? 'bg-surface-warm text-primary-dark' : 'text-charcoal hover:bg-surface-warm'}`
-              }
-            >
-              Direcciones
-            </NavLink>
+          <div className="hidden flex-1 items-center mx-10 md:flex">
+            <div className="flex w-full items-center gap-2 rounded-md border border-border bg-white px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 shadow-sm">
+              <Search size={18} className="text-muted" />
+              <input
+                className="w-full bg-transparent text-sm font-semibold outline-none text-charcoal"
+                placeholder="Buscar hamburguesas, bebidas, combos..."
+                value={search}
+                onChange={(event) => {
+                  const newQ = event.target.value;
+                  if (newQ) {
+                    setSearchParams(prev => { prev.set('q', newQ); return prev; });
+                  } else {
+                    setSearchParams(prev => { prev.delete('q'); return prev; });
+                  }
+                }}
+              />
+            </div>
+
             {user?.role === 'ADMIN' && (
-              <NavLink to="/admin" className="rounded-md px-3 py-2 text-charcoal hover:bg-surface-warm">
+              <NavLink to="/admin" className="ml-4 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold text-charcoal hover:bg-surface-warm">
                 Admin
               </NavLink>
             )}
-          </nav>
+          </div>
 
           <div className="flex items-center gap-2">
             <Link
@@ -76,20 +87,58 @@ export function StoreLayout() {
             </Link>
 
             {isAuthenticated && user ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-bold text-charcoal hover:border-primary"
-              >
-                <LogOut size={17} />
-                <span className="hidden sm:inline">{user.name}</span>
-              </button>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-charcoal hover:border-primary"
+                  title="Perfil"
+                >
+                  <UserCircle size={20} />
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-md border border-border bg-white shadow-lg z-50">
+                    <div className="border-b border-border px-4 py-3">
+                      <p className="text-sm font-bold text-charcoal">{user.name}</p>
+                    </div>
+                    <div className="py-1">
+                      <Link
+                        to="/mis-pedidos"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-charcoal hover:bg-surface-warm"
+                      >
+                        <Package size={16} /> Mis pedidos
+                      </Link>
+                      <Link
+                        to="/mis-direcciones"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-charcoal hover:bg-surface-warm"
+                      >
+                        <MapPin size={16} /> Mis direcciones
+                      </Link>
+                    </div>
+                    <div className="border-t border-border py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm font-semibold text-ketchup hover:bg-red-50"
+                      >
+                        <LogOut size={16} /> Cerrar sesión
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <Link
                 to="/login"
                 className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-3 text-sm font-black text-white hover:bg-primary-dark"
               >
-                <UserRound size={17} />
+                <UserCircle size={17} />
                 Ingresar
               </Link>
             )}

@@ -1,36 +1,45 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { getErrorMessage } from '../../utils/errors';
+import { useMutation } from '@tanstack/react-query';
+import { authService } from '../../services/authService';
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, register } = useAuthStore();
+  const { isAuthenticated, logout } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     nombre: '',
+    apellido: '',
+    celular: '',
     email: '',
     password: '',
+  });
+
+  // Limpiar cualquier token o sesión existente
+  useEffect(() => {
+    logout();
+  }, [logout]);
+
+  const registerMutation = useMutation({
+    mutationFn: () => authService.register(form),
+    onSuccess: () => {
+      navigate('/login', { state: { mensaje: '¡Cuenta creada! Iniciá sesión para continuar.' } });
+    },
+    onError: (err) => {
+      setError(getErrorMessage(err, 'No se pudo crear la cuenta.'));
+    }
   });
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setIsSubmitting(true);
-
-    try {
-      await register(form);
-      navigate('/checkout', { replace: true });
-    } catch (registerError: unknown) {
-      setError(getErrorMessage(registerError, 'No se pudo crear la cuenta.'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    registerMutation.mutate();
   };
 
   return (
@@ -47,15 +56,40 @@ export function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-bold text-charcoal">Nombre</label>
+              <input
+                className="w-full rounded-md border border-border p-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                value={form.nombre}
+                onChange={(event) => setForm((current) => ({ ...current, nombre: event.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-bold text-charcoal">Apellido</label>
+              <input
+                className="w-full rounded-md border border-border p-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                value={form.apellido}
+                onChange={(event) => setForm((current) => ({ ...current, apellido: event.target.value }))}
+                required
+              />
+            </div>
+          </div>
+          
           <div>
-            <label className="mb-1 block text-sm font-bold text-charcoal">Nombre completo</label>
+            <label className="mb-1 block text-sm font-bold text-charcoal">
+              Celular <span className="font-medium text-muted">(Opcional)</span>
+            </label>
             <input
               className="w-full rounded-md border border-border p-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-              value={form.nombre}
-              onChange={(event) => setForm((current) => ({ ...current, nombre: event.target.value }))}
-              required
+              type="tel"
+              value={form.celular}
+              onChange={(event) => setForm((current) => ({ ...current, celular: event.target.value }))}
+              placeholder="Ej: 1123456789"
             />
           </div>
+
           <div>
             <label className="mb-1 block text-sm font-bold text-charcoal">Email</label>
             <input
@@ -81,10 +115,10 @@ export function RegisterPage() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={registerMutation.isPending}
             className="w-full rounded-md bg-primary px-4 py-3 font-black text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Creando...' : 'Registrarme'}
+            {registerMutation.isPending ? 'Creando...' : 'Registrarme'}
           </button>
         </form>
 

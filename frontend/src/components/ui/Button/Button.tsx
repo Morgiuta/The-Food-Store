@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'success';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -11,6 +11,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: 'bg-white text-charcoal border border-gray-300 hover:bg-gray-50',
   danger: 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-transparent',
   ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 border border-transparent',
+  success: 'bg-green-500 text-white hover:bg-green-600 shadow-sm border border-transparent',
 };
 
 export function Button({

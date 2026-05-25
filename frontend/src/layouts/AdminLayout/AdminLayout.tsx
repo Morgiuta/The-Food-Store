@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Package, Tags, ShoppingCart, Users, Home, Menu, ChevronLeft } from 'lucide-react';
+import { LogOut, Package, LayoutGrid, ShoppingCart, Users, Home, Menu, ChevronLeft, Utensils, ExternalLink } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export function AdminLayout() {
@@ -16,9 +16,9 @@ export function AdminLayout() {
 
   const menuItems = [
     { path: '/admin', icon: Home, label: 'Dashboard', roles: ['ADMIN', 'STOCK', 'PEDIDOS'] },
-    { path: '/admin/categorias', icon: Tags, label: 'Categorías', roles: ['ADMIN', 'STOCK', 'PEDIDOS'] },
-    { path: '/admin/ingredientes', icon: Package, label: 'Ingredientes', roles: ['ADMIN', 'STOCK'] },
-    { path: '/admin/productos', icon: ShoppingCart, label: 'Productos', roles: ['ADMIN', 'STOCK'] },
+    { path: '/admin/categorias', icon: LayoutGrid, label: 'Categorías', roles: ['ADMIN', 'STOCK', 'PEDIDOS'] },
+    { path: '/admin/ingredientes', icon: Utensils, label: 'Ingredientes', roles: ['ADMIN', 'STOCK'] },
+    { path: '/admin/productos', icon: Package, label: 'Productos', roles: ['ADMIN', 'STOCK'] },
     { path: '/admin/pedidos', icon: ShoppingCart, label: 'Pedidos', roles: ['ADMIN', 'PEDIDOS'] },
     { path: '/admin/usuarios', icon: Users, label: 'Usuarios', roles: ['ADMIN'] },
   ];
@@ -86,12 +86,23 @@ export function AdminLayout() {
       <main className="flex-1 overflow-y-auto h-screen bg-gray-50 flex flex-col">
         <header className="h-20 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm shrink-0">
           <div className="flex-1"></div>
-          <div className="flex items-center gap-3">
-             <div className="text-right">
-                <p className="text-sm font-bold text-gray-800">{user?.name}</p>
-             </div>
-             <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-               {user?.name?.charAt(0).toUpperCase()}
+          <div className="flex items-center gap-6">
+             <a 
+               href={import.meta.env.VITE_STORE_URL || 'http://localhost:5174'} 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary transition-colors"
+             >
+               <ExternalLink size={18} />
+               Ver tienda
+             </a>
+             <div className="flex items-center gap-3 border-l border-gray-200 pl-6">
+               <div className="text-right">
+                  <p className="text-sm font-bold text-gray-800">{user?.name || user?.nombre}</p>
+               </div>
+               <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+                 {user?.name?.charAt(0).toUpperCase() || user?.nombre?.charAt(0).toUpperCase() || 'A'}
+               </div>
              </div>
           </div>
         </header>

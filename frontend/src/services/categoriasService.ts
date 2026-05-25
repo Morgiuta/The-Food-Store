@@ -11,6 +11,10 @@ function buildQuery(params: CategoriasQuery): string {
   } else if (params.parent_id === null) {
     query.set('parent_id', 'null');
   }
+  
+  if (params.include_deleted !== undefined) {
+    query.set('include_deleted', String(params.include_deleted));
+  }
 
   return query.toString();
 }
@@ -21,8 +25,8 @@ export const categoriasService = {
     return data;
   },
 
-  async getTree(): Promise<CategoriaTree[]> {
-    const { data } = await api.get<CategoriaTree[]>('/categorias/tree');
+  async getTree(include_deleted: boolean = false): Promise<CategoriaTree[]> {
+    const { data } = await api.get<CategoriaTree[]>(`/categorias/tree?include_deleted=${include_deleted}`);
     return data;
   },
 
@@ -51,5 +55,10 @@ export const categoriasService = {
 
   async remove(id: number): Promise<void> {
     await api.delete(`/categorias/${id}`);
+  },
+
+  async restore(id: number): Promise<Categoria> {
+    const { data } = await api.patch<Categoria>(`/categorias/${id}/restore`);
+    return data;
   },
 };

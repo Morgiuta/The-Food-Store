@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, LoginCredentials, RegisterCredentials } from '../types/auth';
 import { authService } from '../services/authService';
+import { useCartStore } from './cartStore';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
+
   logout: () => Promise<void>;
 }
 
@@ -22,12 +23,8 @@ export const useAuthStore = create<AuthState>()(
         set({ user, isAuthenticated: true });
       },
 
-      register: async (credentials) => {
-        const user = await authService.register(credentials);
-        set({ user, isAuthenticated: true });
-      },
-
       logout: async () => {
+        useCartStore.getState().clearCart();
         try {
           await authService.logout();
         } catch (error) {

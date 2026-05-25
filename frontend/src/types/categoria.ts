@@ -22,6 +22,7 @@ export interface CategoriasQuery {
   offset: number;
   limit: number;
   parent_id?: number | null;
+  include_deleted?: boolean;
 }
 
 export interface CategoriasResponse {

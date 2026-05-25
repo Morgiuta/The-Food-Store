@@ -29,8 +29,9 @@ export function PedidosPage() {
   };
 
   const statusMap: Record<string, string> = {
-    PENDIENTE: 'PREPARANDO',
-    PREPARANDO: 'EN_CAMINO',
+    PENDIENTE: 'CONFIRMADO',
+    CONFIRMADO: 'EN_PREP',
+    EN_PREP: 'EN_CAMINO',
     EN_CAMINO: 'ENTREGADO'
   };
 
@@ -65,8 +66,8 @@ export function PedidosPage() {
   };
 
   // Group by status
-  const pendientes = pedidos.filter(p => p.estado_codigo === 'PENDIENTE');
-  const preparando = pedidos.filter(p => p.estado_codigo === 'PREPARANDO');
+  const pendientes = pedidos.filter(p => p.estado_codigo === 'PENDIENTE' || p.estado_codigo === 'CONFIRMADO');
+  const preparando = pedidos.filter(p => p.estado_codigo === 'EN_PREP');
   const enCamino = pedidos.filter(p => p.estado_codigo === 'EN_CAMINO');
   const terminales = pedidos.filter(p => p.estado_codigo === 'ENTREGADO' || p.estado_codigo === 'CANCELADO').slice(0, 10); // Show only last 10 terminales
 

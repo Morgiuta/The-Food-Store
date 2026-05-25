@@ -9,12 +9,47 @@ interface PedidoCardProps {
   onAdvance: (pedido: Pedido, e: React.MouseEvent) => void;
 }
 
-const statusConfig: Record<string, { color: string; icon: LucideIcon; label: string; next?: string }> = {
-  PENDIENTE: { color: 'border-red-500 bg-red-50 text-red-700', icon: Clock, label: 'Pendiente', next: 'PREPARANDO' },
-  PREPARANDO: { color: 'border-orange-500 bg-orange-50 text-orange-700', icon: Package, label: 'En Preparación', next: 'EN_CAMINO' },
-  EN_CAMINO: { color: 'border-blue-500 bg-blue-50 text-blue-700', icon: Truck, label: 'En Camino', next: 'ENTREGADO' },
-  ENTREGADO: { color: 'border-green-500 bg-green-50 text-green-700', icon: CheckCircle, label: 'Entregado' },
-  CANCELADO: { color: 'border-gray-500 bg-gray-50 text-gray-700', icon: XCircle, label: 'Cancelado' },
+const statusConfig: Record<string, { color: string; buttonColor: string; icon: LucideIcon; label: string; next?: string }> = {
+  PENDIENTE: { 
+    color: 'border-yellow-400 bg-yellow-50 text-yellow-900', 
+    buttonColor: 'bg-yellow-500 hover:bg-yellow-600 text-charcoal',
+    icon: Clock, 
+    label: 'Pendiente', 
+    next: 'CONFIRMADO' 
+  },
+  CONFIRMADO: { 
+    color: 'border-blue-500 bg-blue-50 text-blue-700', 
+    buttonColor: 'bg-blue-600 hover:bg-blue-700 text-white',
+    icon: CheckCircle, 
+    label: 'Confirmado', 
+    next: 'EN_PREP' 
+  },
+  EN_PREP: { 
+    color: 'border-orange-500 bg-orange-50 text-orange-700', 
+    buttonColor: 'bg-orange-500 hover:bg-orange-600 text-white',
+    icon: Package, 
+    label: 'En Preparación', 
+    next: 'EN_CAMINO' 
+  },
+  EN_CAMINO: { 
+    color: 'border-green-400 bg-green-50 text-green-900', 
+    buttonColor: 'bg-green-500 hover:bg-green-600 text-white',
+    icon: Truck, 
+    label: 'En Camino', 
+    next: 'ENTREGADO' 
+  },
+  ENTREGADO: { 
+    color: 'border-green-600 bg-green-50 text-green-700', 
+    buttonColor: 'bg-green-600 hover:bg-green-700 text-white',
+    icon: CheckCircle, 
+    label: 'Entregado' 
+  },
+  CANCELADO: { 
+    color: 'border-gray-500 bg-gray-50 text-gray-700', 
+    buttonColor: 'bg-gray-600 hover:bg-gray-700 text-white',
+    icon: XCircle, 
+    label: 'Cancelado' 
+  },
 };
 
 function formatCurrency(value: number): string {
@@ -25,13 +60,19 @@ function formatCurrency(value: number): string {
 }
 
 export function PedidoCard({ pedido, onClick, onAdvance }: PedidoCardProps) {
-  const config = statusConfig[pedido.estado_codigo] || { color: 'border-gray-300 bg-white text-gray-800', icon: Clock, label: pedido.estado_codigo };
+  const config = statusConfig[pedido.estado_codigo] || { 
+    color: 'border-gray-300 bg-white text-gray-800', 
+    buttonColor: 'bg-gray-200 text-charcoal',
+    icon: Clock, 
+    label: pedido.estado_codigo 
+  };
   const Icon = config.icon;
 
   const totalArticulos = pedido.detalles.reduce((acc, curr) => acc + curr.cantidad, 0);
   const timeAgo = formatDistanceToNowStrict(new Date(pedido.created_at), { locale: es, addSuffix: false });
 
   const isTerminal = pedido.estado_codigo === 'ENTREGADO' || pedido.estado_codigo === 'CANCELADO';
+  const nextConfig = config.next ? statusConfig[config.next] : null;
 
   return (
     <div 
@@ -61,19 +102,13 @@ export function PedidoCard({ pedido, onClick, onAdvance }: PedidoCardProps) {
         )}
       </div>
 
-      {!isTerminal && (
+      {!isTerminal && nextConfig && (
         <div className="bg-gray-50 px-4 py-3 border-t border-gray-100 flex gap-2">
           <button
-            className={`w-full py-2 font-bold text-sm rounded transition-colors ${
-              pedido.estado_codigo === 'PENDIENTE' 
-                ? 'bg-red-600 hover:bg-red-700 text-white' 
-                : pedido.estado_codigo === 'PREPARANDO'
-                ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
+            className={`w-full py-2 font-bold text-sm rounded transition-colors ${nextConfig.buttonColor}`}
             onClick={(e) => onAdvance(pedido, e)}
           >
-            Mover a {statusConfig[config.next || '']?.label || 'Siguiente'}
+            {nextConfig.label}
           </button>
         </div>
       )}
