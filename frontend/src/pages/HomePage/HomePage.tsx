@@ -34,7 +34,7 @@ export function HomePage() {
       </div>
 
       {/* Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Metric 1: Pedidos Activos */}
         <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
           <div className="p-3 rounded-xl bg-orange-100 text-orange-600 shrink-0">
@@ -46,21 +46,6 @@ export function HomePage() {
               <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md"></div>
             ) : (
               <p className="text-3xl font-black text-charcoal">{metrics?.pedidosActivos}</p>
-            )}
-          </div>
-        </article>
-
-        {/* Metric 2: Productos */}
-        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-blue-100 text-blue-600 shrink-0">
-            <Package size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Productos</p>
-            {isLoadingMetrics ? (
-              <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md"></div>
-            ) : (
-              <p className="text-3xl font-black text-charcoal">{metrics?.totalProductos}</p>
             )}
           </div>
         </article>

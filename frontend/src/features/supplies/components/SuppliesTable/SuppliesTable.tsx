@@ -55,15 +55,15 @@ export function SuppliesTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse table-fixed">
+      <table className="w-full min-w-[1100px] text-left border-collapse table-fixed">
         <thead>
           <tr className="bg-gray-50 border-y border-gray-200">
-            <th className="p-4 font-bold text-sm text-charcoal w-[18%]">
+            <th className="p-4 font-bold text-sm text-charcoal w-[17%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('nombre')}>
                 Nombre {renderSortIcon('nombre')}
               </button>
             </th>
-            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Descripción</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[14%]">Descripción</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('es_alergeno')}>
                 Tipo {renderSortIcon('es_alergeno')}
@@ -72,7 +72,7 @@ export function SuppliesTable({
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Estado</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Stock</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Unidad</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-[12%]">Precio unitario</th>
+            <th className="p-4 pr-8 font-bold text-sm text-charcoal w-[14%]">Precio unitario</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[15%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
@@ -118,11 +118,11 @@ export function SuppliesTable({
                 </div>
               </td>
               <td className="p-4 text-sm text-gray-600">{supply.unidad}</td>
-              <td className="p-4 text-sm font-medium text-charcoal">
+              <td className="p-4 pr-8 text-sm font-medium text-charcoal whitespace-nowrap">
                 {formatCurrency(supply.costo_unitario ?? 0)}
               </td>
               <td className="p-4">
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                   <Button variant="ghost" onClick={() => onView(supply)}>
                     Ver
                   </Button>
