@@ -38,8 +38,8 @@ function wasDeliveredToday(pedido: PedidosResponse['items'][number]): boolean {
 export const dashboardService = {
   async getMetrics(): Promise<DashboardMetrics> {
     const [pedidosRes, productosRes] = await Promise.all([
-      api.get<PedidosResponse>('/pedidos?page=1&limit=100'),
-      api.get<ProductoListResponse>('/productos?page=1&limit=100'),
+      api.get<PedidosResponse>('/pedidos/?page=1&limit=100'),
+      api.get<ProductoListResponse>('/productos/?page=1&limit=100'),
     ]);
 
     const pedidos = pedidosRes.data.items || [];

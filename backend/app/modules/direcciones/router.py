@@ -21,7 +21,10 @@ def get_direcciones_service(session: DbSession) -> DireccionesService:
 
 @router.get("/", response_model=list[DireccionPublic])
 def list_direcciones(
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: DireccionesService = Depends(get_direcciones_service),
 ) -> list[DireccionPublic]:
     return svc.list_by_usuario(current_user.id or 0)
@@ -30,7 +33,10 @@ def list_direcciones(
 @router.post("/", response_model=DireccionPublic, status_code=status.HTTP_201_CREATED)
 def create_direccion(
     data: DireccionCreate,
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: DireccionesService = Depends(get_direcciones_service),
 ) -> DireccionPublic:
     return svc.create(current_user.id or 0, data)
@@ -40,7 +46,10 @@ def create_direccion(
 def update_direccion(
     direccion_id: Annotated[int, Path(gt=0)],
     data: DireccionUpdate,
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: DireccionesService = Depends(get_direcciones_service),
 ) -> DireccionPublic:
     return svc.update(current_user.id or 0, direccion_id, data)
@@ -49,7 +58,10 @@ def update_direccion(
 @router.patch("/{direccion_id}/principal", response_model=DireccionPublic)
 def mark_direccion_principal(
     direccion_id: Annotated[int, Path(gt=0)],
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: DireccionesService = Depends(get_direcciones_service),
 ) -> DireccionPublic:
     return svc.mark_principal(current_user.id or 0, direccion_id)
@@ -58,7 +70,10 @@ def mark_direccion_principal(
 @router.delete("/{direccion_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_direccion(
     direccion_id: Annotated[int, Path(gt=0)],
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: DireccionesService = Depends(get_direcciones_service),
 ) -> None:
     svc.soft_delete(current_user.id or 0, direccion_id)

@@ -16,7 +16,7 @@ export interface PedidoCreateInput {
 
 export const pedidosService = {
   async getAll(page: number = 1, limit: number = 50): Promise<PedidosResponse> {
-    const { data } = await api.get<PedidosResponse>(`/pedidos?page=${page}&limit=${limit}`);
+    const { data } = await api.get<PedidosResponse>(`/pedidos/?page=${page}&limit=${limit}`);
     return data;
   },
 

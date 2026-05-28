@@ -32,7 +32,7 @@ def get_pedidos_service(session: DbSession) -> PedidosService:
 
 @router.get("/formas-pago", response_model=list[FormaPagoPublic])
 def list_formas_pago(
-    _current_user=Depends(require_roles("ADMIN", "CLIENT")),
+    _current_user=Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
     svc: VentasService = Depends(get_ventas_service),
 ) -> list[FormaPagoPublic]:
     return svc.list_formas_pago()
@@ -49,7 +49,10 @@ def list_estados(
 @router.post("/pedidos", response_model=PedidoPublic, status_code=status.HTTP_201_CREATED)
 def create_pedido(
     data: PedidoCreate,
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
     return svc.create_pedido(current_user.id or 0, data)
@@ -57,7 +60,10 @@ def create_pedido(
 
 @router.get("/pedidos", response_model=PedidoList)
 def list_pedidos(
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     session: DbSession,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 20,
@@ -97,7 +103,10 @@ def list_pedidos(
 @router.get("/pedidos/{pedido_id}", response_model=PedidoPublic)
 def get_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     session: DbSession,
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:

@@ -25,7 +25,10 @@ def get_pedidos_service(session: DbSession) -> PedidosService:
 @router.post("/", response_model=PedidoPublic, status_code=status.HTTP_201_CREATED)
 def create_pedido(
     data: PedidoCreate,
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
     return svc.create_pedido(current_user.id or 0, data)
@@ -33,7 +36,10 @@ def create_pedido(
 
 @router.get("/", response_model=PedidoList)
 def list_pedidos(
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     svc: PedidosService = Depends(get_pedidos_service),
@@ -48,7 +54,10 @@ def list_pedidos(
 @router.get("/{pedido_id}", response_model=PedidoPublic)
 def get_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
     usuario_id = None if svc.can_view_all(current_user.id or 0) else current_user.id
@@ -87,7 +96,10 @@ def avanzar_estado(
 @router.patch("/{pedido_id}/cancelar", response_model=PedidoPublic)
 def cancelar_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "CLIENT"))],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
     return svc.cancelar_pedido(

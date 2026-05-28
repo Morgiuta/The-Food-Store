@@ -16,6 +16,8 @@ import { CheckoutPage } from '../pages/CheckoutPage/CheckoutPage';
 import { AddressesPage } from '../pages/AddressesPage/AddressesPage';
 import { MyOrdersPage } from '../pages/MyOrdersPage/MyOrdersPage';
 
+const storeRoles = ['ADMIN', 'STOCK', 'PEDIDOS', 'CLIENT'];
+
 export function App() {
   return (
     <Routes>
@@ -29,7 +31,7 @@ export function App() {
         <Route
           path="checkout"
           element={
-            <ProtectedRoute allowedRoles={['CLIENT']}>
+            <ProtectedRoute allowedRoles={storeRoles}>
               <CheckoutPage />
             </ProtectedRoute>
           }
@@ -37,7 +39,7 @@ export function App() {
         <Route
           path="mis-direcciones"
           element={
-            <ProtectedRoute allowedRoles={['CLIENT']}>
+            <ProtectedRoute allowedRoles={storeRoles}>
               <AddressesPage />
             </ProtectedRoute>
           }
@@ -45,7 +47,7 @@ export function App() {
         <Route
           path="mis-pedidos"
           element={
-            <ProtectedRoute allowedRoles={['CLIENT']}>
+            <ProtectedRoute allowedRoles={storeRoles}>
               <MyOrdersPage />
             </ProtectedRoute>
           }

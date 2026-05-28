@@ -24,7 +24,7 @@ function buildQuery(params: ProductosQuery): string {
 
 export const productosService = {
   async getAll(params: ProductosQuery): Promise<ProductosResponse> {
-    const { data } = await api.get<ProductosResponse>(`/productos?${buildQuery(params)}`);
+    const { data } = await api.get<ProductosResponse>(`/productos/?${buildQuery(params)}`);
     return data;
   },
 

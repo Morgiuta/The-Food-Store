@@ -21,7 +21,7 @@ function buildQuery(params: CategoriasQuery): string {
 
 export const categoriasService = {
   async getAll(params: CategoriasQuery): Promise<CategoriasResponse> {
-    const { data } = await api.get<CategoriasResponse>(`/categorias?${buildQuery(params)}`);
+    const { data } = await api.get<CategoriasResponse>(`/categorias/?${buildQuery(params)}`);
     return data;
   },
 

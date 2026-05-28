@@ -22,7 +22,7 @@ function buildQuery(params: SuppliesQuery): string {
 
 export const suppliesService = {
   async getAll(params: SuppliesQuery): Promise<SuppliesResponse> {
-    const { data } = await api.get<SuppliesResponse>(`/ingredientes?${buildQuery(params)}`);
+    const { data } = await api.get<SuppliesResponse>(`/ingredientes/?${buildQuery(params)}`);
     return data;
   },
 
