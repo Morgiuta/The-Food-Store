@@ -163,11 +163,7 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
                    variant="ghost" 
                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                    disabled={isMutating}
-                   onClick={() => {
-                     if (confirm('¿Estás seguro que deseas cancelar este pedido? Esta acción es irreversible.')) {
-                        onCancel(pedido);
-                     }
-                   }}
+                   onClick={() => onCancel(pedido)}
                 >
                    Cancelar pedido
                 </Button>

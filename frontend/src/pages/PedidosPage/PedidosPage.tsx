@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { ToastViewport, type ToastMessage, type ToastType } from '../../components/ui/Toast/Toast';
+import { useToast } from '../../components/ui/Toast/Toast';
 import { PedidoCard } from '../../features/pedidos/components/PedidoCard/PedidoCard';
 import { PedidoDetailModal } from '../../features/pedidos/components/PedidoDetailModal/PedidoDetailModal';
 import { usePedidos } from '../../hooks/usePedidos';
 import type { Pedido } from '../../types/pedido';
 
 export function PedidosPage() {
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  const { confirm, notify } = useToast();
 
   const {
     pedidos,
@@ -17,16 +17,6 @@ export function PedidosPage() {
     avanzarEstado,
     cancelarPedido,
   } = usePedidos();
-
-  const dismissToast = (id: number) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id));
-  };
-
-  const notify = (type: ToastType, message: string) => {
-    const id = Date.now();
-    setToasts((current) => [...current.slice(-2), { id, message, type }]);
-    window.setTimeout(() => dismissToast(id), 4200);
-  };
 
   const statusMap: Record<string, string> = {
     PENDIENTE: 'CONFIRMADO',
@@ -54,6 +44,16 @@ export function PedidosPage() {
   };
 
   const handleCancel = async (pedido: Pedido) => {
+    const confirmed = await confirm({
+      confirmLabel: 'Cancelar pedido',
+      message: `¿Estás seguro que deseas cancelar el pedido #${pedido.id}? Esta acción es irreversible.`,
+      title: 'Cancelar pedido',
+      type: 'danger',
+    });
+    if (!confirmed) {
+      return;
+    }
+
     try {
       await cancelarPedido(pedido.id);
       notify('success', `Pedido #${pedido.id} cancelado`);
@@ -73,8 +73,6 @@ export function PedidosPage() {
 
   return (
     <section className="space-y-6 animate-in fade-in duration-300 h-full flex flex-col">
-      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
-
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
           <span className="section-kicker">Operación</span>

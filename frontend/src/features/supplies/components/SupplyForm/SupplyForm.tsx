@@ -6,7 +6,9 @@ const initialValues: SupplyFormValues = {
   descripcion: '',
   es_alergeno: false,
   stock_actual: 0,
+  costo_unitario: 0,
   unidad: 'unidad',
+  es_producto_terminado: false,
 };
 
 interface SupplyFormProps {
@@ -35,7 +37,9 @@ export function SupplyForm({
             descripcion: selectedSupply.descripcion ?? '',
             es_alergeno: selectedSupply.es_alergeno,
             stock_actual: selectedSupply.stock_actual ?? 0,
+            costo_unitario: Number(selectedSupply.costo_unitario ?? 0),
             unidad: selectedSupply.unidad ?? 'unidad',
+            es_producto_terminado: selectedSupply.es_producto_terminado ?? false,
           }
         : initialValues,
     );
@@ -61,9 +65,10 @@ export function SupplyForm({
         ? 'La descripción no puede superar 300 caracteres.'
         : '',
     stock_actual: values.stock_actual < 0 ? 'El stock no puede ser negativo.' : '',
+    costo_unitario: values.costo_unitario < 0 ? 'El costo no puede ser negativo.' : '',
   };
   
-  const isSubmitDisabled = Boolean(errors.nombre || errors.descripcion || errors.stock_actual) || isSubmitting;
+  const isSubmitDisabled = Boolean(errors.nombre || errors.descripcion || errors.stock_actual || errors.costo_unitario) || isSubmitting;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,7 +83,9 @@ export function SupplyForm({
       descripcion: values.descripcion.trim(),
       es_alergeno: values.es_alergeno,
       stock_actual: Number(values.stock_actual),
+      costo_unitario: Number(values.costo_unitario),
       unidad: values.unidad,
+      es_producto_terminado: values.es_producto_terminado,
     });
 
     setValues(initialValues);
@@ -132,6 +139,21 @@ export function SupplyForm({
         </div>
 
         <div>
+          <label className="block text-sm font-bold text-charcoal mb-2">Costo unitario ($)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${submitAttempted && errors.costo_unitario ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+            name="costo_unitario"
+            value={values.costo_unitario}
+            onChange={(event) => setValues((current) => ({ ...current, costo_unitario: Number(event.target.value) }))}
+          />
+          {submitAttempted && errors.costo_unitario && <p className="text-red-500 text-xs mt-1 font-medium">{errors.costo_unitario}</p>}
+          <p className="text-xs text-gray-500 mt-1">Se usa para calcular el precio sugerido en los productos.</p>
+        </div>
+
+        <div>
           <label className="block text-sm font-bold text-charcoal mb-2">Unidad de medida</label>
           <select
             className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent border-gray-300 bg-white"
@@ -170,6 +192,34 @@ export function SupplyForm({
             </div>
             <span className="font-medium text-charcoal group-hover:text-orange-600 transition-colors">Marcar como alérgeno</span>
           </label>
+        </div>
+
+        <div className="flex flex-col gap-2 pb-3">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <div className="relative flex items-center justify-center">
+              <input
+                checked={values.es_producto_terminado}
+                type="checkbox"
+                className="peer sr-only"
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    es_producto_terminado: event.target.checked,
+                  }))
+                }
+              />
+              <div className="w-6 h-6 border-2 border-gray-300 rounded peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-colors"></div>
+              <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="font-medium text-charcoal group-hover:text-blue-600 transition-colors">¿Es producto terminado? (se revende sin elaboración)</span>
+          </label>
+          {values.es_producto_terminado && (
+            <p className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-3 py-2">
+              Este insumo se usará siempre como 1 unidad en las recetas de productos.
+            </p>
+          )}
         </div>
       </div>
 

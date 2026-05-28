@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Modal } from '../../components/ui/Modal/Modal';
-import { ToastViewport, type ToastMessage, type ToastType } from '../../components/ui/Toast/Toast';
+import { useToast } from '../../components/ui/Toast/Toast';
 import { SupplyForm } from '../../features/supplies/components/SupplyForm/SupplyForm';
 import { SuppliesTable } from '../../features/supplies/components/SuppliesTable/SuppliesTable';
 import { useSupplies } from '../../hooks/useSupplies';
@@ -66,7 +66,7 @@ export function SuppliesPage() {
   const [selectedSupply, setSelectedSupply] = useState<Supply | null>(null);
   const [detailSupply, setDetailSupply] = useState<Supply | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const { notify } = useToast();
 
   const stableQuery = useMemo(() => query, [query]);
   const {
@@ -112,16 +112,6 @@ export function SuppliesPage() {
 
   const updateQuery = (patch: Partial<SuppliesQuery>) => {
     setQuery((current) => ({ ...current, ...patch, offset: patch.offset ?? 0 }));
-  };
-
-  const dismissToast = (id: number) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id));
-  };
-
-  const notify = (type: ToastType, message: string) => {
-    const id = Date.now();
-    setToasts((current) => [...current.slice(-2), { id, message, type }]);
-    window.setTimeout(() => dismissToast(id), 4200);
   };
 
   const handleSubmit = async (values: SupplyFormValues) => {
@@ -206,8 +196,6 @@ export function SuppliesPage() {
 
   return (
     <section className="space-y-6">
-      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
-
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
           <span className="section-kicker">Inventario</span>

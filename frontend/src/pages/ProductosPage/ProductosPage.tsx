@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Modal } from '../../components/ui/Modal/Modal';
-import { ToastViewport, type ToastMessage, type ToastType } from '../../components/ui/Toast/Toast';
+import { useToast } from '../../components/ui/Toast/Toast';
 import { ProductoForm } from '../../features/productos/components/ProductoForm/ProductoForm';
 import { ProductosTable } from '../../features/productos/components/ProductosTable/ProductosTable';
 import { useProductos } from '../../hooks/useProductos';
@@ -21,7 +21,7 @@ export function ProductosPage() {
   const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
   const [detailProducto, setDetailProducto] = useState<Producto | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const { confirm, notify } = useToast();
 
   const stableQuery = useMemo(() => query, [query]);
   
@@ -72,16 +72,6 @@ export function ProductosPage() {
     updateQuery({ q: searchDraft, page: 1 });
   };
 
-  const dismissToast = (id: number) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id));
-  };
-
-  const notify = (type: ToastType, message: string) => {
-    const id = Date.now();
-    setToasts((current) => [...current.slice(-2), { id, message, type }]);
-    window.setTimeout(() => dismissToast(id), 4200);
-  };
-
   const handleSubmit = async (values: ProductoFormValues) => {
     try {
       if (selectedProducto) {
@@ -106,7 +96,13 @@ export function ProductosPage() {
   };
 
   const handleDelete = async (prod: Producto) => {
-    if (confirm(`¿Estás seguro que deseas dar de baja el producto "${prod.nombre}"?`)) {
+    const confirmed = await confirm({
+      confirmLabel: 'Dar de baja',
+      message: `¿Estás seguro que deseas dar de baja el producto "${prod.nombre}"?`,
+      title: 'Dar de baja producto',
+      type: 'danger',
+    });
+    if (confirmed) {
         try {
         await deleteProducto(prod.id);
         notify('success', `"${prod.nombre}" fue dado de baja correctamente.`);
@@ -167,8 +163,6 @@ export function ProductosPage() {
 
   return (
     <section className="space-y-6 animate-in fade-in duration-300 h-full flex flex-col">
-      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
-
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
           <span className="section-kicker">Catálogo</span>

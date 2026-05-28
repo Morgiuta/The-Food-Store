@@ -4,8 +4,9 @@ export interface Supply {
   descripcion: string | null;
   es_alergeno: boolean;
   stock_actual: number;
-  costo_unitario?: number;
+  costo_unitario: number;
   unidad: 'unidad' | 'kg' | 'litros' | 'gramos' | 'ml';
+  es_producto_terminado: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -16,7 +17,9 @@ export interface SupplyFormValues {
   descripcion: string;
   es_alergeno: boolean;
   stock_actual: number;
+  costo_unitario: number;
   unidad: 'unidad' | 'kg' | 'litros' | 'gramos' | 'ml';
+  es_producto_terminado: boolean;
 }
 
 export interface SuppliesQuery {

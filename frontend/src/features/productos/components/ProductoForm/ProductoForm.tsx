@@ -122,7 +122,26 @@ export function ProductoForm({
   };
 
   const categoriasOptions = getFlatOptions(categoriasTree);
-  const ingredientesActivos = ingredientesList.filter(i => !i.deleted_at);
+  const ingredientesActivos = useMemo(
+    () => ingredientesList.filter(i => !i.deleted_at),
+    [ingredientesList],
+  );
+
+  useEffect(() => {
+    setValues((current) => {
+      let changed = false;
+      const ingredientes = current.ingredientes.map((ing) => {
+        const selectedIngrediente = ingredientesActivos.find((s) => s.id === ing.ingrediente_id);
+        if (selectedIngrediente?.es_producto_terminado === true && ing.cantidad_requerida !== 1) {
+          changed = true;
+          return { ...ing, cantidad_requerida: 1 };
+        }
+        return ing;
+      });
+
+      return changed ? { ...current, ingredientes } : current;
+    });
+  }, [ingredientesActivos]);
 
   // Calculadora de precio sugerido
   const costoCalculado = useMemo(() => {
@@ -381,25 +400,45 @@ export function ProductoForm({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {values.ingredientes.map((ing, idx) => (
+                  {values.ingredientes.map((ing, idx) => {
+                    const selectedIngrediente = ingredientesActivos.find((s) => s.id === ing.ingrediente_id);
+                    const isProductoTerminado = selectedIngrediente?.es_producto_terminado === true;
+
+                    return (
                     <div key={idx} className="flex flex-wrap md:flex-nowrap gap-3 items-start md:items-center bg-white p-3 rounded shadow-sm border border-orange-100">
                       <div className="w-full md:w-1/3">
-                        <select
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm"
-                          value={ing.ingrediente_id}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setValues(v => ({
-                              ...v,
-                              ingredientes: v.ingredientes.map((c, i) => i === idx ? { ...c, ingrediente_id: val } : c)
-                            }));
-                          }}
-                        >
-                          <option value={0} disabled>Seleccione insumo...</option>
-                          {ingredientesActivos.map(opt => (
-                            <option key={opt.id} value={opt.id}>{opt.nombre}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+                            value={ing.ingrediente_id}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              const ingredienteSeleccionado = ingredientesActivos.find((s) => s.id === val);
+                              setValues(v => ({
+                                ...v,
+                                ingredientes: v.ingredientes.map((c, i) =>
+                                  i === idx
+                                    ? {
+                                        ...c,
+                                        ingrediente_id: val,
+                                        cantidad_requerida: ingredienteSeleccionado?.es_producto_terminado ? 1 : c.cantidad_requerida,
+                                      }
+                                    : c,
+                                )
+                              }));
+                            }}
+                          >
+                            <option value={0} disabled>Seleccione insumo...</option>
+                            {ingredientesActivos.map(opt => (
+                              <option key={opt.id} value={opt.id}>{opt.nombre}</option>
+                            ))}
+                          </select>
+                          {isProductoTerminado && (
+                            <span className="shrink-0 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">
+                              Terminado
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="w-24">
                         <input
@@ -407,8 +446,9 @@ export function ProductoForm({
                           min="0"
                           step="0.01"
                           placeholder="Cant."
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm"
-                          value={ing.cantidad_requerida}
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          value={isProductoTerminado ? 1 : ing.cantidad_requerida}
+                          disabled={isProductoTerminado}
                           onChange={(e) => setValues(v => ({
                             ...v,
                             ingredientes: v.ingredientes.map((c, i) => i === idx ? { ...c, cantidad_requerida: Number(e.target.value) } : c)
@@ -450,7 +490,8 @@ export function ProductoForm({
                         <Trash2 size={18} />
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

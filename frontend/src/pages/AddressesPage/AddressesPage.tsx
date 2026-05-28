@@ -4,6 +4,7 @@ import { useDirecciones } from '../../hooks/useDirecciones';
 import type { DireccionFormValues } from '../../types/direccion';
 import { getErrorMessage } from '../../utils/errors';
 import { Modal } from '../../components/ui/Modal/Modal';
+import { useToast } from '../../components/ui/Toast/Toast';
 
 const emptyForm: DireccionFormValues = {
   alias: '',
@@ -29,6 +30,7 @@ export function AddressesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState<DireccionFormValues>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const { confirm, notify } = useToast();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,6 +40,7 @@ export function AddressesPage() {
       await createDireccion(form);
       setForm(emptyForm);
       setIsModalOpen(false);
+      notify('success', 'Dirección guardada correctamente.');
     } catch (createError: unknown) {
       setFormError(getErrorMessage(createError, 'No se pudo guardar.'));
     }
@@ -107,9 +110,22 @@ export function AddressesPage() {
                   )}
                   <button
                     type="button"
-                    onClick={() => {
-                      if (window.confirm("¿Estás seguro de eliminar esta dirección?")) {
-                        deleteDireccion(direccion.id);
+                    onClick={async () => {
+                      const confirmed = await confirm({
+                        confirmLabel: 'Eliminar',
+                        message: '¿Estás seguro de eliminar esta dirección?',
+                        title: 'Eliminar direccion',
+                        type: 'danger',
+                      });
+                      if (!confirmed) {
+                        return;
+                      }
+
+                      try {
+                        await deleteDireccion(direccion.id);
+                        notify('success', 'Dirección eliminada correctamente.');
+                      } catch (deleteError) {
+                        notify('error', getErrorMessage(deleteError, 'No se pudo eliminar la dirección.'));
                       }
                     }}
                     className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-black text-ketchup hover:border-ketchup"

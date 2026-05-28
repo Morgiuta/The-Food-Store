@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePedidos } from '../../hooks/usePedidos';
 import type { Pedido } from '../../types/pedido';
 import { ClientOrderModal } from './ClientOrderModal';
+import { useToast } from '../../components/ui/Toast/Toast';
 
 const cancelables = new Set(['PENDIENTE', 'CONFIRMADO']);
 
@@ -19,6 +20,27 @@ const estadoStyles: Record<string, string> = {
 export function MyOrdersPage() {
   const { pedidos, isLoading, isFetching, error, reload, cancelarPedido, isMutating } = usePedidos();
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  const { confirm, notify } = useToast();
+
+  const handleCancel = async (pedido: Pedido) => {
+    const confirmed = await confirm({
+      confirmLabel: 'Cancelar pedido',
+      message: `¿Seguro que deseas cancelar el pedido #${pedido.id}?`,
+      title: 'Cancelar pedido',
+      type: 'danger',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await cancelarPedido(pedido.id);
+      setSelectedPedido(null);
+      notify('success', `Pedido #${pedido.id} cancelado.`);
+    } catch {
+      notify('error', 'No se pudo cancelar el pedido.');
+    }
+  };
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8">
@@ -108,11 +130,7 @@ export function MyOrdersPage() {
                   {cancelables.has(pedido.estado_codigo) && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm('¿Seguro que deseas cancelar este pedido?')) {
-                          cancelarPedido(pedido.id);
-                        }
-                      }}
+                      onClick={() => handleCancel(pedido)}
                       disabled={isMutating}
                       className="inline-flex items-center gap-2 rounded-md border border-ketchup px-4 py-2 text-sm font-black text-ketchup hover:bg-red-50 disabled:opacity-60"
                     >
@@ -132,10 +150,7 @@ export function MyOrdersPage() {
           pedido={selectedPedido}
           isMutating={isMutating}
           onClose={() => setSelectedPedido(null)}
-          onCancel={(p) => {
-            cancelarPedido(p.id);
-            setSelectedPedido(null);
-          }}
+          onCancel={handleCancel}
         />
       )}
     </section>

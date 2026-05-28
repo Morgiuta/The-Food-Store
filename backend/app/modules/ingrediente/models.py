@@ -22,6 +22,10 @@ class Ingrediente(SQLModel, table=True):
         default=Decimal("0.00"),
         sa_column=Column(Numeric(10, 2), nullable=False, default=0),
     )
+    costo_unitario: Decimal = Field(
+        default=Decimal("0.00"),
+        sa_column=Column(Numeric(10, 2), nullable=False, default=0),
+    )
     unidad: str = Field(
         default="unidad",
         sa_column=Column(String(20), nullable=False, default="unidad"),

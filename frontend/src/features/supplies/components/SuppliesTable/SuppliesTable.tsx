@@ -16,12 +16,11 @@ interface SuppliesTableProps {
   onRestore: (supply: Supply) => void;
 }
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(value));
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+  }).format(value);
 }
 
 export function SuppliesTable({
@@ -64,7 +63,7 @@ export function SuppliesTable({
                 Nombre {renderSortIcon('nombre')}
               </button>
             </th>
-            <th className="p-4 font-bold text-sm text-charcoal w-[17%]">Descripción</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Descripción</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('es_alergeno')}>
                 Tipo {renderSortIcon('es_alergeno')}
@@ -73,11 +72,7 @@ export function SuppliesTable({
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Estado</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Stock</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Unidad</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
-              <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('updated_at')}>
-                Act. {renderSortIcon('updated_at')}
-              </button>
-            </th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[12%]">Precio unitario</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[15%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
         </thead>
@@ -123,7 +118,9 @@ export function SuppliesTable({
                 </div>
               </td>
               <td className="p-4 text-sm text-gray-600">{supply.unidad}</td>
-              <td className="p-4 text-sm text-gray-500">{formatDate(supply.updated_at)}</td>
+              <td className="p-4 text-sm font-medium text-charcoal">
+                {formatCurrency(supply.costo_unitario ?? 0)}
+              </td>
               <td className="p-4">
                 <div className="flex items-center justify-end gap-2">
                   <Button variant="ghost" onClick={() => onView(supply)}>

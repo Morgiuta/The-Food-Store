@@ -151,11 +151,7 @@ export function ClientOrderModal({ pedido, isMutating, onClose, onCancel }: Clie
                     variant="ghost" 
                     className="w-full text-ketchup hover:text-red-700 hover:bg-red-50"
                     disabled={isMutating}
-                    onClick={() => {
-                      if (confirm('¿Estás seguro que deseas cancelar este pedido?')) {
-                         onCancel(pedido);
-                      }
-                    }}
+                    onClick={() => onCancel(pedido)}
                  >
                     Cancelar pedido
                  </Button>
