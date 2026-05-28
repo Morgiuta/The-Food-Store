@@ -5,6 +5,7 @@ import type { Producto } from '../../../../types/producto';
 interface ProductosTableProps {
   productos: Producto[];
   isLoading?: boolean;
+  stockPosibleMap?: Map<number, number>;
   onView: (producto: Producto) => void;
   onEdit: (producto: Producto) => void;
   onDelete: (producto: Producto) => void;
@@ -22,6 +23,7 @@ function formatCurrency(value: number): string {
 export function ProductosTable({
   productos,
   isLoading = false,
+  stockPosibleMap,
   onView,
   onEdit,
   onDelete,
@@ -97,14 +99,30 @@ export function ProductosTable({
               </td>
               <td className="p-4">
                 <div className="flex flex-col items-start gap-1">
-                  <span className={`font-bold ${prod.stock_cantidad <= 5 ? 'text-red-500' : 'text-gray-600'}`}>
-                    {prod.stock_cantidad}
-                  </span>
-                  {prod.stock_cantidad < 10 && !isDeleted && (
-                    <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                      ¡Poco Stock!
-                    </span>
-                  )}
+                  {(() => {
+                    if (!stockPosibleMap || prod.ingredientes.length === 0) return (
+                      <span className={`font-bold ${prod.stock_cantidad <= 5 ? 'text-red-500' : 'text-gray-600'}`}>
+                        {prod.stock_cantidad}
+                      </span>
+                    );
+                    const posible = stockPosibleMap.get(prod.id);
+                    if (posible === undefined) return null;
+                    if (posible >= 10) return (
+                      <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                        Elaborables: {posible}
+                      </span>
+                    );
+                    if (posible >= 1) return (
+                      <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
+                        ⚠ Solo {posible} posibles
+                      </span>
+                    );
+                    return (
+                      <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                        ✗ Sin stock de insumos
+                      </span>
+                    );
+                  })()}
                 </div>
               </td>
               <td className="p-4">

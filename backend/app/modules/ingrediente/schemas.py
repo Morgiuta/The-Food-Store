@@ -4,11 +4,11 @@ from typing import Literal, Optional
 
 from sqlmodel import Field, SQLModel
 
-
-from sqlmodel import Field, SQLModel
-
 from app.shared.schemas.base import PublicSchema
 from app.shared.schemas.pagination import PaginatedResponse
+
+
+UnidadIngrediente = Literal["unidad", "kg", "litros", "gramos", "ml"]
 
 
 class IngredienteCreate(SQLModel):
@@ -16,6 +16,8 @@ class IngredienteCreate(SQLModel):
     descripcion: Optional[str] = None
     es_alergeno: bool = False
     stock_actual: Decimal = Field(default=Decimal("0.00"), ge=0)
+    unidad: UnidadIngrediente = "unidad"
+    es_producto_terminado: bool = False
 
 
 class IngredienteUpdate(SQLModel):
@@ -23,6 +25,8 @@ class IngredienteUpdate(SQLModel):
     descripcion: Optional[str] = None
     es_alergeno: Optional[bool] = None
     stock_actual: Optional[Decimal] = Field(default=None, ge=0)
+    unidad: UnidadIngrediente = "unidad"
+    es_producto_terminado: bool = False
 
 
 class IngredientePublic(PublicSchema):
@@ -31,6 +35,8 @@ class IngredientePublic(PublicSchema):
     descripcion: Optional[str]
     es_alergeno: bool
     stock_actual: Decimal
+    unidad: UnidadIngrediente = "unidad"
+    es_producto_terminado: bool = False
     created_at: datetime
     updated_at: datetime
     deleted_at: Optional[datetime]

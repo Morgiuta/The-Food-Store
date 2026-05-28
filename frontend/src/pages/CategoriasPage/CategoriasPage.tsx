@@ -3,6 +3,7 @@ import { Modal } from '../../components/ui/Modal/Modal';
 import { ToastViewport, type ToastMessage, type ToastType } from '../../components/ui/Toast/Toast';
 import { CategoriaForm } from '../../features/categorias/components/CategoriaForm/CategoriaForm';
 import { CategoriasTable } from '../../features/categorias/components/CategoriasTable/CategoriasTable';
+import { CategoriasTree } from '../../features/categorias/components/CategoriasTree/CategoriasTree';
 import { useCategorias, useCategoriasTree } from '../../hooks/useCategorias';
 import type { CategoriasQuery, Categoria, CategoriaFormValues } from '../../types/categoria';
 import { Plus } from 'lucide-react';
@@ -19,6 +20,7 @@ export function CategoriasPage() {
   const [detailCategoria, setDetailCategoria] = useState<Categoria | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [vistaActual, setVistaActual] = useState<'grilla' | 'arbol'>('arbol');
 
   const stableQuery = useMemo(() => query, [query]);
   const {
@@ -149,11 +151,38 @@ export function CategoriasPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-100 pb-6">
             <div>
               <h3 className="text-lg font-bold">Listado de Categorías</h3>
-              <span className="text-sm text-gray-500">
-                Página {currentPage} de {totalPages}
-              </span>
+              {vistaActual === 'grilla' && (
+                <span className="text-sm text-gray-500">
+                  Página {currentPage} de {totalPages}
+                </span>
+              )}
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              {/* Toggle vista */}
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setVistaActual('grilla')}
+                  className={`px-3 py-1.5 text-sm font-bold transition-colors ${
+                    vistaActual === 'grilla'
+                      ? 'bg-primary text-white'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  📋 Grilla
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVistaActual('arbol')}
+                  className={`px-3 py-1.5 text-sm font-bold transition-colors ${
+                    vistaActual === 'arbol'
+                      ? 'bg-primary text-white'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  🌳 Árbol
+                </button>
+              </div>
               <button
                 className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center gap-2"
                 type="button"
@@ -212,36 +241,90 @@ export function CategoriasPage() {
 
           {error ? <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">{error}</div> : null}
 
-          <CategoriasTable
-            categorias={categorias}
-            isLoading={isLoading}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onRestore={handleRestore}
-          />
+          {vistaActual === 'arbol' ? (
+            <CategoriasTree
+              tree={categoriasTree}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onRestore={handleRestore}
+            />
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <label className="flex flex-col flex-1 min-w-[200px]">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Filtro de Padre</span>
+                  <select
+                    className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
+                    value={query.parent_id === null ? 'null' : (query.parent_id === undefined ? 'all' : query.parent_id)}
+                    onChange={(event) => {
+                        const val = event.target.value;
+                        if (val === 'all') updateQuery({ parent_id: undefined });
+                        else if (val === 'null') updateQuery({ parent_id: null });
+                        else updateQuery({ parent_id: Number(val) });
+                    }}
+                  >
+                    <option value="all">Todas las categorías</option>
+                    <option value="null">Solo Categorías Principales</option>
+                  </select>
+                </label>
+                <label className="flex flex-col flex-1 min-w-[200px]">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Estado (Bajas)</span>
+                  <select
+                    className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
+                    value={query.include_deleted ? 'all' : 'active'}
+                    onChange={(e) => updateQuery({ include_deleted: e.target.value === 'all' })}
+                  >
+                    <option value="active">Solo Activas</option>
+                    <option value="all">Incluir Dadas de Baja</option>
+                  </select>
+                </label>
+                <label className="flex flex-col w-32">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
+                  <select
+                    className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
+                    value={query.limit}
+                    onChange={(event) => updateQuery({ limit: Number(event.target.value) })}
+                  >
+                    <option value={8}>8</option>
+                    <option value={12}>12</option>
+                    <option value={20}>20</option>
+                  </select>
+                </label>
+              </div>
 
-          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
-            <button
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              type="button"
-              disabled={currentPage === 1 || isLoading}
-              onClick={() => updateQuery({ offset: Math.max(0, query.offset - query.limit) })}
-            >
-              Anterior
-            </button>
-            <span className="text-sm font-medium text-gray-500">
-              {total === 0 ? '0 resultados' : `${query.offset + 1}-${Math.min(query.offset + query.limit, total)} de ${total}`}
-            </span>
-            <button
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              type="button"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => updateQuery({ offset: query.offset + query.limit })}
-            >
-              Siguiente
-            </button>
-          </div>
+              <CategoriasTable
+                categorias={categorias}
+                isLoading={isLoading}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+              />
+
+              <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                <button
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                  type="button"
+                  disabled={currentPage === 1 || isLoading}
+                  onClick={() => updateQuery({ offset: Math.max(0, query.offset - query.limit) })}
+                >
+                  Anterior
+                </button>
+                <span className="text-sm font-medium text-gray-500">
+                  {total === 0 ? '0 resultados' : `${query.offset + 1}-${Math.min(query.offset + query.limit, total)} de ${total}`}
+                </span>
+                <button
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                  type="button"
+                  disabled={currentPage >= totalPages || isLoading}
+                  onClick={() => updateQuery({ offset: query.offset + query.limit })}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </>
+          )}
         </section>
       </div>
 

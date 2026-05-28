@@ -43,6 +43,24 @@ export function ProductosPage() {
   // We need to fetch all active supplies for the ingredients list (offset 0, high limit up to 100)
   const { supplies } = useSupplies({ offset: 0, limit: 100, es_alergeno: 'all', include_deleted: false, sort_by: 'nombre', sort_dir: 'asc', search: '' });
 
+  // Mapa de stockPosible: producto_id → cuántas unidades se pueden elaborar con el stock de insumos
+  const stockPosibleMap = useMemo(() => {
+    const map = new Map<number, number>();
+    productos.forEach((prod) => {
+      if (prod.ingredientes.length === 0) return; // sin receta → no calculamos
+      let minPosible = Infinity;
+      for (const ing of prod.ingredientes) {
+        if (ing.ingrediente_id === 0 || ing.cantidad_requerida <= 0) continue;
+        const supply = supplies.find((s) => s.id === ing.ingrediente_id);
+        const stockDisponible = supply ? Number(supply.stock_actual) : 0;
+        const posible = Math.floor(stockDisponible / Number(ing.cantidad_requerida));
+        if (posible < minPosible) minPosible = posible;
+      }
+      map.set(prod.id, minPosible === Infinity ? 0 : minPosible);
+    });
+    return map;
+  }, [productos, supplies]);
+
   const totalPages = Math.max(1, Math.ceil(total / query.limit));
 
   const updateQuery = (patch: Partial<ProductosQuery>) => {
@@ -262,6 +280,7 @@ export function ProductosPage() {
              <ProductosTable
                 productos={productos}
                 isLoading={isLoading}
+                stockPosibleMap={stockPosibleMap}
                 onView={handleView}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

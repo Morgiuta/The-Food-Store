@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Producto, ProductoFormValues } from '../../../../types/producto';
 import type { CategoriaTree } from '../../../../types/categoria';
@@ -37,6 +37,7 @@ export function ProductoForm({
   const [values, setValues] = useState<ProductoFormValues>(initialValues);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'receta'>('general');
+  const [margen, setMargen] = useState(0);
 
   useEffect(() => {
     setValues(
@@ -62,6 +63,7 @@ export function ProductoForm({
     );
     setSubmitAttempted(false);
     setActiveTab('general');
+    setMargen(0);
   }, [selectedProducto]);
 
   const isEditing = Boolean(selectedProducto);
@@ -122,6 +124,28 @@ export function ProductoForm({
   const categoriasOptions = getFlatOptions(categoriasTree);
   const ingredientesActivos = ingredientesList.filter(i => !i.deleted_at);
 
+  // Calculadora de precio sugerido
+  const costoCalculado = useMemo(() => {
+    if (values.ingredientes.length === 0) return 0;
+    return values.ingredientes.reduce((acc, ing) => {
+      if (ing.ingrediente_id === 0) return acc;
+      const supply = ingredientesActivos.find(s => s.id === ing.ingrediente_id);
+      if (!supply || supply.costo_unitario == null) return acc;
+      return acc + Number(ing.cantidad_requerida) * supply.costo_unitario;
+    }, 0);
+  }, [values.ingredientes, ingredientesActivos]);
+
+  const precioSugerido = costoCalculado > 0
+    ? costoCalculado * (1 + margen / 100)
+    : 0;
+
+  const tieneIngredientesConCosto = values.ingredientes.length > 0 &&
+    values.ingredientes.some(ing => {
+      if (ing.ingrediente_id === 0) return false;
+      const supply = ingredientesActivos.find(s => s.id === ing.ingrediente_id);
+      return supply?.costo_unitario != null;
+    });
+
   return (
     <form className="flex flex-col h-full" onSubmit={handleSubmit}>
       <div className="flex border-b border-gray-200 mb-6">
@@ -172,7 +196,7 @@ export function ProductoForm({
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-charcoal mb-2">Precio Base ($)</label>
+                <label className="block text-sm font-bold text-charcoal mb-2">Precio de Venta ($)</label>
                 <input
                   type="number"
                   min="0"
@@ -184,6 +208,47 @@ export function ProductoForm({
                 />
                 {submitAttempted && errors.precio_base && <p className="text-red-500 text-xs mt-1 font-medium">{errors.precio_base}</p>}
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-charcoal mb-2">Margen de ganancia (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="1"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Ej: 30"
+                  value={margen === 0 ? '' : margen}
+                  onChange={(e) => setMargen(e.target.value === '' ? 0 : Math.min(500, Math.max(0, Number(e.target.value))))}
+                />
+                <p className="text-xs text-gray-400 mt-1">Solo para calcular el precio sugerido. No se guarda.</p>
+              </div>
+
+              {tieneIngredientesConCosto && (
+                <div className="md:col-span-2 rounded-lg border border-green-200 bg-green-50 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-green-700 uppercase tracking-wide mb-2">💡 Calculadora de precio sugerido</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-green-800">Costo estimado de insumos:</span>
+                        <span className="text-sm font-black text-green-900">${costoCalculado.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-green-800">Con margen del {margen}%:</span>
+                        <span className="text-lg font-black text-green-900">${precioSugerido.toFixed(2)}</span>
+                        <span className="text-xs text-green-600 font-medium">← precio sugerido</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setValues(v => ({ ...v, precio_base: Math.round(precioSugerido * 100) / 100 }))}
+                      className="shrink-0 px-3 py-2 text-xs font-bold text-green-700 bg-white border-2 border-green-300 rounded-lg hover:bg-green-100 hover:border-green-400 transition-colors whitespace-nowrap"
+                    >
+                      Usar precio sugerido
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-bold text-charcoal mb-2">Tiempo Prep. (Mins) - Opcional</label>

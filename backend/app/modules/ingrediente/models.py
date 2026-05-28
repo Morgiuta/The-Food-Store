@@ -22,6 +22,14 @@ class Ingrediente(SQLModel, table=True):
         default=Decimal("0.00"),
         sa_column=Column(Numeric(10, 2), nullable=False, default=0),
     )
+    unidad: str = Field(
+        default="unidad",
+        sa_column=Column(String(20), nullable=False, default="unidad"),
+    )
+    es_producto_terminado: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False, default=False),
+    )
     created_at: datetime = Field(
         default_factory=utcnow,
         sa_column=Column(DateTime(timezone=True), nullable=False),

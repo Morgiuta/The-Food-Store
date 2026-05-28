@@ -6,6 +6,7 @@ const initialValues: SupplyFormValues = {
   descripcion: '',
   es_alergeno: false,
   stock_actual: 0,
+  unidad: 'unidad',
 };
 
 interface SupplyFormProps {
@@ -34,6 +35,7 @@ export function SupplyForm({
             descripcion: selectedSupply.descripcion ?? '',
             es_alergeno: selectedSupply.es_alergeno,
             stock_actual: selectedSupply.stock_actual ?? 0,
+            unidad: selectedSupply.unidad ?? 'unidad',
           }
         : initialValues,
     );
@@ -76,6 +78,7 @@ export function SupplyForm({
       descripcion: values.descripcion.trim(),
       es_alergeno: values.es_alergeno,
       stock_actual: Number(values.stock_actual),
+      unidad: values.unidad,
     });
 
     setValues(initialValues);
@@ -126,6 +129,27 @@ export function SupplyForm({
             onChange={(event) => setValues((current) => ({ ...current, stock_actual: Number(event.target.value) }))}
           />
           {submitAttempted && errors.stock_actual && <p className="text-red-500 text-xs mt-1 font-medium">{errors.stock_actual}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-charcoal mb-2">Unidad de medida</label>
+          <select
+            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent border-gray-300 bg-white"
+            name="unidad"
+            value={values.unidad}
+            onChange={(event) =>
+              setValues((current) => ({
+                ...current,
+                unidad: event.target.value as SupplyFormValues['unidad'],
+              }))
+            }
+          >
+            <option value="unidad">Unidad</option>
+            <option value="kg">Kilogramos</option>
+            <option value="litros">Litros</option>
+            <option value="gramos">Gramos</option>
+            <option value="ml">Mililitros</option>
+          </select>
         </div>
 
         <div className="flex items-end pb-3">

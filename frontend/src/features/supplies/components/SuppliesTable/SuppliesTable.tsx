@@ -59,12 +59,12 @@ export function SuppliesTable({
       <table className="w-full text-left border-collapse table-fixed">
         <thead>
           <tr className="bg-gray-50 border-y border-gray-200">
-            <th className="p-4 font-bold text-sm text-charcoal w-[20%]">
+            <th className="p-4 font-bold text-sm text-charcoal w-[18%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('nombre')}>
                 Nombre {renderSortIcon('nombre')}
               </button>
             </th>
-            <th className="p-4 font-bold text-sm text-charcoal w-[25%]">Descripción</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[17%]">Descripción</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('es_alergeno')}>
                 Tipo {renderSortIcon('es_alergeno')}
@@ -72,6 +72,7 @@ export function SuppliesTable({
             </th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Estado</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Stock</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[10%]">Unidad</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[10%]">
               <button className="flex items-center hover:text-primary transition-colors" type="button" onClick={() => onSort('updated_at')}>
                 Act. {renderSortIcon('updated_at')}
@@ -121,6 +122,7 @@ export function SuppliesTable({
                   )}
                 </div>
               </td>
+              <td className="p-4 text-sm text-gray-600">{supply.unidad}</td>
               <td className="p-4 text-sm text-gray-500">{formatDate(supply.updated_at)}</td>
               <td className="p-4">
                 <div className="flex items-center justify-end gap-2">
