@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pedidosService } from '../services/pedidosService';
+import { usePedidosWebSocket } from './usePedidosWebSocket';
 
 export function usePedidos() {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export function usePedidos() {
 
   const pedidos = data?.items || [];
   const total = data?.total || 0;
+  usePedidosWebSocket(pedidos.map((pedido) => pedido.id));
 
   // Mutations
   const avanzarEstadoMutation = useMutation({

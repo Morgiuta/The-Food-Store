@@ -44,6 +44,24 @@ AVANCE_ESTADOS_VALIDOS = {
 
 ESTADOS_CANCELABLES = {"PENDIENTE", "CONFIRMADO"}
 
+EVENTOS_WS = {
+    "PENDIENTE": "NUEVO_PEDIDO",
+    "CONFIRMADO": "PEDIDO_CONFIRMADO",
+    "EN_PREP": "PEDIDO_EN_PREPARACION",
+    "EN_CAMINO": "PEDIDO_EN_CAMINO",
+    "ENTREGADO": "PEDIDO_ENTREGADO",
+    "CANCELADO": "PEDIDO_CANCELADO",
+}
+
+ROLES_POR_ESTADO = {
+    "PENDIENTE": ["PEDIDOS", "STOCK", "ADMIN"],
+    "CONFIRMADO": ["PEDIDOS", "STOCK", "ADMIN"],
+    "EN_PREP": ["STOCK", "PEDIDOS", "ADMIN"],
+    "EN_CAMINO": ["PEDIDOS", "STOCK", "ADMIN"],
+    "ENTREGADO": ["PEDIDOS", "ADMIN"],
+    "CANCELADO": ["PEDIDOS", "STOCK", "ADMIN"],
+}
+
 
 class PedidosService:
     def __init__(self, session: Session) -> None:
@@ -81,7 +99,7 @@ class PedidosService:
     def is_admin(self, usuario_id: int) -> bool:
         return self._has_any_role(usuario_id, {"ADMIN"})
 
-    def create_pedido(self, usuario_id: int, data: PedidoCreate) -> PedidoPublic:
+    async def create_pedido(self, usuario_id: int, data: PedidoCreate) -> PedidoPublic:
         pedido_id: int
 
         with PedidosUnitOfWork(self.session) as uow:
@@ -157,7 +175,9 @@ class PedidosService:
             )
             pedido_id = pedido.id
 
-        return self.get_pedido(pedido_id)
+        result = self.get_pedido(pedido_id)
+        await self._emit_ws_events(result)
+        return result
 
     def get_pedido(
         self,
@@ -172,7 +192,7 @@ class PedidosService:
             )
         return self._to_public(pedido)
 
-    def change_estado(
+    async def change_estado(
         self,
         pedido_id: int,
         estado_hacia: str,
@@ -185,9 +205,12 @@ class PedidosService:
             self._validate_transition(pedido.estado_codigo, estado_hacia, motivo, uow.pedidos)
             pedido.updated_at = utcnow()
             uow.pedidos.update_estado(pedido, estado_hacia, usuario_id, motivo)
-        return self.get_pedido(pedido_id)
 
-    def avanzar_estado(
+        result = self.get_pedido(pedido_id)
+        await self._emit_ws_events(result)
+        return result
+
+    async def avanzar_estado(
         self,
         pedido_id: int,
         nuevo_estado: str,
@@ -214,9 +237,12 @@ class PedidosService:
                 usuario_id=usuario_id,
                 motivo=None,
             )
-        return self.get_pedido(pedido_id)
 
-    def cancelar_pedido(
+        result = self.get_pedido(pedido_id)
+        await self._emit_ws_events(result)
+        return result
+
+    async def cancelar_pedido(
         self,
         pedido_id: int,
         usuario_id: int,
@@ -246,9 +272,13 @@ class PedidosService:
                 usuario_id=usuario_id,
                 motivo="Cancelacion del pedido",
             )
-        return self.get_pedido(pedido_id)
 
-    def register_pago(self, pedido_id: int, data: PagoCreate) -> PagoPublic:
+        result = self.get_pedido(pedido_id)
+        await self._emit_ws_events(result)
+        return result
+
+    async def register_pago(self, pedido_id: int, data: PagoCreate) -> PagoPublic:
+        estado_actualizado = False
         try:
             with PedidosUnitOfWork(self.session) as uow:
                 pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
@@ -285,6 +315,7 @@ class PedidosService:
                             usuario_id=None,
                             motivo=data.mp_status_detail or f"Pago {data.mp_status}",
                         )
+                        estado_actualizado = True
                     except HTTPException:
                         pass
 
@@ -295,7 +326,25 @@ class PedidosService:
             ) from exc
 
         self.session.refresh(pago)
-        return self._pago_to_public(pago)
+        result = self._pago_to_public(pago)
+        if estado_actualizado:
+            await self._emit_ws_events(self.get_pedido(pedido_id))
+        return result
+
+    async def _emit_ws_events(self, pedido: PedidoPublic) -> None:
+        event_type = EVENTOS_WS.get(pedido.estado_codigo)
+        if not event_type:
+            return
+
+        from app.core.websocket import manager
+
+        roles = ROLES_POR_ESTADO.get(pedido.estado_codigo, [])
+        await manager.broadcast_to_order_and_roles(
+            order_id=pedido.id,
+            roles=roles,
+            event_type=event_type,
+            data=pedido.model_dump(mode="json"),
+        )
 
     def _has_any_role(self, usuario_id: int, roles: set[str]) -> bool:
         current_roles = set(self.pedidos.get_role_codes(usuario_id))
