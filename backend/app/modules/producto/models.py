@@ -2,7 +2,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.types import JSON
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -21,6 +31,14 @@ class Producto(SQLModel, table=True):
     imagen_url: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     imagenes_url: list[str] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
     stock_cantidad: int = Field(default=0, sa_column=Column(Integer, nullable=False, default=0))
+    unidad_venta_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            ForeignKey("unidades_medida.id"),
+            nullable=True,
+        ),
+    )
     tiempo_prep_min: Optional[int] = Field(
         default=None,
         sa_column=Column(Integer, nullable=True),
@@ -45,6 +63,7 @@ class Producto(SQLModel, table=True):
     productos_categoria: list["ProductoCategoria"] = Relationship(back_populates="producto")
     productos_ingrediente: list["ProductoIngrediente"] = Relationship(back_populates="producto")
     detalles_pedido: list["DetallePedido"] = Relationship(back_populates="producto")
+    unidad_venta: Optional["UnidadMedida"] = Relationship(back_populates="productos")
 
     __table_args__ = (
         CheckConstraint("precio_base >= 0", name="ck_producto_precio_base_non_negative"),
@@ -59,4 +78,5 @@ class Producto(SQLModel, table=True):
 if TYPE_CHECKING:
     from app.modules.producto_categoria.models import ProductoCategoria
     from app.modules.producto_ingrediente.models import ProductoIngrediente
+    from app.modules.unidad_medida.models import UnidadMedida
     from app.modules.ventas.models import DetallePedido

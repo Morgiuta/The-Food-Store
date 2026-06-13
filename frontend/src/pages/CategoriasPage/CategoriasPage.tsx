@@ -9,8 +9,8 @@ import type { CategoriasQuery, Categoria, CategoriaFormValues } from '../../type
 import { Plus } from 'lucide-react';
 
 const defaultQuery: CategoriasQuery = {
-  offset: 0,
-  limit: 8,
+  page: 1,
+  size: 8,
   parent_id: null,
 };
 
@@ -38,14 +38,14 @@ export function CategoriasPage() {
 
   const { tree: categoriasTree } = useCategoriasTree();
 
-  const totalPages = Math.max(1, Math.ceil(total / query.limit));
-  const currentPage = Math.floor(query.offset / query.limit) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / query.size));
+  const currentPage = query.page;
   const existingNames = categorias
     .filter((cat) => !cat.deleted_at && cat.id !== selectedCategoria?.id)
     .map((cat) => cat.nombre);
 
   const updateQuery = (patch: Partial<CategoriasQuery>) => {
-    setQuery((current) => ({ ...current, ...patch, offset: patch.offset ?? 0 }));
+    setQuery((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
   };
 
   const handleSubmit = async (values: CategoriaFormValues) => {
@@ -223,8 +223,8 @@ export function CategoriasPage() {
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
                 className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
-                value={query.limit}
-                onChange={(event) => updateQuery({ limit: Number(event.target.value) })}
+                value={query.size}
+                onChange={(event) => updateQuery({ size: Number(event.target.value) })}
               >
                 <option value={8}>8</option>
                 <option value={12}>12</option>
@@ -277,8 +277,8 @@ export function CategoriasPage() {
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
                   <select
                     className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
-                    value={query.limit}
-                    onChange={(event) => updateQuery({ limit: Number(event.target.value) })}
+                    value={query.size}
+                    onChange={(event) => updateQuery({ size: Number(event.target.value) })}
                   >
                     <option value={8}>8</option>
                     <option value={12}>12</option>
@@ -301,18 +301,18 @@ export function CategoriasPage() {
                   className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
                   type="button"
                   disabled={currentPage === 1 || isLoading}
-                  onClick={() => updateQuery({ offset: Math.max(0, query.offset - query.limit) })}
+                  onClick={() => updateQuery({ page: Math.max(1, query.page - 1) })}
                 >
                   Anterior
                 </button>
                 <span className="text-sm font-medium text-gray-500">
-                  {total === 0 ? '0 resultados' : `${query.offset + 1}-${Math.min(query.offset + query.limit, total)} de ${total}`}
+                  {total === 0 ? '0 resultados' : `${(query.page - 1) * query.size + 1}-${Math.min(query.page * query.size, total)} de ${total}`}
                 </span>
                 <button
                   className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
                   type="button"
                   disabled={currentPage >= totalPages || isLoading}
-                  onClick={() => updateQuery({ offset: query.offset + query.limit })}
+                  onClick={() => updateQuery({ page: query.page + 1 })}
                 >
                   Siguiente
                 </button>

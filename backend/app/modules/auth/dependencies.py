@@ -17,6 +17,11 @@ from app.modules.auth.service import (
 class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
     async def __call__(self, request: Request) -> str | None:
         token = request.cookies.get("access_token")
+        if not token:
+            authorization = request.headers.get("Authorization")
+            scheme, _, value = authorization.partition(" ") if authorization else ("", "", "")
+            if scheme.lower() == "bearer" and value:
+                token = value
 
         if not token:
             if self.auto_error:

@@ -51,8 +51,11 @@ class IngredienteService(BaseService):
             ingredientes = uow.ingredientes.list_all(params)
             total = uow.ingredientes.count_all(params)
             result = IngredienteList(
-                data=[IngredientePublic.model_validate(ingrediente) for ingrediente in ingredientes],
+                items=[IngredientePublic.model_validate(ingrediente) for ingrediente in ingredientes],
                 total=total,
+                page=params.page,
+                size=params.size,
+                pages=max(1, (total + params.size - 1) // params.size),
             )
         return result
 
@@ -80,7 +83,7 @@ class IngredienteService(BaseService):
 
             ingrediente.updated_at = utcnow()
             uow.ingredientes.add(ingrediente)
-            uow.ingredientes.session.flush()
+            uow.ingredientes.flush()
 
             if "stock_actual" in patch:
                 with ProductoUnitOfWork(self._session) as prod_uow:
@@ -92,7 +95,7 @@ class IngredienteService(BaseService):
                         if producto:
                             prod_svc.recalcular_stock(prod_uow, producto)
                             prod_uow.productos.add(producto)
-                    prod_uow.productos.session.flush()
+                    prod_uow.productos.flush()
 
             result = IngredientePublic.model_validate(ingrediente)
         return result

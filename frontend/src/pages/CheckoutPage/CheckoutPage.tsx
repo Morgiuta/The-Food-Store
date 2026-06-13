@@ -36,7 +36,9 @@ export function CheckoutPage() {
         detalles: items.map((item) => ({
           producto_id: item.producto.id,
           cantidad: item.cantidad,
-          personalizacion: null,
+          personalizacion: {
+            ingredientes_removidos: [],
+          },
         })),
       }),
     onSuccess: () => {

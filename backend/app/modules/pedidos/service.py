@@ -22,8 +22,7 @@ from app.modules.ventas.schemas import (
 TRANSICIONES_VALIDAS = {
     "PENDIENTE": {"CONFIRMADO", "CANCELADO"},
     "CONFIRMADO": {"EN_PREP", "CANCELADO"},
-    "EN_PREP": {"EN_CAMINO", "CANCELADO"},
-    "EN_CAMINO": {"ENTREGADO"},
+    "EN_PREP": {"ENTREGADO", "CANCELADO"},
 }
 
 MP_STATUS_TO_ESTADO = {
@@ -38,8 +37,7 @@ MP_STATUS_TO_ESTADO = {
 AVANCE_ESTADOS_VALIDOS = {
     "PENDIENTE": "CONFIRMADO",
     "CONFIRMADO": "EN_PREP",
-    "EN_PREP": "EN_CAMINO",
-    "EN_CAMINO": "ENTREGADO",
+    "EN_PREP": "ENTREGADO",
 }
 
 ESTADOS_CANCELABLES = {"PENDIENTE", "CONFIRMADO"}
@@ -54,17 +52,17 @@ class PedidosService:
         self,
         current_user_id: int,
         page: int = 1,
-        limit: int = 10,
+        size: int = 10,
     ) -> PedidoList:
-        offset = (page - 1) * limit
+        offset = (page - 1) * size
         if self.can_view_all(current_user_id):
-            pedidos = self.pedidos.get_all(offset=offset, limit=limit)
+            pedidos = self.pedidos.get_all(offset=offset, limit=size)
             total = self.pedidos.count_all()
         else:
             pedidos = self.pedidos.get_by_usuario(
                 current_user_id,
                 offset=offset,
-                limit=limit,
+                limit=size,
             )
             total = self.pedidos.count_by_usuario(current_user_id)
 
@@ -72,7 +70,8 @@ class PedidosService:
             items=[self._to_public(pedido) for pedido in pedidos],
             total=total,
             page=page,
-            limit=limit,
+            size=size,
+            pages=max(1, (total + size - 1) // size),
         )
 
     def can_view_all(self, usuario_id: int) -> bool:
@@ -171,6 +170,22 @@ class PedidosService:
                 detail=f"Pedido con id={pedido_id} no encontrado",
             )
         return self._to_public(pedido)
+
+    def get_historial(
+        self,
+        pedido_id: int,
+        usuario_id: int | None = None,
+    ) -> list[HistorialEstadoPedidoPublic]:
+        pedido = self._get_pedido_or_404(pedido_id)
+        if usuario_id is not None and pedido.usuario_id != usuario_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pedido con id={pedido_id} no encontrado",
+            )
+        return [
+            HistorialEstadoPedidoPublic.model_validate(item)
+            for item in self.pedidos.list_historial(pedido_id)
+        ]
 
     def change_estado(
         self,
@@ -294,8 +309,7 @@ class PedidosService:
                 detail="El pago ya fue registrado",
             ) from exc
 
-        self.session.refresh(pago)
-        return self._pago_to_public(pago)
+        return self._pago_to_public(self.pedidos.refresh_pago(pago))
 
     def _has_any_role(self, usuario_id: int, roles: set[str]) -> bool:
         current_roles = set(self.pedidos.get_role_codes(usuario_id))

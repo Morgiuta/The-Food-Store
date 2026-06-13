@@ -7,6 +7,7 @@ from app.modules.direcciones.router import router as direcciones_router
 from app.modules.ingrediente.router import router as ingrediente_router
 from app.modules.pedidos.router import router as pedidos_router
 from app.modules.producto.router import router as producto_router
+from app.modules.unidad_medida.router import router as unidad_medida_router
 from app.modules.ventas.router import router as ventas_router
 
 api_router = APIRouter()
@@ -22,6 +23,11 @@ api_router.include_router(
     producto_router,
     prefix="/productos",
     tags=["productos"],
+)
+api_router.include_router(
+    unidad_medida_router,
+    prefix="/unidades-medida",
+    tags=["unidades-medida"],
 )
 api_router.include_router(
     ingrediente_router,

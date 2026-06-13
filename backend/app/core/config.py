@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     secret_key: str = Field(default_factory=lambda: token_urlsafe(32), min_length=32)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
 
     @computed_field
     @property

@@ -33,11 +33,6 @@ const statusConfig: Record<string, { label: string; buttonColor: string; next?: 
   EN_PREP: { 
     buttonColor: 'bg-orange-500 hover:bg-orange-600 text-white',
     label: 'En Preparación', 
-    next: 'EN_CAMINO' 
-  },
-  EN_CAMINO: { 
-    buttonColor: 'bg-green-500 hover:bg-green-600 text-white',
-    label: 'En Camino', 
     next: 'ENTREGADO' 
   },
   ENTREGADO: { 
@@ -124,7 +119,6 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
                  pedido.estado_codigo === 'PENDIENTE' ? 'text-yellow-600' :
                  pedido.estado_codigo === 'CONFIRMADO' ? 'text-blue-600' :
                  pedido.estado_codigo === 'EN_PREP' ? 'text-orange-600' :
-                 pedido.estado_codigo === 'EN_CAMINO' ? 'text-green-500' :
                  pedido.estado_codigo === 'ENTREGADO' ? 'text-green-600' :
                  'text-gray-600'
               }`}>{currentConfig?.label || pedido.estado_codigo}</p>

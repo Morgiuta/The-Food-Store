@@ -51,7 +51,7 @@ export function ProductosTable({
           <tr className="bg-gray-50 border-y border-gray-200">
             <th className="p-4 font-bold text-sm text-charcoal w-[35%]">Producto</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Precio</th>
-            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Stock U.</th>
+            <th className="p-4 font-bold text-sm text-charcoal w-[15%]">Stock</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[15%] text-center">Disponibilidad</th>
             <th className="p-4 font-bold text-sm text-charcoal w-[20%] text-right" aria-label="Acciones">Acciones</th>
           </tr>
@@ -102,7 +102,7 @@ export function ProductosTable({
                   {(() => {
                     if (!stockPosibleMap || prod.ingredientes.length === 0) return (
                       <span className={`font-bold ${prod.stock_cantidad <= 5 ? 'text-red-500' : 'text-gray-600'}`}>
-                        {prod.stock_cantidad}
+                        {prod.stock_cantidad} {prod.unidad_venta?.simbolo ?? 'u.'}
                       </span>
                     );
                     const posible = stockPosibleMap.get(prod.id);

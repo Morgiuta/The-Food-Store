@@ -18,12 +18,13 @@ export interface UsuarioListResponse {
   items: UsuarioPublic[];
   total: number;
   page: number;
-  limit: number;
+  size: number;
+  pages: number;
 }
 
 export interface UsuariosQuery {
   page: number;
-  limit: number;
+  size: number;
   rol?: string;
 }
 

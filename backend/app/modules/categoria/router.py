@@ -32,8 +32,8 @@ def create_categoria(
 @router.get("/", response_model=CategoriaList)
 def list_categorias(
     request: Request,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
     parent_id: Annotated[str | None, Query()] = None,
     include_deleted: Annotated[bool, Query()] = False,
     svc: CategoriaService = Depends(get_categoria_service),
@@ -59,8 +59,8 @@ def list_categorias(
             )
 
     return svc.get_all(
-        offset=offset,
-        limit=limit,
+        page=page,
+        size=size,
         parent_id=parent_id_value,
         filter_parent=filter_parent,
         include_deleted=include_deleted,

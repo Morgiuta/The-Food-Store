@@ -19,15 +19,18 @@ export interface CategoriaFormValues {
 }
 
 export interface CategoriasQuery {
-  offset: number;
-  limit: number;
+  page: number;
+  size: number;
   parent_id?: number | null;
   include_deleted?: boolean;
 }
 
 export interface CategoriasResponse {
-  data: Categoria[];
+  items: Categoria[];
   total: number;
+  page: number;
+  size: number;
+  pages: number;
 }
 
 export interface CategoriaTree extends Categoria {

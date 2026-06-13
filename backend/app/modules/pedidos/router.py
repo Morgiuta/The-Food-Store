@@ -8,6 +8,7 @@ from app.modules.auth.models import Usuario
 from app.modules.pedidos.schemas import PedidoEstadoPatch, PedidoList
 from app.modules.pedidos.service import PedidosService
 from app.modules.ventas.schemas import (
+    HistorialEstadoPedidoPublic,
     PagoCreate,
     PagoPublic,
     PedidoCreate,
@@ -41,13 +42,13 @@ def list_pedidos(
         Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
     ],
     page: Annotated[int, Query(ge=1)] = 1,
-    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    size: Annotated[int, Query(ge=1, le=100)] = 10,
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoList:
     return svc.list_pedidos_for_user(
         current_user_id=current_user.id or 0,
         page=page,
-        limit=limit,
+        size=size,
     )
 
 
@@ -62,6 +63,19 @@ def get_pedido(
 ) -> PedidoPublic:
     usuario_id = None if svc.can_view_all(current_user.id or 0) else current_user.id
     return svc.get_pedido(pedido_id, usuario_id=usuario_id)
+
+
+@router.get("/{pedido_id}/historial", response_model=list[HistorialEstadoPedidoPublic])
+def get_pedido_historial(
+    pedido_id: Annotated[int, Path(gt=0)],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT")),
+    ],
+    svc: PedidosService = Depends(get_pedidos_service),
+) -> list[HistorialEstadoPedidoPublic]:
+    usuario_id = None if svc.can_view_all(current_user.id or 0) else current_user.id
+    return svc.get_historial(pedido_id, usuario_id=usuario_id)
 
 
 @router.post("/{pedido_id}/estado", response_model=PedidoPublic)
@@ -99,6 +113,21 @@ def cancelar_pedido(
     current_user: Annotated[
         Usuario,
         Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+    ],
+    svc: PedidosService = Depends(get_pedidos_service),
+) -> PedidoPublic:
+    return svc.cancelar_pedido(
+        pedido_id=pedido_id,
+        usuario_id=current_user.id or 0,
+    )
+
+
+@router.delete("/{pedido_id}", response_model=PedidoPublic)
+def delete_pedido(
+    pedido_id: Annotated[int, Path(gt=0)],
+    current_user: Annotated[
+        Usuario,
+        Depends(require_roles("ADMIN", "CLIENT")),
     ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:

@@ -3,7 +3,17 @@ from sqlmodel import Field, SQLModel
 
 class Token(SQLModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+    expires_in: int
+
+
+class RefreshTokenRequest(SQLModel):
+    refresh_token: str = Field(min_length=1)
+
+
+class LogoutRequest(SQLModel):
+    refresh_token: str | None = Field(default=None)
 
 
 class TokenData(SQLModel):

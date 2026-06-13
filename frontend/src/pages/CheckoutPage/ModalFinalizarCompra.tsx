@@ -19,7 +19,7 @@ interface ModalFinalizarCompraProps {
 const iconMap: Record<string, React.ReactNode> = {
   EFECTIVO: <Banknote size={24} className="text-emerald-600" />,
   TRANSFERENCIA: <Wallet size={24} className="text-blue-600" />,
-  MERCADO_PAGO: <CreditCard size={24} className="text-sky-500" />
+  MERCADOPAGO: <CreditCard size={24} className="text-sky-500" />
 };
 
 export function ModalFinalizarCompra({
@@ -38,7 +38,7 @@ export function ModalFinalizarCompra({
   if (!isOpen) return null;
 
   const total = subtotal + envio;
-  const isMercadoPago = selectedFormaPago === 'MERCADO_PAGO';
+  const isMercadoPago = selectedFormaPago === 'MERCADOPAGO';
 
   const handleConfirm = () => {
     if (selectedFormaPago && !isMercadoPago) {
@@ -92,7 +92,7 @@ export function ModalFinalizarCompra({
                  <div className="p-4 text-center font-bold text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">Cargando métodos de pago...</div>
               ) : (
                  <>
-                    {formasPago.filter(fp => fp.habilitado && fp.codigo === 'EFECTIVO').map(fp => (
+                    {formasPago.filter(fp => fp.habilitado && fp.codigo !== 'MERCADOPAGO').map(fp => (
                        <label 
                          key={fp.codigo}
                          className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
@@ -118,18 +118,18 @@ export function ModalFinalizarCompra({
                     {/* Hardcoded Mercado Pago Placeholder */}
                     <label 
                        className={`relative overflow-hidden flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                          selectedFormaPago === 'MERCADO_PAGO' ? 'border-[#009EE3] bg-[#009EE3]/5' : 'border-gray-200 bg-white hover:border-gray-300'
+                          selectedFormaPago === 'MERCADOPAGO' ? 'border-[#009EE3] bg-[#009EE3]/5' : 'border-gray-200 bg-white hover:border-gray-300'
                        }`}
                     >
                        <input 
                          type="radio" 
                          name="forma_pago" 
                          className="sr-only" 
-                         checked={selectedFormaPago === 'MERCADO_PAGO'}
-                         onChange={() => setSelectedFormaPago('MERCADO_PAGO')}
+                         checked={selectedFormaPago === 'MERCADOPAGO'}
+                         onChange={() => setSelectedFormaPago('MERCADOPAGO')}
                        />
                        <div className="w-10 h-10 rounded-full bg-[#009EE3]/10 flex items-center justify-center shrink-0">
-                          {iconMap['MERCADO_PAGO']}
+                          {iconMap.MERCADOPAGO}
                        </div>
                        <div className="flex-1">
                           <div className="flex items-center justify-between">

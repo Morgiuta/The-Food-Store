@@ -3,6 +3,8 @@ from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
+from app.shared.schemas.pagination import PaginatedResponse
+
 
 class RolPublic(SQLModel):
     codigo: str
@@ -20,11 +22,8 @@ class UsuarioPublic(SQLModel):
     updated_at: datetime
 
 
-class UsuarioList(SQLModel):
-    items: list[UsuarioPublic]
-    total: int
-    page: int
-    limit: int
+class UsuarioList(PaginatedResponse[UsuarioPublic]):
+    pass
 
 
 class UsuarioUpdate(SQLModel):

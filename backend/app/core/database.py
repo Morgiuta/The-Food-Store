@@ -15,6 +15,7 @@ from app.modules.ingrediente.models import Ingrediente  # noqa: F401
 from app.modules.producto.models import Producto  # noqa: F401
 from app.modules.producto_categoria.models import ProductoCategoria  # noqa: F401
 from app.modules.producto_ingrediente.models import ProductoIngrediente  # noqa: F401
+from app.modules.unidad_medida.models import UnidadMedida  # noqa: F401
 from app.modules.ventas.models import (  # noqa: F401
     DetallePedido,
     EstadoPedido,
@@ -39,6 +40,7 @@ def create_db_and_tables() -> None:
     migrate_direcciones_to_direcciones_entrega()
     ensure_direcciones_usuario_fk()
     ensure_pedido_direccion_fk()
+    ensure_producto_unidad_venta_fk()
     ensure_historial_estado_append_only()
 
 
@@ -291,6 +293,47 @@ def ensure_pedido_direccion_fk() -> None:
         )
 
 
+def ensure_producto_unidad_venta_fk() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("productos"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("productos")}
+    if "unidad_venta_id" not in columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE productos ADD COLUMN unidad_venta_id INTEGER")
+            )
+
+    if engine.dialect.name != "postgresql":
+        return
+
+    if not inspector.has_table("unidades_medida"):
+        return
+
+    producto_fks = [
+        fk
+        for fk in inspector.get_foreign_keys("productos")
+        if fk.get("constrained_columns") == ["unidad_venta_id"]
+    ]
+    if any(fk.get("referred_table") == "unidades_medida" for fk in producto_fks):
+        return
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                ALTER TABLE productos
+                ADD CONSTRAINT productos_unidad_venta_id_fkey
+                FOREIGN KEY (unidad_venta_id)
+                REFERENCES unidades_medida(id)
+                ON DELETE SET NULL
+                NOT VALID
+                """
+            )
+        )
+
+
 def normalize_pedido_estado_codes() -> None:
     if engine.dialect.name != "postgresql":
         return
@@ -309,7 +352,7 @@ def normalize_pedido_estado_codes() -> None:
             text("UPDATE pedidos SET estado_codigo = 'EN_PREP' WHERE estado_codigo = 'EN_PROCESO'")
         )
         connection.execute(
-            text("UPDATE pedidos SET estado_codigo = 'EN_CAMINO' WHERE estado_codigo = 'LISTO'")
+            text("UPDATE pedidos SET estado_codigo = 'EN_PREP' WHERE estado_codigo IN ('LISTO', 'EN_CAMINO')")
         )
         connection.execute(
             text(
@@ -333,8 +376,8 @@ def normalize_pedido_estado_codes() -> None:
             text(
                 """
                 UPDATE historial_estados_pedido
-                SET estado_desde = 'EN_CAMINO'
-                WHERE estado_desde = 'LISTO'
+                SET estado_desde = 'EN_PREP'
+                WHERE estado_desde IN ('LISTO', 'EN_CAMINO')
                 """
             )
         )
@@ -342,12 +385,12 @@ def normalize_pedido_estado_codes() -> None:
             text(
                 """
                 UPDATE historial_estados_pedido
-                SET estado_hacia = 'EN_CAMINO'
-                WHERE estado_hacia = 'LISTO'
+                SET estado_hacia = 'EN_PREP'
+                WHERE estado_hacia IN ('LISTO', 'EN_CAMINO')
                 """
             )
         )
-        connection.execute(text("DELETE FROM estados_pedido WHERE codigo IN ('EN_PROCESO', 'LISTO')"))
+        connection.execute(text("DELETE FROM estados_pedido WHERE codigo IN ('EN_PROCESO', 'LISTO', 'EN_CAMINO')"))
 
 
 def migrate_direcciones_to_direcciones_entrega() -> None:

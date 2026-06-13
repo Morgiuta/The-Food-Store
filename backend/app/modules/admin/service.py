@@ -44,16 +44,17 @@ class UsuarioService(BaseService):
             updated_at=usuario.updated_at,
         )
 
-    def list(self, page: int = 1, limit: int = 10, rol: str | None = None) -> UsuarioList:
+    def list(self, page: int = 1, size: int = 10, rol: str | None = None) -> UsuarioList:
         repo = self._repo()
-        offset = (page - 1) * limit
-        usuarios = repo.list_active(offset=offset, limit=limit, rol_nombre=rol)
+        offset = (page - 1) * size
+        usuarios = repo.list_active(offset=offset, limit=size, rol_nombre=rol)
         total = repo.count_active(rol_nombre=rol)
         return UsuarioList(
             items=[self._to_public(repo, usuario) for usuario in usuarios],
             total=total,
             page=page,
-            limit=limit,
+            size=size,
+            pages=max(1, (total + size - 1) // size),
         )
 
     def get_by_id(self, usuario_id: int) -> UsuarioPublic:

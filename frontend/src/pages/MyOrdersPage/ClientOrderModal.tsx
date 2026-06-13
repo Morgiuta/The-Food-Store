@@ -31,10 +31,6 @@ const statusConfig: Record<string, { label: string; textColor: string }> = {
     label: 'En Preparación', 
     textColor: 'text-orange-600'
   },
-  EN_CAMINO: { 
-    label: 'En Camino', 
-    textColor: 'text-green-500'
-  },
   ENTREGADO: { 
     label: 'Entregado',
     textColor: 'text-green-600'

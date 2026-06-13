@@ -33,7 +33,7 @@ def create_producto(
 @router.get("/", response_model=ProductoList)
 def list_productos(
     page: Annotated[int, Query(ge=1)] = 1,
-    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    size: Annotated[int, Query(ge=1, le=100)] = 10,
     categoria_id: Annotated[int | None, Query(gt=0)] = None,
     disponible: Annotated[bool | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=150)] = None,
@@ -42,7 +42,7 @@ def list_productos(
 ) -> ProductoList:
     return svc.get_all(
         page=page,
-        limit=limit,
+        size=size,
         categoria_id=categoria_id,
         disponible=disponible,
         q=q,

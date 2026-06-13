@@ -67,16 +67,17 @@ class CategoriaService(BaseService):
 
     def get_all(
         self,
-        offset: int = 0,
-        limit: int = 20,
+        page: int = 1,
+        size: int = 20,
         parent_id: int | None = None,
         filter_parent: bool = False,
         include_deleted: bool = False,
     ) -> CategoriaList:
         with CategoriaUnitOfWork(self._session) as uow:
+            offset = (page - 1) * size
             categorias = uow.categorias.list_active(
                 offset=offset,
-                limit=limit,
+                limit=size,
                 parent_id=parent_id,
                 filter_parent=filter_parent,
                 include_deleted=include_deleted,
@@ -87,8 +88,11 @@ class CategoriaService(BaseService):
                 include_deleted=include_deleted,
             )
             result = CategoriaList(
-                data=[CategoriaPublic.model_validate(categoria) for categoria in categorias],
+                items=[CategoriaPublic.model_validate(categoria) for categoria in categorias],
                 total=total,
+                page=page,
+                size=size,
+                pages=max(1, (total + size - 1) // size),
             )
         return result
 

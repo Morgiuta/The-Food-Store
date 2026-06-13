@@ -3,8 +3,8 @@ import { api } from './api';
 
 function buildQuery(params: CategoriasQuery): string {
   const query = new URLSearchParams();
-  query.set('offset', String(params.offset));
-  query.set('limit', String(params.limit));
+  query.set('page', String(params.page));
+  query.set('size', String(params.size));
   
   if (params.parent_id !== undefined && params.parent_id !== null) {
     query.set('parent_id', String(params.parent_id));

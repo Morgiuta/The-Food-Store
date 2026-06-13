@@ -26,13 +26,16 @@ export interface SuppliesQuery {
   search: string;
   es_alergeno: 'all' | 'true' | 'false';
   include_deleted: boolean;
-  offset: number;
-  limit: number;
+  page: number;
+  size: number;
   sort_by: 'id' | 'nombre' | 'es_alergeno' | 'created_at' | 'updated_at';
   sort_dir: 'asc' | 'desc';
 }
 
 export interface SuppliesResponse {
-  data: Supply[];
+  items: Supply[];
   total: number;
+  page: number;
+  size: number;
+  pages: number;
 }

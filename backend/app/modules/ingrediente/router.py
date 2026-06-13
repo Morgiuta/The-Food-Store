@@ -34,8 +34,8 @@ def list_ingredientes(
     search: Annotated[str | None, Query(max_length=100)] = None,
     es_alergeno: Annotated[bool | None, Query()] = None,
     include_deleted: Annotated[bool, Query()] = False,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20,
     sort_by: Annotated[
         str,
         Query(pattern="^(id|nombre|es_alergeno|created_at|updated_at)$"),
@@ -48,8 +48,8 @@ def list_ingredientes(
         search=search,
         es_alergeno=es_alergeno,
         include_deleted=include_deleted,
-        offset=offset,
-        limit=limit,
+        page=page,
+        size=size,
         sort_by=sort_by,
         sort_dir=sort_dir,
     )

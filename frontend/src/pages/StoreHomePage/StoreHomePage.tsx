@@ -9,10 +9,10 @@ export function StoreHomePage() {
   const [categoriaId, setCategoriaId] = useState<number | undefined>(undefined);
   const [searchParams] = useSearchParams();
   const search = searchParams.get('q') || '';
-  const { categorias } = useCategorias({ offset: 0, limit: 100 });
+  const { categorias } = useCategorias({ page: 1, size: 100 });
   const { productos, isLoading, error } = useProductos({
     page: 1,
-    limit: 60,
+    size: 60,
     categoria_id: categoriaId,
     disponible: true,
     q: search.trim() || undefined,
@@ -142,7 +142,9 @@ export function StoreHomePage() {
                       <span className="text-xs font-bold uppercase text-muted">
                         {principal ? categoriasById.get(principal.categoria_id) || 'Categoria' : 'Catalogo'}
                       </span>
-                      <span className="text-xs font-bold text-lettuce">Stock {producto.stock_cantidad}</span>
+                      <span className="text-xs font-bold text-lettuce">
+                        Stock {producto.stock_cantidad} {producto.unidad_venta?.simbolo ?? 'u.'}
+                      </span>
                     </div>
                   </div>
                 </div>

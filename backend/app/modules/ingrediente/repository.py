@@ -63,12 +63,13 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         if params.sort_dir == "desc":
             sort_column = sort_column.desc()
 
+        offset = (params.page - 1) * params.size
         return list(
             self.session.exec(
                 self._apply_filters(select(Ingrediente), params)
                 .order_by(sort_column, Ingrediente.id)
-                .offset(params.offset)
-                .limit(params.limit)
+                .offset(offset)
+                .limit(params.size)
             ).all()
         )
 

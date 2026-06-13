@@ -6,6 +6,7 @@ from app.modules.ingrediente.repository import IngredienteRepository
 from app.modules.producto.repository import ProductoRepository
 from app.modules.producto_categoria.repository import ProductoCategoriaRepository
 from app.modules.producto_ingrediente.repository import ProductoIngredienteRepository
+from app.modules.unidad_medida.repository import UnidadMedidaRepository
 
 
 class ProductoUnitOfWork(UnitOfWork):
@@ -14,5 +15,6 @@ class ProductoUnitOfWork(UnitOfWork):
         self.productos = ProductoRepository(session)
         self.categorias = CategoriaRepository(session)
         self.ingredientes = IngredienteRepository(session)
+        self.unidades_medida = UnidadMedidaRepository(session)
         self.producto_categorias = ProductoCategoriaRepository(session)
         self.producto_ingredientes = ProductoIngredienteRepository(session)

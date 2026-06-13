@@ -1,3 +1,8 @@
+export interface PedidoPersonalizacion {
+  ingredientes_removidos: number[];
+  [key: string]: unknown;
+}
+
 export interface DetallePedidoPublic {
   pedido_id: number;
   producto_id: number;
@@ -5,7 +10,7 @@ export interface DetallePedidoPublic {
   nombre_snapshot: string;
   precio_snapshot: number;
   subtotal_snapshot: number;
-  personalizacion: Record<string, unknown> | null;
+  personalizacion: PedidoPersonalizacion | null;
   created_at: string;
 }
 
@@ -56,5 +61,6 @@ export interface PedidosResponse {
   items: Pedido[];
   total: number;
   page: number;
-  limit: number;
+  size: number;
+  pages: number;
 }

@@ -7,10 +7,14 @@ from sqlmodel import Field, SQLModel
 from app.shared.schemas.pagination import PaginatedResponse
 
 
+class PedidoPersonalizacion(SQLModel):
+    ingredientes_removidos: list[int] = Field(default_factory=list)
+
+
 class DetallePedidoCreate(SQLModel):
     producto_id: int = Field(gt=0)
     cantidad: int = Field(ge=1)
-    personalizacion: dict[str, Any] | None = None
+    personalizacion: PedidoPersonalizacion | dict[str, Any] | None = None
 
 
 class PedidoCreate(SQLModel):
@@ -57,7 +61,7 @@ class DetallePedidoPublic(SQLModel):
     nombre_snapshot: str
     precio_snapshot: Decimal
     subtotal_snapshot: Decimal
-    personalizacion: dict[str, Any] | None
+    personalizacion: PedidoPersonalizacion | dict[str, Any] | None
     created_at: datetime
 
 

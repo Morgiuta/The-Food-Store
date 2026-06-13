@@ -5,6 +5,8 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 from app.shared.schemas.base import PublicSchema
+from app.shared.schemas.pagination import PaginatedResponse
+from app.modules.unidad_medida.schemas import UnidadMedidaPublic
 
 
 class ProductoCategoriaLink(SQLModel):
@@ -35,6 +37,7 @@ class ProductoCreate(SQLModel):
     imagen_url: Optional[str] = None
     imagenes_url: list[str] = Field(default_factory=list)
     stock_cantidad: int = Field(default=0, ge=0)
+    unidad_venta_id: Optional[int] = Field(default=None, gt=0)
     tiempo_prep_min: Optional[int] = Field(default=None, ge=0)
     categorias: list[ProductoCategoriaLink] = Field(default_factory=list)
     ingredientes: list[ProductoIngredienteLink] = Field(default_factory=list)
@@ -47,6 +50,7 @@ class ProductoUpdate(SQLModel):
     imagen_url: Optional[str] = None
     imagenes_url: Optional[list[str]] = None
     stock_cantidad: Optional[int] = Field(default=None, ge=0)
+    unidad_venta_id: Optional[int] = Field(default=None, gt=0)
     tiempo_prep_min: Optional[int] = Field(default=None, ge=0)
     disponible: Optional[bool] = None
     categorias: Optional[list[ProductoCategoriaLink]] = None
@@ -69,6 +73,8 @@ class ProductoPublic(PublicSchema):
     imagen_url: Optional[str]
     imagenes_url: list[str]
     stock_cantidad: int
+    unidad_venta_id: Optional[int]
+    unidad_venta: Optional[UnidadMedidaPublic]
     tiempo_prep_min: Optional[int]
     disponible: bool
     created_at: datetime
@@ -78,8 +84,5 @@ class ProductoPublic(PublicSchema):
     ingredientes: list[ProductoIngredientePublic]
 
 
-class ProductoList(SQLModel):
-    items: list[ProductoPublic]
-    total: int
-    page: int
-    limit: int
+class ProductoList(PaginatedResponse[ProductoPublic]):
+    pass

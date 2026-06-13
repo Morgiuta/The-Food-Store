@@ -20,6 +20,8 @@ from app.modules.producto.schemas import (
 from app.modules.producto_categoria.models import ProductoCategoria
 from app.modules.producto_ingrediente.models import ProductoIngrediente
 from app.modules.producto.unit_of_work import ProductoUnitOfWork
+from app.modules.unidad_medida.models import UnidadMedida
+from app.modules.unidad_medida.schemas import UnidadMedidaPublic
 
 
 class ProductoService(BaseService):
@@ -47,6 +49,19 @@ class ProductoService(BaseService):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Ingrediente con id={ingrediente_id} no encontrado",
+            )
+
+    def _assert_unidad_venta_exists(
+        self,
+        uow: ProductoUnitOfWork,
+        unidad_venta_id: int | None,
+    ) -> None:
+        if unidad_venta_id is None:
+            return
+        if uow.unidades_medida.get_active_by_id(unidad_venta_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Unidad de medida con id={unidad_venta_id} no encontrada",
             )
 
     def _validate_categorias(self, categorias: list[ProductoCategoriaLink]) -> None:
@@ -107,9 +122,9 @@ class ProductoService(BaseService):
 
         for categoria_id, link in existentes.items():
             if categoria_id not in incoming_ids:
-                uow.producto_categorias.session.delete(link)
+                uow.producto_categorias.delete(link)
 
-        uow.producto_categorias.session.flush()
+        uow.producto_categorias.flush()
 
     def _sync_ingredientes(
         self,
@@ -144,9 +159,9 @@ class ProductoService(BaseService):
 
         for ingrediente_id, link in existentes.items():
             if ingrediente_id not in incoming_ids:
-                uow.producto_ingredientes.session.delete(link)
+                uow.producto_ingredientes.delete(link)
 
-        uow.producto_ingredientes.session.flush()
+        uow.producto_ingredientes.flush()
 
     def recalcular_stock(self, uow: ProductoUnitOfWork, producto: Producto) -> None:
         links = uow.producto_ingredientes.list_by_producto(producto.id)
@@ -170,8 +185,15 @@ class ProductoService(BaseService):
         categorias: list[ProductoCategoria],
         ingredientes: list[ProductoIngrediente],
         ingredientes_by_id: dict[int, Ingrediente] | None = None,
+        unidades_by_id: dict[int, UnidadMedida] | None = None,
     ) -> ProductoPublic:
         ingredientes_by_id = ingredientes_by_id or {}
+        unidades_by_id = unidades_by_id or {}
+        unidad_venta = (
+            unidades_by_id.get(producto.unidad_venta_id)
+            if producto.unidad_venta_id is not None
+            else None
+        )
         return ProductoPublic(
             id=producto.id,
             nombre=producto.nombre,
@@ -180,6 +202,21 @@ class ProductoService(BaseService):
             imagen_url=producto.imagen_url,
             imagenes_url=producto.imagenes_url,
             stock_cantidad=producto.stock_cantidad,
+            unidad_venta_id=producto.unidad_venta_id,
+            unidad_venta=(
+                UnidadMedidaPublic(
+                    id=unidad_venta.id or 0,
+                    codigo=unidad_venta.codigo,
+                    nombre=unidad_venta.nombre,
+                    simbolo=unidad_venta.simbolo,
+                    descripcion=unidad_venta.descripcion,
+                    created_at=unidad_venta.created_at,
+                    updated_at=unidad_venta.updated_at,
+                    deleted_at=unidad_venta.deleted_at,
+                )
+                if unidad_venta is not None
+                else None
+            ),
             tiempo_prep_min=producto.tiempo_prep_min,
             disponible=producto.disponible,
             created_at=producto.created_at,
@@ -222,38 +259,58 @@ class ProductoService(BaseService):
             if ingrediente.id is not None
         }
 
+    def _unidades_by_id(
+        self,
+        uow: ProductoUnitOfWork,
+        productos: list[Producto],
+    ) -> dict[int, UnidadMedida]:
+        unidad_ids = sorted(
+            {
+                producto.unidad_venta_id
+                for producto in productos
+                if producto.unidad_venta_id is not None
+            }
+        )
+        return {
+            unidad.id: unidad
+            for unidad in uow.unidades_medida.list_by_ids(unidad_ids)
+            if unidad.id is not None
+        }
+
     def create(self, data: ProductoCreate) -> ProductoPublic:
         with ProductoUnitOfWork(self._session) as uow:
             producto_data = data.model_dump(exclude={"categorias", "ingredientes"})
+            self._assert_unidad_venta_exists(uow, data.unidad_venta_id)
             producto = Producto.model_validate(producto_data)
             self._apply_stock_rule(producto)
             uow.productos.add(producto)
             self._sync_categorias(uow, producto.id, data.categorias)
             self._sync_ingredientes(uow, producto.id, data.ingredientes)
             self.recalcular_stock(uow, producto)
-            uow.productos.session.flush()
+            uow.productos.flush()
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto.id),
                 ingredientes := uow.producto_ingredientes.list_by_producto(producto.id),
                 self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
             )
         return result
 
     def get_all(
         self,
         page: int = 1,
-        limit: int = 10,
+        size: int = 10,
         categoria_id: int | None = None,
         disponible: bool | None = None,
         q: str | None = None,
         include_deleted: bool = False,
     ) -> ProductoList:
         with ProductoUnitOfWork(self._session) as uow:
-            offset = (page - 1) * limit
+            offset = (page - 1) * size
             productos = uow.productos.list_active(
                 offset=offset,
-                limit=limit,
+                limit=size,
                 categoria_id=categoria_id,
                 disponible=disponible,
                 q=q,
@@ -283,6 +340,7 @@ class ProductoService(BaseService):
                     for link in producto_links
                 ],
             )
+            unidades_by_id = self._unidades_by_id(uow, productos)
 
             result = ProductoList(
                 items=[
@@ -291,12 +349,14 @@ class ProductoService(BaseService):
                         categorias_map.get(producto.id, []),
                         ingredientes_map.get(producto.id, []),
                         ingredientes_by_id,
+                        unidades_by_id,
                     )
                     for producto in productos
                 ],
                 total=total,
                 page=page,
-                limit=limit,
+                size=size,
+                pages=max(1, (total + size - 1) // size),
             )
         return result
 
@@ -309,6 +369,7 @@ class ProductoService(BaseService):
                 uow.producto_categorias.list_by_producto(producto_id),
                 ingredientes,
                 self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
             )
         return result
 
@@ -323,6 +384,8 @@ class ProductoService(BaseService):
             patch = data.model_dump(exclude_unset=True)
             patch.pop("categorias", None)
             patch.pop("ingredientes", None)
+            if "unidad_venta_id" in patch:
+                self._assert_unidad_venta_exists(uow, patch["unidad_venta_id"])
             categorias_payload = data.categorias if "categorias" in data.model_fields_set else None
             ingredientes_payload = (
                 data.ingredientes if "ingredientes" in data.model_fields_set else None
@@ -342,13 +405,14 @@ class ProductoService(BaseService):
                 self._sync_ingredientes(uow, producto_id, ingredientes_payload)
                 
             self.recalcular_stock(uow, producto)
-            uow.productos.session.flush()
+            uow.productos.flush()
 
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto_id),
                 ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
                 self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
             )
         return result
 
@@ -372,6 +436,7 @@ class ProductoService(BaseService):
                 uow.producto_categorias.list_by_producto(producto_id),
                 ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
                 self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
             )
         return result
 
@@ -393,6 +458,7 @@ class ProductoService(BaseService):
                 uow.producto_categorias.list_by_producto(producto_id),
                 ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
                 self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
             )
         return result
 
@@ -410,7 +476,7 @@ class ProductoService(BaseService):
 
     def restore(self, producto_id: int) -> ProductoPublic:
         with ProductoUnitOfWork(self._session) as uow:
-            producto = uow.productos.session.get(Producto, producto_id)
+            producto = uow.productos.get_by_id(producto_id)
             if not producto:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -420,12 +486,13 @@ class ProductoService(BaseService):
             producto.updated_at = utcnow()
             self.recalcular_stock(uow, producto)
             uow.productos.add(producto)
-            uow.productos.session.flush()
+            uow.productos.flush()
 
             result = self._to_public(
                 producto,
                 uow.producto_categorias.list_by_producto(producto_id),
                 ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
                 self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
             )
         return result

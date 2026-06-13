@@ -12,7 +12,6 @@ const estadoStyles: Record<string, string> = {
   PENDIENTE: 'bg-yellow-400 text-yellow-900', // amarillo
   CONFIRMADO: 'bg-blue-500 text-white', // azul
   EN_PREP: 'bg-orange-500 text-white', // naranja (EN_PROCESO)
-  EN_CAMINO: 'bg-green-400 text-green-900', // verde claro (LISTO)
   ENTREGADO: 'bg-green-600 text-white', // verde
   CANCELADO: 'bg-gray-500 text-white', // gris
 };

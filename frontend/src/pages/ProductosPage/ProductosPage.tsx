@@ -6,13 +6,14 @@ import { ProductosTable } from '../../features/productos/components/ProductosTab
 import { useProductos } from '../../hooks/useProductos';
 import { useCategoriasTree } from '../../hooks/useCategorias';
 import { useSupplies } from '../../hooks/useSupplies';
+import { useUnidadesMedida } from '../../hooks/useUnidadesMedida';
 import type { ProductosQuery, Producto, ProductoFormValues } from '../../types/producto';
 import { Plus, Search } from 'lucide-react';
 import type { CategoriaTree } from '../../types/categoria';
 
 const defaultQuery: ProductosQuery = {
   page: 1,
-  limit: 10,
+  size: 10,
 };
 
 export function ProductosPage() {
@@ -40,8 +41,9 @@ export function ProductosPage() {
   } = useProductos(stableQuery);
 
   const { tree: categoriasTree } = useCategoriasTree();
-  // We need to fetch all active supplies for the ingredients list (offset 0, high limit up to 100)
-  const { supplies } = useSupplies({ offset: 0, limit: 100, es_alergeno: 'all', include_deleted: false, sort_by: 'nombre', sort_dir: 'asc', search: '' });
+  const { unidades: unidadesMedida } = useUnidadesMedida({ page: 1, size: 100 });
+  // We need to fetch all active supplies for the ingredients list.
+  const { supplies } = useSupplies({ page: 1, size: 100, es_alergeno: 'all', include_deleted: false, sort_by: 'nombre', sort_dir: 'asc', search: '' });
 
   // Mapa de stockPosible: producto_id → cuántas unidades se pueden elaborar con el stock de insumos
   const stockPosibleMap = useMemo(() => {
@@ -61,7 +63,7 @@ export function ProductosPage() {
     return map;
   }, [productos, supplies]);
 
-  const totalPages = Math.max(1, Math.ceil(total / query.limit));
+  const totalPages = Math.max(1, Math.ceil(total / query.size));
 
   const updateQuery = (patch: Partial<ProductosQuery>) => {
     setQuery((current) => ({ ...current, ...patch, page: patch.page ?? current.page }));
@@ -258,8 +260,8 @@ export function ProductosPage() {
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
                 className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary outline-none bg-white"
-                value={query.limit}
-                onChange={(event) => updateQuery({ limit: Number(event.target.value), page: 1 })}
+                value={query.size}
+                onChange={(event) => updateQuery({ size: Number(event.target.value), page: 1 })}
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -321,6 +323,7 @@ export function ProductosPage() {
             selectedProducto={selectedProducto}
             categoriasTree={categoriasTree}
             ingredientesList={supplies}
+            unidadesMedida={unidadesMedida}
             isSubmitting={isMutating}
             onSubmit={handleSubmit}
             onCancelEdit={() => {
@@ -349,7 +352,15 @@ export function ProductosPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Stock Disp.</p>
-                <p className="text-charcoal font-bold text-lg">{detailProducto.stock_cantidad} u.</p>
+                <p className="text-charcoal font-bold text-lg">
+                  {detailProducto.stock_cantidad} {detailProducto.unidad_venta?.simbolo ?? 'u.'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Unidad</p>
+                <p className="text-charcoal font-bold text-lg">
+                  {detailProducto.unidad_venta?.nombre ?? 'Sin unidad'}
+                </p>
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">T. Prep.</p>

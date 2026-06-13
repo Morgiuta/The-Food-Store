@@ -179,6 +179,10 @@ class PedidoRepository:
         self.session.refresh(pago)
         return pago
 
+    def refresh_pago(self, pago: Pago) -> Pago:
+        self.session.refresh(pago)
+        return pago
+
     def get_role_codes(self, usuario_id: int) -> list[str]:
         return list(
             self.session.exec(

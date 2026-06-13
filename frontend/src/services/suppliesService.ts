@@ -3,8 +3,8 @@ import { api } from './api';
 
 function buildQuery(params: SuppliesQuery): string {
   const query = new URLSearchParams();
-  query.set('offset', String(params.offset));
-  query.set('limit', String(params.limit));
+  query.set('page', String(params.page));
+  query.set('size', String(params.size));
   query.set('sort_by', params.sort_by);
   query.set('sort_dir', params.sort_dir);
   query.set('include_deleted', String(params.include_deleted));

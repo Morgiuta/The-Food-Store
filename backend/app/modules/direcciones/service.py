@@ -1,9 +1,10 @@
 from fastapi import HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.base_model import utcnow
 from app.core.unit_of_work import UnitOfWork
 from app.modules.auth.models import DireccionEntrega
+from app.modules.direcciones.repository import DireccionesRepository
 from app.modules.direcciones.schemas import (
     DireccionCreate,
     DireccionPublic,
@@ -14,16 +15,10 @@ from app.modules.direcciones.schemas import (
 class DireccionesService:
     def __init__(self, session: Session) -> None:
         self.session = session
+        self.direcciones = DireccionesRepository(session)
 
     def list_by_usuario(self, usuario_id: int) -> list[DireccionPublic]:
-        direcciones = self.session.exec(
-            select(DireccionEntrega)
-            .where(
-                DireccionEntrega.usuario_id == usuario_id,
-                DireccionEntrega.deleted_at.is_(None),
-            )
-            .order_by(DireccionEntrega.es_principal.desc(), DireccionEntrega.id)
-        ).all()
+        direcciones = self.direcciones.list_active_by_usuario(usuario_id)
         return [self._to_public(direccion) for direccion in direcciones]
 
     def create(self, usuario_id: int, data: DireccionCreate) -> DireccionPublic:
@@ -41,10 +36,9 @@ class DireccionesService:
                 codigo_postal=data.codigo_postal,
                 es_principal=data.es_principal,
             )
-            self.session.add(direccion)
-            self.session.flush()
+            self.direcciones.add(direccion)
 
-        self.session.refresh(direccion)
+        self.direcciones.refresh(direccion)
         self._assert_single_principal(usuario_id)
         return self._to_public(direccion)
 
@@ -72,9 +66,9 @@ class DireccionesService:
             direccion.es_principal = data.es_principal
             direccion.updated_at = utcnow()
 
-            self.session.add(direccion)
+            self.direcciones.add(direccion)
 
-        self.session.refresh(direccion)
+        self.direcciones.refresh(direccion)
         self._assert_single_principal(usuario_id)
         return self._to_public(direccion)
 
@@ -84,9 +78,9 @@ class DireccionesService:
             self._unset_principales(usuario_id)
             direccion.es_principal = True
             direccion.updated_at = utcnow()
-            self.session.add(direccion)
+            self.direcciones.add(direccion)
 
-        self.session.refresh(direccion)
+        self.direcciones.refresh(direccion)
         self._assert_single_principal(usuario_id)
         return self._to_public(direccion)
 
@@ -96,16 +90,10 @@ class DireccionesService:
             direccion.deleted_at = utcnow()
             direccion.updated_at = utcnow()
             direccion.es_principal = False
-            self.session.add(direccion)
+            self.direcciones.add(direccion)
 
     def _get_owned_or_404(self, usuario_id: int, direccion_id: int) -> DireccionEntrega:
-        direccion = self.session.exec(
-            select(DireccionEntrega).where(
-                DireccionEntrega.id == direccion_id,
-                DireccionEntrega.usuario_id == usuario_id,
-                DireccionEntrega.deleted_at.is_(None),
-            )
-        ).first()
+        direccion = self.direcciones.get_active_owned(usuario_id, direccion_id)
         if direccion is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -114,39 +102,17 @@ class DireccionesService:
         return direccion
 
     def _unset_principales(self, usuario_id: int) -> None:
-        direcciones = self.session.exec(
-            select(DireccionEntrega).where(
-                DireccionEntrega.usuario_id == usuario_id,
-                DireccionEntrega.deleted_at.is_(None),
-                DireccionEntrega.es_principal.is_(True),
-            )
-        ).all()
+        direcciones = self.direcciones.list_active_principales(usuario_id)
         for direccion in direcciones:
             direccion.es_principal = False
             direccion.updated_at = utcnow()
-            self.session.add(direccion)
+            self.direcciones.add(direccion)
 
     def _has_other_principal(self, usuario_id: int, direccion_id: int) -> bool:
-        return (
-            self.session.exec(
-                select(DireccionEntrega).where(
-                    DireccionEntrega.usuario_id == usuario_id,
-                    DireccionEntrega.id != direccion_id,
-                    DireccionEntrega.deleted_at.is_(None),
-                    DireccionEntrega.es_principal.is_(True),
-                )
-            ).first()
-            is not None
-        )
+        return self.direcciones.has_other_principal(usuario_id, direccion_id)
 
     def _assert_single_principal(self, usuario_id: int) -> None:
-        principales = self.session.exec(
-            select(DireccionEntrega).where(
-                DireccionEntrega.usuario_id == usuario_id,
-                DireccionEntrega.deleted_at.is_(None),
-                DireccionEntrega.es_principal.is_(True),
-            )
-        ).all()
+        principales = self.direcciones.list_active_principales(usuario_id)
         if len(principales) > 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

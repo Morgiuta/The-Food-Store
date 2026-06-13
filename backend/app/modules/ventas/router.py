@@ -65,38 +65,43 @@ def list_pedidos(
         Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
     ],
     session: DbSession,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=1000)] = 20,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=1000)] = 20,
     solo_hoy: Annotated[bool, Query()] = False,
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoList:
+    offset = (page - 1) * size
     if current_user.id is not None and not user_has_role(
         session,
         current_user.id,
         {"ADMIN", "PEDIDOS"},
     ):
+        total = svc.pedidos.count_by_usuario(current_user.id, solo_hoy=solo_hoy)
         return PedidoList(
             items=[
                 svc.get_pedido(pedido.id or 0)
                 for pedido in svc.pedidos.get_by_usuario(
                     current_user.id,
                     offset=offset,
-                    limit=limit,
+                    limit=size,
                     solo_hoy=solo_hoy,
                 )
             ],
-            total=svc.pedidos.count_by_usuario(current_user.id, solo_hoy=solo_hoy),
-            page=(offset // limit) + 1,
-            limit=limit,
+            total=total,
+            page=page,
+            size=size,
+            pages=max(1, (total + size - 1) // size),
         )
+    total = svc.pedidos.count_all(solo_hoy=solo_hoy)
     return PedidoList(
         items=[
             svc.get_pedido(pedido.id or 0)
-            for pedido in svc.pedidos.get_all(offset=offset, limit=limit, solo_hoy=solo_hoy)
+            for pedido in svc.pedidos.get_all(offset=offset, limit=size, solo_hoy=solo_hoy)
         ],
-        total=svc.pedidos.count_all(solo_hoy=solo_hoy),
-        page=(offset // limit) + 1,
-        limit=limit,
+        total=total,
+        page=page,
+        size=size,
+        pages=max(1, (total + size - 1) // size),
     )
 
 

@@ -13,8 +13,8 @@ const defaultQuery: SuppliesQuery = {
   search: '',
   es_alergeno: 'all',
   include_deleted: false,
-  offset: 0,
-  limit: 8,
+  page: 1,
+  size: 8,
   sort_by: 'nombre',
   sort_dir: 'asc',
 };
@@ -83,7 +83,7 @@ export function SuppliesPage() {
     restoreSupply,
   } = useSupplies(stableQuery);
 
-  const { productos } = useProductos({ page: 1, limit: 1000 });
+  const { productos } = useProductos({ page: 1, size: 1000 });
 
   const lowStockIds = useMemo(() => {
     const ids = new Set<number>();
@@ -104,14 +104,14 @@ export function SuppliesPage() {
     return ids;
   }, [productos, supplies]);
 
-  const totalPages = Math.max(1, Math.ceil(total / query.limit));
-  const currentPage = Math.floor(query.offset / query.limit) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / query.size));
+  const currentPage = query.page;
   const existingNames = supplies
     .filter((supply) => !supply.deleted_at && supply.id !== selectedSupply?.id)
     .map((supply) => supply.nombre);
 
   const updateQuery = (patch: Partial<SuppliesQuery>) => {
-    setQuery((current) => ({ ...current, ...patch, offset: patch.offset ?? 0 }));
+    setQuery((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
   };
 
   const handleSubmit = async (values: SupplyFormValues) => {
@@ -190,7 +190,7 @@ export function SuppliesPage() {
       ...current,
       sort_by: field,
       sort_dir: current.sort_by === field && current.sort_dir === 'asc' ? 'desc' : 'asc',
-      offset: 0,
+      page: 1,
     }));
   };
 
@@ -283,8 +283,8 @@ export function SuppliesPage() {
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
                 className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
-                value={query.limit}
-                onChange={(event) => updateQuery({ limit: Number(event.target.value) })}
+                value={query.size}
+                onChange={(event) => updateQuery({ size: Number(event.target.value) })}
               >
                 <option value={8}>8</option>
                 <option value={12}>12</option>
@@ -313,18 +313,18 @@ export function SuppliesPage() {
               className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               type="button"
               disabled={currentPage === 1 || isLoading}
-              onClick={() => updateQuery({ offset: Math.max(0, query.offset - query.limit) })}
+              onClick={() => updateQuery({ page: Math.max(1, query.page - 1) })}
             >
               Anterior
             </button>
             <span className="text-sm font-medium text-gray-500">
-              {total === 0 ? '0 resultados' : `${query.offset + 1}-${Math.min(query.offset + query.limit, total)} de ${total}`}
+              {total === 0 ? '0 resultados' : `${(query.page - 1) * query.size + 1}-${Math.min(query.page * query.size, total)} de ${total}`}
             </span>
             <button
               className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               type="button"
               disabled={currentPage >= totalPages || isLoading}
-              onClick={() => updateQuery({ offset: query.offset + query.limit })}
+              onClick={() => updateQuery({ page: query.page + 1 })}
             >
               Siguiente
             </button>

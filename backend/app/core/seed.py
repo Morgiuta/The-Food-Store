@@ -2,11 +2,12 @@ from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
 from app.modules.auth.models import Rol, Usuario, UsuarioRol
+from app.modules.unidad_medida.models import UnidadMedida
 from app.modules.ventas.models import EstadoPedido, FormaPago
 
 
-DEFAULT_ADMIN_EMAIL = "admin@admin.com"
-DEFAULT_ADMIN_PASSWORD = "admin123"
+DEFAULT_ADMIN_EMAIL = "admin@foodstore.com"
+DEFAULT_ADMIN_PASSWORD = "Admin1234!"
 
 
 ROLES_SEED = [
@@ -20,14 +21,23 @@ ESTADOS_PEDIDO_SEED = [
     ("PENDIENTE", "Pendiente", 1, False),
     ("CONFIRMADO", "Confirmado", 2, False),
     ("EN_PREP", "En preparacion", 3, False),
-    ("EN_CAMINO", "En camino", 4, False),
-    ("ENTREGADO", "Entregado", 5, True),
-    ("CANCELADO", "Cancelado", 6, True),
+    ("ENTREGADO", "Entregado", 4, True),
+    ("CANCELADO", "Cancelado", 5, True),
 ]
 
 FORMAS_PAGO_SEED = [
+    ("MERCADOPAGO", "MercadoPago", True),
     ("EFECTIVO", "Efectivo", True),
-    ("TARJETA", "Tarjeta", True),
+    ("TRANSFERENCIA", "Transferencia", True),
+]
+
+UNIDADES_MEDIDA_SEED = [
+    ("kg", "Kilogramo", "kg"),
+    ("g", "Gramo", "g"),
+    ("L", "Litro", "L"),
+    ("ml", "Mililitro", "ml"),
+    ("ud", "Unidad", "ud"),
+    ("porciones", "Porciones", "porciones"),
 ]
 
 
@@ -35,6 +45,7 @@ def seed_required_data(session: Session) -> None:
     seed_roles(session)
     seed_estados_pedido(session)
     seed_formas_pago(session)
+    seed_unidades_medida(session)
     seed_default_admin(session)
     session.commit()
 
@@ -66,7 +77,8 @@ def seed_estados_pedido(session: Session) -> None:
 
 def seed_formas_pago(session: Session) -> None:
     for codigo, descripcion, habilitado in FORMAS_PAGO_SEED:
-        if session.get(FormaPago, codigo) is None:
+        forma_pago = session.get(FormaPago, codigo)
+        if forma_pago is None:
             session.add(
                 FormaPago(
                     codigo=codigo,
@@ -74,6 +86,35 @@ def seed_formas_pago(session: Session) -> None:
                     habilitado=habilitado,
                 )
             )
+        else:
+            forma_pago.descripcion = descripcion
+            forma_pago.habilitado = habilitado
+            session.add(forma_pago)
+
+    legacy_tarjeta = session.get(FormaPago, "TARJETA")
+    if legacy_tarjeta is not None:
+        legacy_tarjeta.habilitado = False
+        session.add(legacy_tarjeta)
+
+
+def seed_unidades_medida(session: Session) -> None:
+    for codigo, nombre, simbolo in UNIDADES_MEDIDA_SEED:
+        unidad = session.exec(
+            select(UnidadMedida).where(UnidadMedida.codigo == codigo)
+        ).first()
+        if unidad is None:
+            session.add(
+                UnidadMedida(
+                    codigo=codigo,
+                    nombre=nombre,
+                    simbolo=simbolo,
+                )
+            )
+        else:
+            unidad.nombre = nombre
+            unidad.simbolo = simbolo
+            unidad.deleted_at = None
+            session.add(unidad)
 
 
 def seed_default_admin(session: Session) -> None:

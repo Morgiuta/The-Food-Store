@@ -49,8 +49,8 @@ class IngredienteListParams(SQLModel):
     search: Optional[str] = Field(default=None, max_length=100)
     es_alergeno: Optional[bool] = None
     include_deleted: bool = False
-    offset: int = Field(default=0, ge=0)
-    limit: int = Field(default=20, ge=1, le=100)
+    page: int = Field(default=1, ge=1)
+    size: int = Field(default=20, ge=1, le=100)
     sort_by: Literal["id", "nombre", "es_alergeno", "created_at", "updated_at"] = "nombre"
     sort_dir: Literal["asc", "desc"] = "asc"
 

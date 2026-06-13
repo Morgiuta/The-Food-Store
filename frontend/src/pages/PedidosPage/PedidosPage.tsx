@@ -21,8 +21,7 @@ export function PedidosPage() {
   const statusMap: Record<string, string> = {
     PENDIENTE: 'CONFIRMADO',
     CONFIRMADO: 'EN_PREP',
-    EN_PREP: 'EN_CAMINO',
-    EN_CAMINO: 'ENTREGADO'
+    EN_PREP: 'ENTREGADO',
   };
 
   const handleAdvance = async (pedido: Pedido, e?: React.MouseEvent) => {
@@ -68,7 +67,6 @@ export function PedidosPage() {
   // Group by status
   const pendientes = pedidos.filter(p => p.estado_codigo === 'PENDIENTE' || p.estado_codigo === 'CONFIRMADO');
   const preparando = pedidos.filter(p => p.estado_codigo === 'EN_PREP');
-  const enCamino = pedidos.filter(p => p.estado_codigo === 'EN_CAMINO');
   const terminales = pedidos.filter(p => p.estado_codigo === 'ENTREGADO' || p.estado_codigo === 'CANCELADO').slice(0, 10); // Show only last 10 terminales
 
   return (
@@ -115,19 +113,6 @@ export function PedidosPage() {
              </div>
              <div className="flex-1 p-3 space-y-3 overflow-y-auto">
                 {preparando.map(p => (
-                   <PedidoCard key={p.id} pedido={p} onClick={setSelectedPedido} onAdvance={handleAdvance} />
-                ))}
-             </div>
-          </div>
-
-          {/* En Camino Column */}
-          <div className="flex-1 min-w-0 flex flex-col bg-gray-50 rounded-lg border border-gray-200">
-             <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-100/50 rounded-t-lg">
-                <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">En Camino / Lista</h3>
-                <span className="bg-blue-100 text-blue-700 font-black text-xs px-2 py-0.5 rounded-full">{enCamino.length}</span>
-             </div>
-             <div className="flex-1 p-3 space-y-3 overflow-y-auto">
-                {enCamino.map(p => (
                    <PedidoCard key={p.id} pedido={p} onClick={setSelectedPedido} onAdvance={handleAdvance} />
                 ))}
              </div>

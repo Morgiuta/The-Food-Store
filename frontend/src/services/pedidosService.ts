@@ -1,4 +1,4 @@
-import type { Pedido, PedidosResponse } from '../types/pedido';
+import type { Pedido, PedidoPersonalizacion, PedidosResponse } from '../types/pedido';
 import { api } from './api';
 
 export interface PedidoCreateInput {
@@ -10,13 +10,13 @@ export interface PedidoCreateInput {
   detalles: Array<{
     producto_id: number;
     cantidad: number;
-    personalizacion: Record<string, unknown> | null;
+    personalizacion: PedidoPersonalizacion | null;
   }>;
 }
 
 export const pedidosService = {
-  async getAll(page: number = 1, limit: number = 50): Promise<PedidosResponse> {
-    const { data } = await api.get<PedidosResponse>(`/pedidos/?page=${page}&limit=${limit}`);
+  async getAll(page: number = 1, size: number = 50): Promise<PedidosResponse> {
+    const { data } = await api.get<PedidosResponse>(`/pedidos/?page=${page}&size=${size}`);
     return data;
   },
 

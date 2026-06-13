@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { Producto, ProductoFormValues } from '../../../../types/producto';
 import type { CategoriaTree } from '../../../../types/categoria';
 import type { Supply } from '../../../../types/supply';
+import type { UnidadMedida } from '../../../../types/unidadMedida';
 
 const initialValues: ProductoFormValues = {
   nombre: '',
@@ -11,6 +12,7 @@ const initialValues: ProductoFormValues = {
   imagen_url: '',
   imagenes_url: [],
   stock_cantidad: 0,
+  unidad_venta_id: null,
   tiempo_prep_min: null,
   disponible: true,
   categorias: [],
@@ -21,6 +23,7 @@ interface ProductoFormProps {
   selectedProducto: Producto | null;
   categoriasTree: CategoriaTree[];
   ingredientesList: Supply[];
+  unidadesMedida: UnidadMedida[];
   isSubmitting?: boolean;
   onSubmit: (values: ProductoFormValues) => Promise<void>;
   onCancelEdit: () => void;
@@ -30,6 +33,7 @@ export function ProductoForm({
   selectedProducto,
   categoriasTree,
   ingredientesList,
+  unidadesMedida,
   isSubmitting = false,
   onSubmit,
   onCancelEdit,
@@ -49,6 +53,7 @@ export function ProductoForm({
             imagen_url: selectedProducto.imagen_url ?? '',
             imagenes_url: selectedProducto.imagenes_url ?? [],
             stock_cantidad: selectedProducto.stock_cantidad,
+            unidad_venta_id: selectedProducto.unidad_venta_id ?? null,
             tiempo_prep_min: selectedProducto.tiempo_prep_min ?? null,
             disponible: selectedProducto.disponible,
             categorias: selectedProducto.categorias.map(c => ({ categoria_id: c.categoria_id, es_principal: c.es_principal })),
@@ -76,10 +81,11 @@ export function ProductoForm({
         : '',
     precio_base: values.precio_base < 0 ? 'El precio no puede ser negativo.' : '',
     stock_cantidad: values.stock_cantidad < 0 ? 'El stock no puede ser negativo.' : '',
+    unidad_venta_id: values.unidad_venta_id === null ? 'Debe seleccionar una unidad de venta.' : '',
     categorias: values.categorias.length === 0 ? 'Debe seleccionar al menos una categoría.' : '',
   };
 
-  const isSubmitDisabled = Boolean(errors.nombre || errors.precio_base || errors.stock_cantidad || errors.categorias) || isSubmitting;
+  const isSubmitDisabled = Boolean(errors.nombre || errors.precio_base || errors.stock_cantidad || errors.unidad_venta_id || errors.categorias) || isSubmitting;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -99,6 +105,7 @@ export function ProductoForm({
       imagen_url: values.imagen_url.trim(),
       precio_base: Number(values.precio_base),
       stock_cantidad: Number(values.stock_cantidad),
+      unidad_venta_id: values.unidad_venta_id,
       tiempo_prep_min: values.tiempo_prep_min ? Number(values.tiempo_prep_min) : null,
       // Ensure one category is principal
       categorias: values.categorias.map((c, i) => ({ ...c, es_principal: i === 0 })),
@@ -280,6 +287,29 @@ export function ProductoForm({
                   value={values.tiempo_prep_min ?? ''}
                   onChange={(e) => setValues(v => ({ ...v, tiempo_prep_min: e.target.value ? Number(e.target.value) : null }))}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-charcoal mb-2">Unidad de venta</label>
+                <select
+                  className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${submitAttempted && errors.unidad_venta_id ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                  value={values.unidad_venta_id ?? 0}
+                  onChange={(e) => {
+                    const unidadId = Number(e.target.value);
+                    setValues(v => ({
+                      ...v,
+                      unidad_venta_id: unidadId === 0 ? null : unidadId,
+                    }));
+                  }}
+                >
+                  <option value={0} disabled>Seleccione una unidad...</option>
+                  {unidadesMedida.map((unidad) => (
+                    <option key={unidad.id} value={unidad.id}>
+                      {unidad.nombre} ({unidad.simbolo})
+                    </option>
+                  ))}
+                </select>
+                {submitAttempted && errors.unidad_venta_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.unidad_venta_id}</p>}
               </div>
 
               <div>

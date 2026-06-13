@@ -8,7 +8,7 @@ import type { UsuariosQuery, UsuarioPublic, UsuarioUpdate } from '../../types/us
 
 const defaultQuery: UsuariosQuery = {
   page: 1,
-  limit: 20,
+  size: 20,
 };
 
 export function UsuariosPage() {
@@ -30,7 +30,7 @@ export function UsuariosPage() {
     deleteUsuario,
   } = useUsuarios(stableQuery);
 
-  const totalPages = Math.max(1, Math.ceil(total / query.limit));
+  const totalPages = Math.max(1, Math.ceil(total / query.size));
 
   const updateQuery = (patch: Partial<UsuariosQuery>) => {
     setQuery((current) => ({ ...current, ...patch }));
@@ -128,8 +128,8 @@ export function UsuariosPage() {
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Por página</span>
               <select
                 className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary outline-none bg-white font-medium text-charcoal"
-                value={query.limit}
-                onChange={(event) => updateQuery({ limit: Number(event.target.value), page: 1 })}
+                value={query.size}
+                onChange={(event) => updateQuery({ size: Number(event.target.value), page: 1 })}
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>

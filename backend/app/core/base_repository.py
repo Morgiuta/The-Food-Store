@@ -21,6 +21,13 @@ class BaseRepository(Generic[ModelT]):
         self.session.refresh(instance)
         return instance
 
+    def delete(self, instance: ModelT) -> None:
+        self.session.delete(instance)
+        self.session.flush()
+
+    def flush(self) -> None:
+        self.session.flush()
+
     def get_all(self, offset: int = 0, limit: int = 20) -> list[ModelT]:
         return list(
             self.session.exec(

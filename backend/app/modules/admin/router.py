@@ -22,11 +22,11 @@ def get_usuario_service(session: DbSession) -> UsuarioService:
 @router.get("/usuarios/", response_model=UsuarioList)
 def list_usuarios(
     page: Annotated[int, Query(ge=1)] = 1,
-    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    size: Annotated[int, Query(ge=1, le=100)] = 10,
     rol: Annotated[str | None, Query(min_length=1, max_length=50)] = None,
     svc: UsuarioService = Depends(get_usuario_service),
 ) -> UsuarioList:
-    return svc.list(page=page, limit=limit, rol=rol)
+    return svc.list(page=page, size=size, rol=rol)
 
 
 @router.get("/usuarios/{usuario_id}", response_model=UsuarioPublic)

@@ -4,7 +4,7 @@ import { api } from './api';
 function buildQuery(params: ProductosQuery): string {
   const query = new URLSearchParams();
   query.set('page', String(params.page));
-  query.set('limit', String(params.limit));
+  query.set('size', String(params.size));
   
   if (params.categoria_id) {
     query.set('categoria_id', String(params.categoria_id));
