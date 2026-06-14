@@ -349,6 +349,9 @@ def normalize_pedido_estado_codes() -> None:
 
     with engine.begin() as connection:
         connection.execute(
+            text("DROP TRIGGER IF EXISTS trg_historial_estados_pedido_append_only ON historial_estados_pedido")
+        )
+        connection.execute(
             text("UPDATE pedidos SET estado_codigo = 'EN_PREP' WHERE estado_codigo = 'EN_PROCESO'")
         )
         connection.execute(

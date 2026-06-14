@@ -61,6 +61,10 @@ class ProductoDisponibilidadUpdate(SQLModel):
     disponible: bool
 
 
+class ImagenProductoUpdate(SQLModel):
+    imagenes_url: list[str] = Field(default_factory=list)
+
+
 class ProductoStockUpdate(SQLModel):
     stock_cantidad: int = Field(ge=0)
 

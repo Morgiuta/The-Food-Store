@@ -79,6 +79,17 @@ def update_producto_disponibilidad(
     return svc.update_disponibilidad(producto_id, data)
 
 
+from app.modules.producto.schemas import ImagenProductoUpdate
+@router.patch("/{producto_id}/imagenes", response_model=ProductoPublic)
+def update_producto_imagenes(
+    producto_id: Annotated[int, Path(gt=0)],
+    data: ImagenProductoUpdate,
+    _current_user=Depends(require_roles("ADMIN")),
+    svc: ProductoService = Depends(get_producto_service),
+) -> ProductoPublic:
+    return svc.update_imagenes(producto_id, data)
+
+
 @router.patch("/{producto_id}/stock", response_model=ProductoPublic)
 def update_producto_stock(
     producto_id: Annotated[int, Path(gt=0)],

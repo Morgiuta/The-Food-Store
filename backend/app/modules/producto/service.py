@@ -10,6 +10,7 @@ from app.modules.producto.schemas import (
     ProductoCategoriaLink,
     ProductoCreate,
     ProductoDisponibilidadUpdate,
+    ImagenProductoUpdate,
     ProductoIngredientePublic,
     ProductoIngredienteLink,
     ProductoList,
@@ -429,6 +430,30 @@ class ProductoService(BaseService):
                     detail="No se puede editar un producto inactivo",
                 )
             producto.disponible = data.disponible
+            producto.updated_at = utcnow()
+            uow.productos.add(producto)
+            result = self._to_public(
+                producto,
+                uow.producto_categorias.list_by_producto(producto_id),
+                ingredientes := uow.producto_ingredientes.list_by_producto(producto_id),
+                self._ingredientes_by_id(uow, ingredientes),
+                self._unidades_by_id(uow, [producto]),
+            )
+        return result
+
+    def update_imagenes(
+        self,
+        producto_id: int,
+        data: ImagenProductoUpdate,
+    ) -> ProductoPublic:
+        with ProductoUnitOfWork(self._session) as uow:
+            producto = self._get_or_404(uow, producto_id)
+            if producto.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No se puede editar un producto inactivo",
+                )
+            producto.imagenes_url = data.imagenes_url
             producto.updated_at = utcnow()
             uow.productos.add(producto)
             result = self._to_public(

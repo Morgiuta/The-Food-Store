@@ -3,13 +3,21 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import cloudinary
+
 from app.api.router import api_router
 from app.core.database import create_db_and_tables
-
+from app.core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    cloudinary.config(
+        cloud_name=settings.cloudinary_cloud_name,
+        api_key=settings.cloudinary_api_key,
+        api_secret=settings.cloudinary_api_secret,
+        secure=True,
+    )
     yield
 
 

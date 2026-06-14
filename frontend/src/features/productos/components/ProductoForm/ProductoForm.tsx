@@ -4,6 +4,7 @@ import type { Producto, ProductoFormValues } from '../../../../types/producto';
 import type { CategoriaTree } from '../../../../types/categoria';
 import type { Supply } from '../../../../types/supply';
 import type { UnidadMedida } from '../../../../types/unidadMedida';
+import { uploadImagen, deleteImagen } from '../../../../services/uploadsService';
 
 const initialValues: ProductoFormValues = {
   nombre: '',
@@ -42,6 +43,7 @@ export function ProductoForm({
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'receta'>('general');
   const [margen, setMargen] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setValues(
@@ -129,6 +131,47 @@ export function ProductoForm({
   };
 
   const categoriasOptions = getFlatOptions(categoriasTree);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, isPrincipal: boolean = false) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const response = await uploadImagen(file, 'foodstore/productos');
+      setValues((current) => {
+        if (isPrincipal) {
+          return { ...current, imagen_url: response.secure_url };
+        } else {
+          return { ...current, imagenes_url: [...current.imagenes_url, response.secure_url] };
+        }
+      });
+    } catch (error) {
+      console.error('Error al subir la imagen:', error);
+      alert('Hubo un error al subir la imagen. Por favor, intente de nuevo.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async (url: string, isPrincipal: boolean = false) => {
+    try {
+      const urlParts = url.split('/');
+      const publicIdWithExt = urlParts[urlParts.length - 1];
+      const publicId = `foodstore/productos/${publicIdWithExt.split('.')[0]}`;
+      await deleteImagen(publicId);
+    } catch (error) {
+      console.error('Error al eliminar imagen de Cloudinary:', error);
+    }
+
+    setValues((current) => {
+      if (isPrincipal) {
+        return { ...current, imagen_url: '' };
+      } else {
+        return { ...current, imagenes_url: current.imagenes_url.filter(u => u !== url) };
+      }
+    });
+  };
   const ingredientesActivos = useMemo(
     () => ingredientesList.filter(i => !i.deleted_at),
     [ingredientesList],
@@ -312,15 +355,61 @@ export function ProductoForm({
                 {submitAttempted && errors.unidad_venta_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.unidad_venta_id}</p>}
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-charcoal mb-2">URL de Imagen Principal</label>
-                <input
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  name="imagen_url"
-                  placeholder="https://ejemplo.com/img.jpg"
-                  value={values.imagen_url}
-                  onChange={(e) => setValues(v => ({ ...v, imagen_url: e.target.value }))}
-                />
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-charcoal mb-2">Imagen Principal</label>
+                {values.imagen_url ? (
+                  <div className="relative inline-block">
+                    <img src={values.imagen_url} alt="Vista previa principal" className="h-24 w-24 object-cover rounded-md border border-gray-200" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(values.imagen_url, true)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-sm"
+                      title="Eliminar imagen"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      accept="image/jpeg, image/png, image/webp"
+                      onChange={(e) => handleFileUpload(e, true)}
+                      disabled={isUploading}
+                      className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark"
+                    />
+                    {isUploading && <span className="text-sm text-gray-500 font-medium">Subiendo...</span>}
+                  </div>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-charcoal mb-2">Galería de Imágenes Adicionales</label>
+                <div className="flex flex-wrap gap-4 mb-3">
+                  {values.imagenes_url.map((url, idx) => (
+                    <div key={idx} className="relative inline-block">
+                      <img src={url} alt={`Vista previa ${idx + 1}`} className="h-24 w-24 object-cover rounded-md border border-gray-200" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(url, false)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-sm"
+                        title="Eliminar imagen"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="file"
+                    accept="image/jpeg, image/png, image/webp"
+                    onChange={(e) => handleFileUpload(e, false)}
+                    disabled={isUploading}
+                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark"
+                  />
+                  {isUploading && <span className="text-sm text-gray-500 font-medium">Subiendo...</span>}
+                </div>
               </div>
               
               <div className="md:col-span-2 mt-2">

@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Categoria, CategoriaFormValues, CategoriaTree } from '../../../../types/categoria';
+import { uploadImagen, deleteImagen } from '../../../../services/uploadsService';
 
 const initialValues: CategoriaFormValues = {
   nombre: '',
@@ -28,6 +29,7 @@ export function CategoriaForm({
 }: CategoriaFormProps) {
   const [values, setValues] = useState<CategoriaFormValues>(initialValues);
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setValues(
@@ -103,6 +105,37 @@ export function CategoriaForm({
 
   const parentOptions = getFlatOptions(categoriasTree);
 
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const response = await uploadImagen(file, 'foodstore/categorias');
+      setValues((current) => ({ ...current, imagen_url: response.secure_url }));
+    } catch (error) {
+      console.error('Error al subir la imagen:', error);
+      alert('Hubo un error al subir la imagen. Por favor, intente de nuevo.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!values.imagen_url) return;
+    
+    try {
+      const urlParts = values.imagen_url.split('/');
+      const publicIdWithExt = urlParts[urlParts.length - 1];
+      const publicId = `foodstore/categorias/${publicIdWithExt.split('.')[0]}`;
+      await deleteImagen(publicId);
+    } catch (error) {
+      console.error('Error al eliminar imagen de Cloudinary:', error);
+    }
+
+    setValues((current) => ({ ...current, imagen_url: '' }));
+  };
+
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div>
@@ -164,14 +197,31 @@ export function CategoriaForm({
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-charcoal mb-2">URL de Imagen</label>
-          <input
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            name="imagen_url"
-            placeholder="https://ejemplo.com/img.jpg"
-            value={values.imagen_url}
-            onChange={(event) => setValues((current) => ({ ...current, imagen_url: event.target.value }))}
-          />
+          <label className="block text-sm font-bold text-charcoal mb-2">Imagen de Categoría</label>
+          {values.imagen_url ? (
+            <div className="relative inline-block">
+              <img src={values.imagen_url} alt="Vista previa" className="h-24 w-24 object-cover rounded-md border border-gray-200" />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-sm"
+                title="Eliminar imagen"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <input
+                type="file"
+                accept="image/jpeg, image/png, image/webp"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark"
+              />
+              {isUploading && <span className="text-sm text-gray-500 font-medium">Subiendo...</span>}
+            </div>
+          )}
         </div>
       </div>
 

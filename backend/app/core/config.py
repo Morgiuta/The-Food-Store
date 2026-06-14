@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     mp_notification_url: str = ""
     mp_webhook_secret: str = ""
 
+    # Cloudinary
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+
     # URL base del frontend para construir las back_urls de Checkout Pro
     frontend_url: str = "http://localhost:5173"
 

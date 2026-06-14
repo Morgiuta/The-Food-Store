@@ -55,3 +55,8 @@ api_router.include_router(
     prefix="/pagos",
     tags=["pagos"],
 )
+from app.modules.uploads.router import router as uploads_router
+api_router.include_router(
+    uploads_router,
+    tags=["uploads"],
+)
