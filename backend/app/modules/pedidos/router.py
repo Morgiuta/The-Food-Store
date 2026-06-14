@@ -15,8 +15,6 @@ from app.modules.pedidos.schemas import PedidoEstadoPatch, PedidoList
 from app.modules.pedidos.service import PedidosService
 from app.modules.ventas.schemas import (
     HistorialEstadoPedidoPublic,
-    PagoCreate,
-    PagoPublic,
     PedidoCreate,
     PedidoEstadoUpdate,
     PedidoPublic,
@@ -141,20 +139,6 @@ async def delete_pedido(
         pedido_id=pedido_id,
         usuario_id=current_user.id or 0,
     )
-
-
-@router.post(
-    "/{pedido_id}/pagos",
-    response_model=PagoPublic,
-    status_code=status.HTTP_201_CREATED,
-)
-async def register_pago(
-    pedido_id: Annotated[int, Path(gt=0)],
-    data: PagoCreate,
-    _current_user=Depends(require_roles("ADMIN")),
-    svc: PedidosService = Depends(get_pedidos_service),
-) -> PagoPublic:
-    return await svc.register_pago(pedido_id, data)
 
 
 def _get_ws_token(websocket: WebSocket) -> str | None:

@@ -11,8 +11,6 @@ from app.modules.pedidos.service import PedidosService
 from app.modules.ventas.schemas import (
     EstadoPedidoPublic,
     FormaPagoPublic,
-    PagoCreate,
-    PagoPublic,
     PedidoCreate,
     PedidoEstadoUpdate,
     PedidoPublic,
@@ -138,17 +136,3 @@ def change_estado(
         usuario_id=current_user.id,
         motivo=data.motivo,
     )
-
-
-@router.post(
-    "/pedidos/{pedido_id}/pagos",
-    response_model=PagoPublic,
-    status_code=status.HTTP_201_CREATED,
-)
-def register_pago(
-    pedido_id: Annotated[int, Path(gt=0)],
-    data: PagoCreate,
-    _current_user=Depends(require_roles("ADMIN")),
-    svc: VentasService = Depends(get_ventas_service),
-) -> PagoPublic:
-    return svc.register_pago(pedido_id, data)

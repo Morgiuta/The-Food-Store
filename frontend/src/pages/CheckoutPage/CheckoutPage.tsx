@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { pedidosService } from '../../services/pedidosService';
+import { pagosService } from '../../services/pagosService';
 import { getCartSubtotal, useCartStore } from '../../store/cartStore';
 import { useDirecciones } from '../../hooks/useDirecciones';
 import { getErrorMessage } from '../../utils/errors';
@@ -16,7 +17,11 @@ export function CheckoutPage() {
   const [notas, setNotas] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  const [mpPreference, setMpPreference] = useState<{
+    preferenceId: string;
+    publicKey: string;
+  } | null>(null);
+
   const subtotal = getCartSubtotal(items);
   const envio = items.length > 0 ? 50 : 0;
 
@@ -42,12 +47,15 @@ export function CheckoutPage() {
         })),
       }),
     onSuccess: () => {
-      clearCart();
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
-      setIsModalOpen(false);
-      navigate('/mis-pedidos', { replace: true });
     },
   });
+
+  const crearPagoMutation = useMutation({
+    mutationFn: (pedidoId: number) => pagosService.crear(pedidoId),
+  });
+
+  const isMutating = createPedidoMutation.isPending || crearPagoMutation.isPending;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,14 +72,41 @@ export function CheckoutPage() {
     }
 
     // Instead of creating the order, open the payment modal
+    setMpPreference(null);
     setIsModalOpen(true);
   };
 
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setMpPreference(null);
+  };
+
   const handleConfirmOrder = async (formaPagoCodigo: string) => {
+    setError(null);
     try {
-      await createPedidoMutation.mutateAsync(formaPagoCodigo);
+      const pedido = await createPedidoMutation.mutateAsync(formaPagoCodigo);
+
+      if (formaPagoCodigo === 'MERCADOPAGO') {
+        // Crear la preferencia de Checkout Pro y mostrar el Wallet Brick (sin salir del sitio).
+        const preferencia = await crearPagoMutation.mutateAsync(pedido.id);
+        if (!preferencia.preference_id) {
+          setError('No se pudo iniciar el pago con MercadoPago.');
+          return;
+        }
+        clearCart();
+        setMpPreference({
+          preferenceId: preferencia.preference_id,
+          publicKey: preferencia.public_key,
+        });
+        return;
+      }
+
+      // Otras formas de pago: el pedido queda registrado.
+      clearCart();
+      closeModal();
+      navigate('/mis-pedidos', { replace: true });
     } catch (checkoutError: unknown) {
-      setError(getErrorMessage(checkoutError, 'No se pudo crear el pedido.'));
+      setError(getErrorMessage(checkoutError, 'No se pudo procesar el pedido.'));
     }
   };
 
@@ -198,15 +233,17 @@ export function CheckoutPage() {
         </form>
       )}
 
-      <ModalFinalizarCompra 
+      <ModalFinalizarCompra
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeModal}
         items={items}
         subtotal={subtotal}
         envio={envio}
-        isMutating={createPedidoMutation.isPending}
+        isMutating={isMutating}
         onConfirm={handleConfirmOrder}
         error={error}
+        preferenceId={mpPreference?.preferenceId}
+        publicKey={mpPreference?.publicKey}
       />
     </section>
   );

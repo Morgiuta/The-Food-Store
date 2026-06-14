@@ -4,6 +4,7 @@ import { Modal } from '../../components/ui/Modal/Modal';
 import { Button } from '../../components/ui/Button/Button';
 import { Wallet, CreditCard, Banknote, HelpCircle } from 'lucide-react';
 import type { CartItem } from '../../store/cartStore';
+import { MercadoPagoWallet } from './MercadoPagoWallet';
 
 interface ModalFinalizarCompraProps {
   isOpen: boolean;
@@ -14,6 +15,9 @@ interface ModalFinalizarCompraProps {
   isMutating: boolean;
   onConfirm: (formaPagoCodigo: string) => void;
   error?: string | null;
+  /** Preferencia de Checkout Pro lista; cuando existe se muestra el Wallet Brick. */
+  preferenceId?: string | null;
+  publicKey?: string | null;
 }
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -30,7 +34,9 @@ export function ModalFinalizarCompra({
   envio,
   isMutating,
   onConfirm,
-  error
+  error,
+  preferenceId,
+  publicKey
 }: ModalFinalizarCompraProps) {
   const { formasPago, isLoading: isLoadingFormas } = useFormasPago();
   const [selectedFormaPago, setSelectedFormaPago] = useState<string | null>(null);
@@ -41,10 +47,18 @@ export function ModalFinalizarCompra({
   const isMercadoPago = selectedFormaPago === 'MERCADOPAGO';
 
   const handleConfirm = () => {
-    if (selectedFormaPago && !isMercadoPago) {
+    if (selectedFormaPago) {
       onConfirm(selectedFormaPago);
     }
   };
+
+  const confirmLabel = isMutating
+    ? 'Procesando...'
+    : !selectedFormaPago
+      ? 'Selecciona un método de pago'
+      : isMercadoPago
+        ? 'Pagar con Mercado Pago'
+        : 'Confirmar Pedido';
 
   return (
     <Modal kicker="Pago" title="Resumen del pedido" size="lg" onClose={onClose}>
@@ -92,52 +106,43 @@ export function ModalFinalizarCompra({
                  <div className="p-4 text-center font-bold text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">Cargando métodos de pago...</div>
               ) : (
                  <>
-                    {formasPago.filter(fp => fp.habilitado && fp.codigo !== 'MERCADOPAGO').map(fp => (
-                       <label 
+                    {formasPago.filter(fp => fp.habilitado).map(fp => {
+                       const isMp = fp.codigo === 'MERCADOPAGO';
+                       const isSelected = selectedFormaPago === fp.codigo;
+                       return (
+                       <label
                          key={fp.codigo}
                          className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                            selectedFormaPago === fp.codigo ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white hover:border-gray-300'
+                            isSelected
+                              ? (isMp ? 'border-[#009EE3] bg-[#009EE3]/5' : 'border-primary bg-primary/5')
+                              : 'border-gray-200 bg-white hover:border-gray-300'
                          }`}
                        >
-                          <input 
-                            type="radio" 
-                            name="forma_pago" 
-                            className="sr-only" 
-                            checked={selectedFormaPago === fp.codigo}
+                          <input
+                            type="radio"
+                            name="forma_pago"
+                            className="sr-only"
+                            checked={isSelected}
                             onChange={() => setSelectedFormaPago(fp.codigo)}
                           />
-                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center shrink-0">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                             isMp ? 'bg-[#009EE3]/10' : 'bg-white shadow-sm border border-gray-100'
+                          }`}>
                              {iconMap[fp.codigo] || <HelpCircle size={24} className="text-gray-400" />}
                           </div>
                           <div className="flex-1">
-                             <h4 className="font-black text-charcoal">{fp.descripcion}</h4>
+                             <h4 className={`font-black ${isMp ? 'text-[#009EE3]' : 'text-charcoal'}`}>
+                                {fp.descripcion}
+                             </h4>
+                             {isMp && (
+                                <p className="text-xs font-semibold text-gray-500">
+                                   Pagá con tarjeta o dinero en cuenta
+                                </p>
+                             )}
                           </div>
                        </label>
-                    ))}
-
-                    {/* Hardcoded Mercado Pago Placeholder */}
-                    <label 
-                       className={`relative overflow-hidden flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                          selectedFormaPago === 'MERCADOPAGO' ? 'border-[#009EE3] bg-[#009EE3]/5' : 'border-gray-200 bg-white hover:border-gray-300'
-                       }`}
-                    >
-                       <input 
-                         type="radio" 
-                         name="forma_pago" 
-                         className="sr-only" 
-                         checked={selectedFormaPago === 'MERCADOPAGO'}
-                         onChange={() => setSelectedFormaPago('MERCADOPAGO')}
-                       />
-                       <div className="w-10 h-10 rounded-full bg-[#009EE3]/10 flex items-center justify-center shrink-0">
-                          {iconMap.MERCADOPAGO}
-                       </div>
-                       <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                             <h4 className="font-black text-[#009EE3]">Mercado Pago</h4>
-                             <span className="text-[10px] uppercase tracking-wider font-black text-white bg-[#009EE3] px-2 py-0.5 rounded-full">Próximamente</span>
-                          </div>
-                       </div>
-                    </label>
+                       );
+                    })}
                  </>
               )}
            </div>
@@ -149,22 +154,28 @@ export function ModalFinalizarCompra({
            )}
 
            <div className="mt-6 pt-4 border-t border-gray-100">
-              {isMercadoPago ? (
-                 <Button className="w-full py-4 text-base bg-[#009EE3] hover:bg-[#008ACA] text-white opacity-50 cursor-not-allowed" disabled>
-                    Integración con Mercado Pago en desarrollo
-                    {/* TODO: integrar SDK de Mercado Pago aquí con la estructura base del objeto de preferencia de pago. */}
-                 </Button>
+              {preferenceId ? (
+                 <div className="space-y-2">
+                    <p className="text-center text-sm font-bold text-charcoal">
+                       Pedido creado. Finalizá tu pago con Mercado Pago:
+                    </p>
+                    <MercadoPagoWallet preferenceId={preferenceId} publicKey={publicKey || ''} />
+                 </div>
               ) : (
-                 <Button 
-                    className="w-full py-4 text-base shadow-lg shadow-primary/25" 
+                 <Button
+                    className={`w-full py-4 text-base shadow-lg ${
+                       isMercadoPago
+                         ? 'bg-[#009EE3] hover:bg-[#008ACA] text-white shadow-[#009EE3]/25'
+                         : 'shadow-primary/25'
+                    }`}
                     disabled={isMutating || !selectedFormaPago}
                     onClick={handleConfirm}
                  >
-                    {isMutating ? 'Procesando...' : selectedFormaPago ? 'Confirmar Pedido' : 'Selecciona un método de pago'}
+                    {confirmLabel}
                  </Button>
               )}
               <Button variant="ghost" className="w-full mt-2 text-gray-500 hover:text-gray-800" onClick={onClose} disabled={isMutating}>
-                 Cancelar y volver
+                 {preferenceId ? 'Cerrar' : 'Cancelar y volver'}
               </Button>
            </div>
         </div>

@@ -5,6 +5,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.categoria.router import router as categoria_router
 from app.modules.direcciones.router import router as direcciones_router
 from app.modules.ingrediente.router import router as ingrediente_router
+from app.modules.pagos.router import router as pagos_router
 from app.modules.pedidos.router import router as pedidos_router
 from app.modules.producto.router import router as producto_router
 from app.modules.unidad_medida.router import router as unidad_medida_router
@@ -48,4 +49,9 @@ api_router.include_router(
     ventas_router,
     prefix="/ventas",
     tags=["ventas"],
+)
+api_router.include_router(
+    pagos_router,
+    prefix="/pagos",
+    tags=["pagos"],
 )
