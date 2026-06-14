@@ -13,9 +13,9 @@ Esto significa que:
 - [x] Ningun `service.py` debe usar `select(...)`, `session.exec(...)`, queries SQLAlchemy/SQLModel ni acceder directo a tablas para leer datos.
 - [x] La capa `service` solo debe orquestar reglas de negocio.
 - [x] Toda consulta a DB debe estar en `repository.py`.
-- [ ] Las transacciones deben manejarse con Unit of Work cuando la operacion modifique mas de una entidad.
-- [ ] El flujo correcto debe ser: `router -> service -> uow/repository -> model`.
-- [ ] Revisar servicios actuales que violan o pueden violar esta regla:
+- [x] Las transacciones deben manejarse con Unit of Work cuando la operacion modifique mas de una entidad.
+- [x] El flujo correcto debe ser: `router -> service -> uow/repository -> model`.
+- [x] Revisar servicios actuales que violan o pueden violar esta regla:
   - [x] `backend/app/modules/direcciones/service.py`: usa `select(...)` y `session.exec(...)` directamente.
   - [x] `backend/app/modules/auth/service.py`: usa `select(...)` directamente.
   - [x] `backend/app/modules/ventas/service.py`: usaba `select(...)` directamente.
@@ -48,20 +48,20 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
   - [x] Agregar header `Retry-After`.
   - [x] Evitar queries en service: guardar/acceder intentos desde repository o mecanismo externo.
 
-- [ ] Revisar permisos RBAC.
-  - [ ] `CLIENT` no deberia poder crear pedidos como ADMIN/STOCK/PEDIDOS.
-  - [ ] `STOCK` no deberia acceder a datos financieros ni crear pedidos administrativos.
-  - [ ] `PEDIDOS` no deberia gestionar productos/categorias.
-  - [ ] Validar endpoints contra la matriz del documento.
+- [x] Revisar permisos RBAC.
+  - [x] `CLIENT` no deberia poder crear pedidos como ADMIN/STOCK/PEDIDOS.
+  - [x] `STOCK` no deberia acceder a datos financieros ni crear pedidos administrativos.
+  - [x] `PEDIDOS` no deberia gestionar productos/categorias.
+  - [x] Validar endpoints contra la matriz del documento.
 
 ### Usuarios
 
-- [ ] Separar modulo `usuarios` o dejar documentado que vive bajo `admin/usuarios`.
-- [ ] CRUD completo segun especificacion.
-- [ ] Soft delete.
-- [ ] Asignacion de roles con `expires_at`.
-- [ ] No consultar DB desde service.
-- [ ] Agregar endpoints y schemas alineados al documento.
+- [x] Separar modulo `usuarios` o dejar documentado que vive bajo `admin/usuarios`.
+- [x] CRUD completo segun especificacion.
+- [x] Soft delete.
+- [x] Asignacion de roles con `expires_at`.
+- [x] No consultar DB desde service.
+- [x] Agregar endpoints y schemas alineados al documento.
 
 ### Direcciones
 
@@ -72,20 +72,20 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
   - [x] `_has_other_principal`.
   - [x] `_assert_single_principal`.
 
-- [ ] Validar que solo exista una direccion principal por usuario.
-- [ ] Mantener `PATCH /principal`.
-- [ ] Revisar permisos: normalmente solo propietario o ADMIN.
+- [x] Validar que solo exista una direccion principal por usuario.
+- [x] Mantener `PATCH /principal`.
+- [x] Revisar permisos: normalmente solo propietario o ADMIN.
 
 ### Categorias
 
-- [ ] Revisar contrato contra documento.
-  - [ ] `GET /api/v1/categorias`.
-  - [ ] `GET /api/v1/categorias/tree`.
-  - [ ] Crear/editar/borrar soft delete.
+- [x] Revisar contrato contra documento.
+  - [x] `GET /api/v1/categorias`.
+  - [x] `GET /api/v1/categorias/tree`.
+  - [x] Crear/editar/borrar soft delete.
 
 - [ ] Cloudinary para imagen de categoria.
-  - [ ] Campo `imagen_url` ya existe.
-  - [ ] Falta upload real.
+  - [x] Campo `imagen_url` ya existe.
+  - [x] Upload real con modulo `/uploads/imagen`.
   - [ ] Falta endpoint para actualizar imagen segun contrato.
 
 - [ ] Jerarquia.
@@ -94,23 +94,23 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 
 ### Productos
 
-- [ ] Agregar entidad `UnidadMedida`.
-  - [ ] Modelo `UnidadMedida`.
+- [x] Agregar entidad `UnidadMedida`.
+  - [x] Modelo `UnidadMedida`.
   - [ ] Migration.
-  - [ ] Repository.
-  - [ ] Router CRUD/listado si corresponde.
-  - [ ] Seed obligatorio: `kg`, `g`, `L`, `ml`, `ud`, `porciones`.
+  - [x] Repository.
+  - [x] Router CRUD/listado si corresponde.
+  - [x] Seed obligatorio: `kg`, `g`, `L`, `ml`, `ud`, `porciones`.
 
-- [ ] Agregar `unidad_venta_id` en `Producto`.
-  - [ ] FK hacia `UnidadMedida`.
-  - [ ] Incluir en schemas create/update/read.
-  - [ ] Mostrar simbolo en frontend.
+- [x] Agregar `unidad_venta_id` en `Producto`.
+  - [x] FK hacia `UnidadMedida`.
+  - [x] Incluir en schemas create/update/read.
+  - [x] Mostrar simbolo en frontend.
 
 - [ ] Revisar imagenes.
-  - [ ] Actualmente hay `imagen_url` e `imagenes_url`.
+  - [x] Actualmente hay `imagen_url` e `imagenes_url`.
   - [ ] Definir si se mantiene compatibilidad o se usa solo `imagenes_url`.
-  - [ ] Agregar `PATCH /api/v1/productos/{id}/imagenes`.
-  - [ ] Integrar con `/uploads`.
+  - [x] Agregar `PATCH /api/v1/productos/{id}/imagenes`.
+  - [x] Integrar con `/uploads`.
 
 - [ ] Revisar endpoints.
   - [ ] Documento pide `PUT /productos/{id}` para actualizar; proyecto usa `PATCH`.
@@ -118,8 +118,8 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
   - [ ] Documento pide `POST /productos/{id}/ingredientes`.
 
 - [ ] Stock.
-  - [ ] Mantener `PATCH /stock`.
-  - [ ] Validar permisos ADMIN/STOCK.
+  - [x] Mantener `PATCH /stock`.
+  - [x] Validar permisos ADMIN/STOCK.
   - [ ] Validar que `disponible` sea independiente del stock, salvo regla explicita.
 
 ### Ingredientes
@@ -172,42 +172,42 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
   - [x] Proyecto usa JSON/dict.
   - [x] Alinear schema backend y tipos frontend.
 
-- [ ] WebSocket post-commit.
-  - [ ] Al cambiar estado exitosamente, emitir evento despues del commit.
-  - [ ] No emitir dentro de la transaccion.
+- [x] WebSocket post-commit.
+  - [x] Al cambiar estado exitosamente, emitir evento despues del commit.
+  - [x] No emitir dentro de la transaccion.
 
 ### Pagos y MercadoPago
 
-- [ ] Crear modulo `pagos`.
-  - [ ] `backend/app/modules/pagos/router.py`.
-  - [ ] `backend/app/modules/pagos/service.py`.
-  - [ ] `backend/app/modules/pagos/repository.py`.
-  - [ ] `backend/app/modules/pagos/schemas.py`.
-  - [ ] No hacer queries desde service.
+- [x] Crear modulo `pagos`.
+  - [x] `backend/app/modules/pagos/router.py`.
+  - [x] `backend/app/modules/pagos/service.py`.
+  - [x] `backend/app/modules/pagos/repository.py`.
+  - [x] `backend/app/modules/pagos/schemas.py`.
+  - [x] No hacer queries desde service.
 
-- [ ] Agregar dependencia backend.
-  - [ ] `mercadopago`.
-  - [ ] Variables `.env`: `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`, `MP_NOTIFICATION_URL`.
+- [x] Agregar dependencia backend.
+  - [x] `mercadopago`.
+  - [x] Variables `.env`: `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`, `MP_NOTIFICATION_URL`.
 
-- [ ] Endpoint `POST /api/v1/pagos/crear`.
-  - [ ] Recibir pedido o datos necesarios.
-  - [ ] Crear preferencia/pago en MercadoPago.
-  - [ ] Guardar registro `Pago`.
-  - [ ] Generar `idempotency_key`.
-  - [ ] Usar `external_reference` con referencia del pedido.
-  - [ ] Retornar datos necesarios al frontend.
+- [x] Endpoint `POST /api/v1/pagos/crear`.
+  - [x] Recibir pedido o datos necesarios.
+  - [x] Crear preferencia/pago en MercadoPago.
+  - [x] Guardar registro `Pago`.
+  - [x] Generar `idempotency_key`.
+  - [x] Usar `external_reference` con referencia del pedido.
+  - [x] Retornar datos necesarios al frontend.
 
-- [ ] Endpoint `POST /api/v1/pagos/webhook`.
-  - [ ] Validar firma si se implementa.
-  - [ ] Consultar estado del pago en MercadoPago.
-  - [ ] Actualizar `Pago.mp_status`.
-  - [ ] Actualizar pedido a `CONFIRMADO` si pago aprobado.
-  - [ ] Cancelar/rechazar segun corresponda.
-  - [ ] Emitir WebSocket post-commit.
+- [x] Endpoint `POST /api/v1/pagos/webhook`.
+  - [x] Validar firma si se implementa.
+  - [x] Consultar estado del pago en MercadoPago.
+  - [x] Actualizar `Pago.mp_status`.
+  - [x] Actualizar pedido a `CONFIRMADO` si pago aprobado.
+  - [x] Cancelar/rechazar segun corresponda.
+  - [x] Emitir WebSocket post-commit.
 
-- [ ] Endpoint `GET /api/v1/pagos/{pedido_id}`.
-  - [ ] Solo propietario o ADMIN.
-  - [ ] Devolver pago asociado.
+- [x] Endpoint `GET /api/v1/pagos/{pedido_id}`.
+  - [x] Solo propietario o ADMIN.
+  - [x] Devolver pago asociado.
 
 - [ ] Seed de formas de pago.
   - [x] `MERCADOPAGO`.
@@ -217,45 +217,46 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 
 ### Uploads y Cloudinary
 
-- [ ] Crear modulo `uploads`.
-  - [ ] `backend/app/modules/uploads/router.py`.
-  - [ ] `backend/app/modules/uploads/service.py`.
-  - [ ] `backend/app/modules/uploads/schemas.py`.
+- [x] Crear modulo `uploads`.
+  - [x] `backend/app/modules/uploads/router.py`.
+  - [x] `backend/app/modules/uploads/service.py`.
+  - [x] `backend/app/modules/uploads/schemas.py`.
 
-- [ ] Agregar dependencia backend.
-  - [ ] `cloudinary`.
-  - [ ] Variables `.env`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+- [x] Agregar dependencia backend.
+  - [x] `cloudinary`.
+  - [x] Variables `.env`: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
 
-- [ ] Endpoint `POST /api/v1/uploads/imagen`.
-  - [ ] Recibir `multipart/form-data`.
-  - [ ] Validar MIME: jpg, jpeg, png, webp.
-  - [ ] Validar maximo 5 MB.
-  - [ ] Subir a Cloudinary.
-  - [ ] Devolver `secure_url`, `public_id`, `width`, `height`, `format`, `resource_type`.
+- [x] Endpoint `POST /api/v1/uploads/imagen`.
+  - [x] Recibir `multipart/form-data`.
+  - [x] Validar MIME: jpg, jpeg, png, webp.
+  - [x] Validar maximo 5 MB.
+  - [x] Subir a Cloudinary.
+  - [x] Devolver `secure_url`, `public_id`, `width`, `height`, `format`, `resource_type`.
 
-- [ ] Endpoint `DELETE /api/v1/uploads/imagen/{public_id}`.
-  - [ ] Eliminar por `public_id`.
-  - [ ] URL encode/decode correcto.
-  - [ ] Solo ADMIN.
+- [x] Endpoint `DELETE /api/v1/uploads/imagen/{public_id}`.
+  - [x] Eliminar por `public_id`.
+  - [x] URL encode/decode correcto.
+  - [x] Solo ADMIN.
 
 ### WebSocket
 
-- [ ] Crear `backend/app/core/ws_manager.py`.
-  - [ ] Pool de conexiones.
-  - [ ] Canal admin/pedidos.
-  - [ ] Broadcast por pedido.
-  - [ ] Manejo de desconexiones.
+- [x] Crear manager WebSocket.
+  - [x] Pool de conexiones.
+  - [x] Canal admin/pedidos.
+  - [x] Broadcast por pedido.
+  - [x] Manejo de desconexiones.
+  - [x] Implementado en `backend/app/core/websocket.py`.
 
-- [ ] Crear endpoint WS.
-  - [ ] `WS /ws/pedidos`.
+- [x] Crear endpoint WS.
+  - [x] `WS /api/v1/pedidos/ws`.
   - [ ] Autenticacion por query param `token`.
-  - [ ] Solo ADMIN/PEDIDOS para feed global.
+  - [x] Solo ADMIN/PEDIDOS para feed global.
 
-- [ ] Integrar con pedidos y pagos.
-  - [ ] Cambio de estado manual.
-  - [ ] Cancelacion.
-  - [ ] Confirmacion de pago.
-  - [ ] Emitir siempre despues del commit.
+- [x] Integrar con pedidos y pagos.
+  - [x] Cambio de estado manual.
+  - [x] Cancelacion.
+  - [x] Confirmacion de pago.
+  - [x] Emitir siempre despues del commit.
 
 ### Estadisticas
 
@@ -312,7 +313,7 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 
 ### Dependencias
 
-- [ ] Agregar `@mercadopago/sdk-react`.
+- [x] Agregar `@mercadopago/sdk-react`.
 - [ ] Agregar libreria de graficos.
   - [ ] `recharts` o `react-chartjs-2`.
 - [ ] Evaluar TanStack Form si se quiere cumplir literal con el documento.
@@ -323,7 +324,7 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 - [x] Manejar refresh token.
 - [x] Interceptor Axios debe intentar refresh antes de hacer logout.
 - [ ] Revisar persistencia: documento dice persistir solo access token; proyecto persiste usuario e `isAuthenticated`.
-- [ ] Alinear cookies/headers con backend.
+- [x] Alinear cookies/headers con backend.
 
 ### Carrito
 
@@ -337,37 +338,38 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 
 ### Checkout y MercadoPago
 
-- [ ] Quitar placeholder "Proximamente".
-- [ ] Usar forma de pago `MERCADOPAGO` o la que se defina en backend.
-- [ ] Integrar SDK MercadoPago.
-- [ ] Crear pago/preferencia llamando `POST /api/v1/pagos/crear`.
-- [ ] Manejar resultado aprobado, pendiente, rechazado.
-- [ ] Mostrar errores de pago.
-- [ ] Consultar estado del pedido/pago despues del checkout.
+- [x] Quitar placeholder "Proximamente".
+- [x] Usar forma de pago `MERCADOPAGO` o la que se defina en backend.
+- [x] Integrar SDK MercadoPago.
+- [x] Crear pago/preferencia llamando `POST /api/v1/pagos/crear`.
+- [x] Manejar resultado aprobado, pendiente, rechazado.
+- [x] Mostrar errores de pago.
+- [x] Consultar estado del pedido/pago despues del checkout.
 
 ### Productos y Categorias
 
-- [ ] Upload de imagenes.
-  - [ ] Formulario de producto debe subir imagen a `/uploads/imagen`.
-  - [ ] Guardar `secure_url` en `imagenes_url`.
-  - [ ] Permitir eliminar imagen y llamar DELETE upload.
+- [x] Upload de imagenes.
+  - [x] Formulario de producto debe subir imagen a `/uploads/imagen`.
+  - [x] Guardar `secure_url` en `imagenes_url`.
+  - [x] Permitir eliminar imagen y llamar DELETE upload.
 
-- [ ] Categorias.
-  - [ ] Subir imagen de categoria.
-  - [ ] Guardar `imagen_url`.
+- [x] Categorias.
+  - [x] Subir imagen de categoria.
+  - [x] Guardar `imagen_url`.
 
-- [ ] Unidad de medida.
-  - [ ] Mostrar simbolo en cards.
-  - [ ] Permitir elegir unidad de venta en formulario admin.
+- [x] Unidad de medida.
+  - [x] Mostrar simbolo en cards.
+  - [x] Permitir elegir unidad de venta en formulario admin.
 
 ### Pedidos
 
 - [ ] Cambiar polling por WebSocket.
+  - [x] Crear hook WebSocket de pedidos.
   - [ ] Crear `useOrderStatusWS`.
   - [ ] Crear `useAdminOrdersFeed`.
   - [ ] Crear `wsStore`.
   - [ ] Reconectar con backoff.
-  - [ ] Invalidar React Query cuando llegue evento.
+  - [x] Invalidar React Query cuando llegue evento.
 
 - [ ] Alinear estados.
   - [x] Quitar `EN_CAMINO`.
@@ -390,8 +392,8 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 
 ### Stores Zustand
 
-- [ ] Mantener `authStore`.
-- [ ] Mantener `cartStore`.
+- [x] Mantener `authStore`.
+- [x] Mantener `cartStore`.
 - [ ] Agregar `wsStore`.
 - [ ] Evaluar `paymentStore`.
 - [ ] Evaluar `uiStore`.
@@ -399,20 +401,22 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 
 ## Tests
 
-- [ ] Crear carpeta `backend/tests`.
-- [ ] Crear `conftest.py`.
+Nota de revision 2026-06-14: `backend/.venv/bin/python -m pytest tests -q` ejecuta correctamente: 79 passed.
+
+- [x] Crear carpeta `backend/tests`.
+- [x] Crear `conftest.py`.
 - [ ] Tests auth.
-  - [ ] Register OK.
-  - [ ] Login OK.
-  - [ ] Login invalido.
+  - [x] Register OK.
+  - [x] Login OK.
+  - [x] Login invalido.
   - [ ] Refresh token.
   - [ ] Logout revoca token.
   - [ ] Rate limit.
 
 - [ ] Tests pedidos.
-  - [ ] Crear pedido OK.
+  - [x] Crear pedido OK.
   - [ ] Stock insuficiente.
-  - [ ] Transicion valida.
+  - [x] Transicion valida.
   - [ ] Transicion invalida.
   - [ ] Estado terminal no permite avanzar.
   - [ ] Cancelacion con motivo obligatorio.
@@ -439,10 +443,10 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
 1. [x] Refactor de arquitectura: sacar queries de services y moverlas a repositories.
 2. [x] Corregir contratos chicos: seed, estados, formas de pago, `/api/v1`, paginacion.
 3. [x] Completar auth: refresh token, logout real, rate limit.
-4. [ ] Corregir pedidos FSM e historial.
+4. [x] Corregir pedidos FSM e historial.
 5. [x] Agregar UnidadMedida.
-6. [ ] Implementar Cloudinary/uploads.
-7. [ ] Implementar MercadoPago/pagos.
+6. [x] Implementar Cloudinary/uploads.
+7. [x] Implementar MercadoPago/pagos.
 8. [ ] Implementar WebSocket.
 9. [ ] Implementar estadisticas y dashboard con graficos.
 10. [ ] Agregar tests.

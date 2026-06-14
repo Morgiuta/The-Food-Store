@@ -4,7 +4,7 @@ import { useToast } from '../../components/ui/Toast/Toast';
 import { UsuarioFormModal } from '../../features/usuarios/components/UsuarioFormModal/UsuarioFormModal';
 import { UsuariosTable } from '../../features/usuarios/components/UsuariosTable/UsuariosTable';
 import { useUsuarios } from '../../hooks/useUsuarios';
-import type { UsuariosQuery, UsuarioPublic, UsuarioUpdate } from '../../types/usuario';
+import type { UsuarioCreate, UsuarioRolUpdate, UsuariosQuery, UsuarioPublic, UsuarioUpdate } from '../../types/usuario';
 
 const defaultQuery: UsuariosQuery = {
   page: 1,
@@ -25,6 +25,7 @@ export function UsuariosPage() {
     error,
     isLoading,
     isMutating,
+    createUsuario,
     updateUsuario,
     assignRol,
     deleteUsuario,
@@ -36,21 +37,24 @@ export function UsuariosPage() {
     setQuery((current) => ({ ...current, ...patch }));
   };
 
-  const handleSubmit = async (values: UsuarioUpdate, newRole: string | null) => {
-    if (!selectedUsuario) return;
-
+  const handleSubmit = async (
+    values: UsuarioCreate | UsuarioUpdate,
+    roleUpdate: UsuarioRolUpdate | null,
+  ) => {
     try {
-      // First update info
-      await updateUsuario(selectedUsuario.id, values);
-      
-      // If role changed, update it too
-      if (newRole) {
-         await assignRol(selectedUsuario.id, newRole);
+      if (selectedUsuario) {
+        await updateUsuario(selectedUsuario.id, values as UsuarioUpdate);
+
+        if (roleUpdate) {
+          await assignRol(selectedUsuario.id, roleUpdate);
+        }
+      } else {
+        await createUsuario(values as UsuarioCreate);
       }
       
       setSelectedUsuario(null);
       setIsFormOpen(false);
-      notify('success', 'Usuario actualizado correctamente.');
+      notify('success', selectedUsuario ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.');
     } catch (requestError) {
       notify(
         'error',
@@ -88,6 +92,11 @@ export function UsuariosPage() {
     setIsFormOpen(true);
   };
 
+  const handleCreate = () => {
+    setSelectedUsuario(null);
+    setIsFormOpen(true);
+  };
+
   return (
     <section className="space-y-6 animate-in fade-in duration-300 pb-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -97,6 +106,13 @@ export function UsuariosPage() {
           <p className="text-muted">Gestión de accesos, perfiles de clientes y empleados.</p>
         </div>
         <div className="flex gap-4">
+          <button
+            type="button"
+            className="rounded-lg bg-primary px-4 py-3 font-black text-white hover:bg-primary-dark"
+            onClick={handleCreate}
+          >
+            Nuevo usuario
+          </button>
           <div className="bg-primary/10 text-primary-dark px-4 py-3 rounded-lg flex flex-col items-center justify-center min-w-[100px]">
             <span className="text-xs font-bold uppercase tracking-wide">Total</span>
             <strong className="text-2xl font-black">{total}</strong>
@@ -173,10 +189,10 @@ export function UsuariosPage() {
         </section>
       </div>
 
-      {isFormOpen && selectedUsuario ? (
+      {isFormOpen ? (
         <Modal
           kicker="Administración"
-          title={`Editar Usuario #${selectedUsuario.id}`}
+          title={selectedUsuario ? `Editar Usuario #${selectedUsuario.id}` : 'Nuevo usuario'}
           size="md"
           onClose={() => {
             setIsFormOpen(false);

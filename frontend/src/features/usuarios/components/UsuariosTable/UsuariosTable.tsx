@@ -69,7 +69,10 @@ export function UsuariosTable({
                 </div>
               </td>
               <td className="p-4">
-                <a href={`mailto:${u.email}`} className="text-sm font-medium text-primary hover:underline">{u.email}</a>
+                <div className="space-y-1">
+                  <a href={`mailto:${u.email}`} className="block text-sm font-medium text-primary hover:underline">{u.email}</a>
+                  {u.celular ? <span className="block text-xs font-semibold text-gray-500">{u.celular}</span> : null}
+                </div>
               </td>
               <td className="p-4">
                 <div className="flex flex-wrap gap-1.5">
@@ -79,8 +82,15 @@ export function UsuariosTable({
                     u.roles.map(r => {
                       const colorClass = roleColors[r.codigo] || 'bg-gray-100 text-gray-800 border-gray-200';
                       return (
-                        <span key={r.codigo} className={`px-2.5 py-1 text-xs font-bold rounded-full border ${colorClass}`}>
-                          {r.codigo}
+                        <span key={r.codigo} className="space-y-1">
+                          <span className={`inline-flex px-2.5 py-1 text-xs font-bold rounded-full border ${colorClass}`}>
+                            {r.codigo}
+                          </span>
+                          {r.expires_at ? (
+                            <span className="block text-[11px] font-semibold text-gray-500">
+                              vence {format(new Date(r.expires_at), 'dd/MM/yyyy', { locale: es })}
+                            </span>
+                          ) : null}
                         </span>
                       );
                     })

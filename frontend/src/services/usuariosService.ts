@@ -1,4 +1,11 @@
-import type { UsuarioPublic, UsuarioListResponse, UsuariosQuery, UsuarioUpdate } from '../types/usuario';
+import type {
+  UsuarioCreate,
+  UsuarioPublic,
+  UsuarioListResponse,
+  UsuarioRolUpdate,
+  UsuariosQuery,
+  UsuarioUpdate,
+} from '../types/usuario';
 import { api } from './api';
 
 function buildQuery(params: UsuariosQuery): string {
@@ -24,15 +31,18 @@ export const usuariosService = {
     return data;
   },
 
+  async create(input: UsuarioCreate): Promise<UsuarioPublic> {
+    const { data } = await api.post<UsuarioPublic>('/admin/usuarios/', input);
+    return data;
+  },
+
   async update(id: number, input: UsuarioUpdate): Promise<UsuarioPublic> {
     const { data } = await api.patch<UsuarioPublic>(`/admin/usuarios/${id}`, input);
     return data;
   },
 
-  async assignRol(id: number, rol_nombre: string): Promise<UsuarioPublic> {
-    const { data } = await api.patch<UsuarioPublic>(`/admin/usuarios/${id}/rol`, {
-      rol_nombre,
-    });
+  async assignRol(id: number, input: UsuarioRolUpdate): Promise<UsuarioPublic> {
+    const { data } = await api.patch<UsuarioPublic>(`/admin/usuarios/${id}/rol`, input);
     return data;
   },
 

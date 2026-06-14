@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usuariosService } from '../services/usuariosService';
-import type { UsuariosQuery, UsuarioUpdate } from '../types/usuario';
+import type { UsuarioCreate, UsuarioRolUpdate, UsuariosQuery, UsuarioUpdate } from '../types/usuario';
 
 export function useUsuarios(query: UsuariosQuery) {
   const queryClient = useQueryClient();
@@ -14,6 +14,13 @@ export function useUsuarios(query: UsuariosQuery) {
   const usuarios = data?.items || [];
   const total = data?.total || 0;
 
+  const createMutation = useMutation({
+    mutationFn: (values: UsuarioCreate) => usuariosService.create(values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ id, values }: { id: number; values: UsuarioUpdate }) => 
       usuariosService.update(id, values),
@@ -23,8 +30,8 @@ export function useUsuarios(query: UsuariosQuery) {
   });
 
   const assignRolMutation = useMutation({
-    mutationFn: ({ id, rol_nombre }: { id: number; rol_nombre: string }) => 
-      usuariosService.assignRol(id, rol_nombre),
+    mutationFn: ({ id, values }: { id: number; values: UsuarioRolUpdate }) =>
+      usuariosService.assignRol(id, values),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
     },
@@ -38,6 +45,7 @@ export function useUsuarios(query: UsuariosQuery) {
   });
 
   const isMutating = 
+    createMutation.isPending ||
     updateMutation.isPending || 
     assignRolMutation.isPending || 
     deleteMutation.isPending;
@@ -49,8 +57,9 @@ export function useUsuarios(query: UsuariosQuery) {
     isLoading,
     isMutating,
     reload: refetch,
+    createUsuario: createMutation.mutateAsync,
     updateUsuario: async (id: number, values: UsuarioUpdate) => updateMutation.mutateAsync({ id, values }),
-    assignRol: async (id: number, rol_nombre: string) => assignRolMutation.mutateAsync({ id, rol_nombre }),
+    assignRol: async (id: number, values: UsuarioRolUpdate) => assignRolMutation.mutateAsync({ id, values }),
     deleteUsuario: deleteMutation.mutateAsync,
   };
 }
