@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
-from app.modules.auth.dependencies import require_roles
+from app.modules.auth.dependencies import require_permission
 from app.modules.unidad_medida.schemas import (
     UnidadMedidaCreate,
     UnidadMedidaList,
@@ -43,7 +43,7 @@ def get_unidad_medida(
 )
 def create_unidad_medida(
     data: UnidadMedidaCreate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("unidad_medida", "manage")),
     svc: UnidadMedidaService = Depends(get_unidad_medida_service),
 ) -> UnidadMedidaPublic:
     return svc.create(data)
@@ -53,7 +53,7 @@ def create_unidad_medida(
 def update_unidad_medida(
     unidad_id: Annotated[int, Path(gt=0)],
     data: UnidadMedidaUpdate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("unidad_medida", "manage")),
     svc: UnidadMedidaService = Depends(get_unidad_medida_service),
 ) -> UnidadMedidaPublic:
     return svc.update(unidad_id, data)
@@ -62,7 +62,7 @@ def update_unidad_medida(
 @router.delete("/{unidad_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_unidad_medida(
     unidad_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("unidad_medida", "manage")),
     svc: UnidadMedidaService = Depends(get_unidad_medida_service),
 ) -> None:
     svc.soft_delete(unidad_id)

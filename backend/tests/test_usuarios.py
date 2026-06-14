@@ -20,7 +20,7 @@ def test_actualizar_usuario_admin(client):
     admin_id = me_resp.json()["id"]
 
     payload = {
-        "nombre": "Admin Modificado"
+        "nombre": "Admin Cocina"
     }
     response = client.patch(f"/api/v1/admin/usuarios/{admin_id}", json=payload)
     
@@ -46,9 +46,9 @@ def test_actualizar_usuario_con_datos_vacios(client):
 
 def test_asignar_rol_a_usuario(client):
     payload_reg = {
-        "nombre": "Maria",
-        "apellido": "Gonzalez",
-        "email": "maria.gonzalez@foodstore.com",
+        "nombre": "Admin",
+        "apellido": "Mostrador",
+        "email": "admin_mostrador@test.com",
         "password": "test123"
     }
     reg_resp = client.post("/api/v1/auth/register", json=payload_reg)
@@ -74,9 +74,50 @@ def test_actualizar_usuario_apellido(client):
     admin_id = me_resp.json()["id"]
 
     payload = {
-        "nombre": "Admin Nuevo"
+        "apellido": "Delivery"
     }
     response = client.patch(f"/api/v1/admin/usuarios/{admin_id}", json=payload)
     
     assert response.status_code == 200
-    assert response.json()["nombre"] == "Admin Nuevo"
+    assert response.json()["apellido"] == "Delivery"
+
+
+def test_crear_usuario_admin(client):
+    payload = {
+        "nombre": "Operador",
+        "apellido": "Pedidos",
+        "email": "operador_pedidos@test.com",
+        "password": "Password123!",
+        "rol_nombre": "PEDIDOS",
+    }
+    response = client.post("/api/v1/admin/usuarios/", json=payload)
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == "operador_pedidos@test.com"
+    assert data["roles"][0]["codigo"] == "PEDIDOS"
+
+
+def test_asignar_rol_con_expires_at(client):
+    payload = {
+        "nombre": "Stock",
+        "apellido": "Temporal",
+        "email": "stock_temporal@test.com",
+        "password": "Password123!",
+        "rol_nombre": "CLIENT",
+    }
+    create_resp = client.post("/api/v1/admin/usuarios/", json=payload)
+    usuario_id = create_resp.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/admin/usuarios/{usuario_id}/rol",
+        json={
+            "rol_nombre": "STOCK",
+            "expires_at": "2099-01-01T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    rol = response.json()["roles"][0]
+    assert rol["codigo"] == "STOCK"
+    assert rol["expires_at"].startswith("2099-01-01T00:00:00")

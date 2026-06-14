@@ -1,7 +1,7 @@
 def test_crear_direccion(client):
     payload = {
         "calle": "Avenida San Martin",
-        "numero": "2450",
+        "numero": "1845",
         "ciudad": "Mendoza",
         "provincia": "Mendoza",
         "codigo_postal": "5500",
@@ -21,7 +21,7 @@ def test_obtener_direcciones(client):
 def test_marcar_direccion_principal(client):
     payload = {
         "calle": "Avenida Belgrano",
-        "numero": "950",
+        "numero": "1120",
         "ciudad": "Mendoza",
         "provincia": "Mendoza",
         "codigo_postal": "5500",
@@ -36,8 +36,8 @@ def test_marcar_direccion_principal(client):
 
 def test_eliminar_direccion(client):
     payload = {
-        "calle": "Avenida Aristitides Villanueva",
-        "numero": "750",
+        "calle": "Avenida Aristicides Villanueva",
+        "numero": "760",
         "ciudad": "Mendoza",
         "provincia": "Mendoza",
         "codigo_postal": "5500",
@@ -52,7 +52,7 @@ def test_eliminar_direccion(client):
 
 def test_crear_direccion_faltan_datos(client):
     payload = {
-        "calle": "San Martin"
+        "calle": "Avenida San Martin"
     }
     response = client.post("/api/v1/direcciones/", json=payload)
     
@@ -61,7 +61,7 @@ def test_crear_direccion_faltan_datos(client):
 def test_obtener_direccion_por_id(client):
     payload = {
         "calle": "Avenida Mitre",
-        "numero": "1680",
+        "numero": "1430",
         "ciudad": "Mendoza",
         "provincia": "Mendoza",
         "codigo_postal": "5500",
@@ -77,7 +77,7 @@ def test_obtener_direccion_por_id(client):
 
 def test_actualizar_direccion(client):
     payload = {
-        "calle": "Avenida Roca",
+        "calle": "Avenida Las Heras",
         "numero": "500",
         "ciudad": "Mendoza",
         "provincia": "Mendoza",

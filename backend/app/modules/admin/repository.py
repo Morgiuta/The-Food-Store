@@ -2,6 +2,7 @@ from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from app.core.base_repository import BaseRepository
+from app.core.utils import utcnow
 from app.modules.auth.models import Rol, Usuario, UsuarioRol
 
 
@@ -92,13 +93,35 @@ class UsuarioRepository(BaseRepository[Usuario]):
                 .where(
                     UsuarioRol.usuario_id == usuario_id,
                     UsuarioRol.deleted_at.is_(None),
+                    or_(UsuarioRol.expires_at.is_(None), UsuarioRol.expires_at > utcnow()),
                     Rol.deleted_at.is_(None),
                 )
                 .order_by(Rol.codigo)
             ).all()
         )
 
-    def replace_usuario_rol(self, usuario_id: int, rol_codigo: str) -> None:
+    def list_role_assignments_by_usuario(self, usuario_id: int) -> list[tuple[Rol, UsuarioRol]]:
+        return list(
+            self.session.exec(
+                select(Rol, UsuarioRol)
+                .join(Rol, UsuarioRol.rol_codigo == Rol.codigo)
+                .where(
+                    UsuarioRol.usuario_id == usuario_id,
+                    UsuarioRol.deleted_at.is_(None),
+                    or_(UsuarioRol.expires_at.is_(None), UsuarioRol.expires_at > utcnow()),
+                    Rol.deleted_at.is_(None),
+                )
+                .order_by(UsuarioRol.rol_codigo)
+            ).all()
+        )
+
+    def replace_usuario_rol(
+        self,
+        usuario_id: int,
+        rol_codigo: str,
+        expires_at=None,
+        asignado_por_id: int | None = None,
+    ) -> None:
         current_roles = self.session.exec(
             select(UsuarioRol).where(
                 UsuarioRol.usuario_id == usuario_id,
@@ -109,5 +132,12 @@ class UsuarioRepository(BaseRepository[Usuario]):
             self.session.delete(current_role)
 
         self.session.flush()
-        self.session.add(UsuarioRol(usuario_id=usuario_id, rol_codigo=rol_codigo))
+        self.session.add(
+            UsuarioRol(
+                usuario_id=usuario_id,
+                rol_codigo=rol_codigo,
+                expires_at=expires_at,
+                asignado_por_id=asignado_por_id,
+            )
+        )
         self.session.flush()

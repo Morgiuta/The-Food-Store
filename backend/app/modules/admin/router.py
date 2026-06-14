@@ -4,12 +4,14 @@ from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
 from app.modules.admin.schemas import (
+    UsuarioCreate,
     UsuarioList,
     UsuarioPublic,
     UsuarioRolUpdate,
     UsuarioUpdate,
 )
 from app.modules.admin.service import UsuarioService
+from app.modules.auth.models import Usuario
 from app.modules.auth.dependencies import require_roles
 
 router = APIRouter(dependencies=[Depends(require_roles("ADMIN"))])
@@ -37,6 +39,15 @@ def get_usuario(
     return svc.get_by_id(usuario_id)
 
 
+@router.post("/usuarios/", response_model=UsuarioPublic, status_code=status.HTTP_201_CREATED)
+def create_usuario(
+    data: UsuarioCreate,
+    current_user: Annotated[Usuario, Depends(require_roles("ADMIN"))],
+    svc: UsuarioService = Depends(get_usuario_service),
+) -> UsuarioPublic:
+    return svc.create(data, asignado_por_id=current_user.id)
+
+
 @router.patch("/usuarios/{usuario_id}", response_model=UsuarioPublic)
 def update_usuario(
     usuario_id: Annotated[int, Path(gt=0)],
@@ -58,6 +69,7 @@ def delete_usuario(
 def assign_usuario_rol(
     usuario_id: Annotated[int, Path(gt=0)],
     data: UsuarioRolUpdate,
+    current_user: Annotated[Usuario, Depends(require_roles("ADMIN"))],
     svc: UsuarioService = Depends(get_usuario_service),
 ) -> UsuarioPublic:
-    return svc.assign_rol(usuario_id, data)
+    return svc.assign_rol(usuario_id, data, asignado_por_id=current_user.id)

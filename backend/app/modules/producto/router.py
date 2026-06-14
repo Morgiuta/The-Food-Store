@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.api.deps import DbSession
-from app.modules.auth.dependencies import require_roles
+from app.modules.auth.dependencies import require_permission
 from app.modules.producto.schemas import (
     ProductoCreate,
     ProductoDisponibilidadUpdate,
@@ -24,7 +24,7 @@ def get_producto_service(session: DbSession) -> ProductoService:
 @router.post("/", response_model=ProductoPublic, status_code=status.HTTP_201_CREATED)
 def create_producto(
     data: ProductoCreate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("producto", "manage")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.create(data)
@@ -53,7 +53,7 @@ def list_productos(
 @router.get("/{producto_id}", response_model=ProductoPublic)
 def get_producto(
     producto_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN", "STOCK", "CLIENT")),
+    _current_user=Depends(require_permission("producto", "read")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.get_by_id(producto_id)
@@ -63,7 +63,7 @@ def get_producto(
 def update_producto(
     producto_id: Annotated[int, Path(gt=0)],
     data: ProductoUpdate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("producto", "manage")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.update(producto_id, data)
@@ -73,7 +73,7 @@ def update_producto(
 def update_producto_disponibilidad(
     producto_id: Annotated[int, Path(gt=0)],
     data: ProductoDisponibilidadUpdate,
-    _current_user=Depends(require_roles("ADMIN", "STOCK")),
+    _current_user=Depends(require_permission("producto", "disponibilidad")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.update_disponibilidad(producto_id, data)
@@ -84,7 +84,7 @@ from app.modules.producto.schemas import ImagenProductoUpdate
 def update_producto_imagenes(
     producto_id: Annotated[int, Path(gt=0)],
     data: ImagenProductoUpdate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("producto", "manage")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.update_imagenes(producto_id, data)
@@ -94,7 +94,7 @@ def update_producto_imagenes(
 def update_producto_stock(
     producto_id: Annotated[int, Path(gt=0)],
     data: ProductoStockUpdate,
-    _current_user=Depends(require_roles("ADMIN", "STOCK")),
+    _current_user=Depends(require_permission("producto", "stock")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.update_stock(producto_id, data)
@@ -104,7 +104,7 @@ def update_producto_stock(
 def update_producto_stock_cantidad(
     producto_id: Annotated[int, Path(gt=0)],
     data: ProductoStockUpdate,
-    _current_user=Depends(require_roles("ADMIN", "STOCK")),
+    _current_user=Depends(require_permission("producto", "stock")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.update_stock(producto_id, data)
@@ -113,7 +113,7 @@ def update_producto_stock_cantidad(
 @router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_producto(
     producto_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("producto", "manage")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> None:
     svc.soft_delete(producto_id)
@@ -122,7 +122,7 @@ def delete_producto(
 @router.patch("/{producto_id}/restore", response_model=ProductoPublic)
 def restore_producto(
     producto_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("producto", "manage")),
     svc: ProductoService = Depends(get_producto_service),
 ) -> ProductoPublic:
     return svc.restore(producto_id)

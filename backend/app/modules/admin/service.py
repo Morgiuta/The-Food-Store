@@ -7,6 +7,7 @@ from app.core.utils import utcnow
 from app.modules.admin.repository import UsuarioRepository
 from app.modules.admin.schemas import (
     RolPublic,
+    UsuarioCreate,
     UsuarioList,
     UsuarioPublic,
     UsuarioRolUpdate,
@@ -14,6 +15,7 @@ from app.modules.admin.schemas import (
 )
 from app.modules.auth.models import Usuario
 from app.modules.auth.service import normalize_login
+from app.core.security import get_password_hash
 
 
 class UsuarioService(BaseService):
@@ -36,8 +38,12 @@ class UsuarioService(BaseService):
             apellido=usuario.apellido,
             email=usuario.email,
             roles=[
-                RolPublic(codigo=rol.codigo, nombre=rol.nombre)
-                for rol in repo.list_roles_by_usuario(usuario.id or 0)
+                RolPublic(
+                    codigo=rol.codigo,
+                    nombre=rol.nombre,
+                    expires_at=usuario_rol.expires_at,
+                )
+                for rol, usuario_rol in repo.list_role_assignments_by_usuario(usuario.id or 0)
             ],
             is_active=usuario.is_active,
             created_at=usuario.created_at,
@@ -60,6 +66,55 @@ class UsuarioService(BaseService):
     def get_by_id(self, usuario_id: int) -> UsuarioPublic:
         repo = self._repo()
         usuario = self._get_or_404(repo, usuario_id)
+        return self._to_public(repo, usuario)
+
+    def create(self, data: UsuarioCreate, asignado_por_id: int | None = None) -> UsuarioPublic:
+        repo = self._repo()
+        email = normalize_login(data.email)
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="El email es obligatorio",
+            )
+        if repo.get_by_email_any_status(email) is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ya existe un usuario con ese email",
+            )
+        rol = repo.get_rol_by_nombre(data.rol_nombre)
+        if not rol:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Rol '{data.rol_nombre}' no encontrado",
+            )
+
+        try:
+            with UnitOfWork(self._session):
+                usuario = Usuario(
+                    nombre=data.nombre.strip(),
+                    apellido=data.apellido.strip(),
+                    email=email,
+                    celular=data.celular.strip() if data.celular else None,
+                    password_hash=get_password_hash(data.password),
+                )
+                if not usuario.nombre or not usuario.apellido:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Nombre y apellido son obligatorios",
+                    )
+                repo.add(usuario)
+                repo.replace_usuario_rol(
+                    usuario.id or 0,
+                    rol.codigo,
+                    expires_at=data.rol_expires_at,
+                    asignado_por_id=asignado_por_id,
+                )
+        except IntegrityError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ya existe un usuario con ese email",
+            ) from exc
+
         return self._to_public(repo, usuario)
 
     def update(self, usuario_id: int, data: UsuarioUpdate) -> UsuarioPublic:
@@ -93,6 +148,21 @@ class UsuarioService(BaseService):
                         )
                     usuario.nombre = nombre
 
+                if "apellido" in patch:
+                    apellido = patch["apellido"].strip()
+                    if not apellido:
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="El apellido es obligatorio",
+                        )
+                    usuario.apellido = apellido
+
+                if "celular" in patch:
+                    usuario.celular = patch["celular"].strip() if patch["celular"] else None
+
+                if "password" in patch:
+                    usuario.password_hash = get_password_hash(patch["password"])
+
                 usuario.updated_at = utcnow()
                 repo.add(usuario)
         except IntegrityError as exc:
@@ -111,7 +181,12 @@ class UsuarioService(BaseService):
             usuario.updated_at = utcnow()
             repo.add(usuario)
 
-    def assign_rol(self, usuario_id: int, data: UsuarioRolUpdate) -> UsuarioPublic:
+    def assign_rol(
+        self,
+        usuario_id: int,
+        data: UsuarioRolUpdate,
+        asignado_por_id: int | None = None,
+    ) -> UsuarioPublic:
         repo = self._repo()
         usuario = self._get_or_404(repo, usuario_id)
         rol = repo.get_rol_by_nombre(data.rol_nombre)
@@ -122,7 +197,12 @@ class UsuarioService(BaseService):
             )
 
         with UnitOfWork(self._session):
-            repo.replace_usuario_rol(usuario.id or 0, rol.codigo)
+            repo.replace_usuario_rol(
+                usuario.id or 0,
+                rol.codigo,
+                expires_at=data.expires_at,
+                asignado_por_id=asignado_por_id,
+            )
             usuario.updated_at = utcnow()
             repo.add(usuario)
         return self._to_public(repo, usuario)

@@ -14,9 +14,9 @@ def test_registrar_pago_pedido_inexistente(client):
     payload = {
         "mp_payment_id": 123456,
         "mp_status": "approved",
-        "external_reference": "PEDIDO-999",
-        "idempotency_key": "clave-unica-123",
-        "transaction_amount": 5000.0,
+        "external_reference": "PEDIDO-DELIVERY-999",
+        "idempotency_key": "pago-lomo-completo-999",
+        "transaction_amount": 9100.0,
         "payment_method": "credit_card"
     }
     response = client.post("/api/v1/ventas/pedidos/99999/pagos", json=payload)
@@ -27,9 +27,9 @@ def test_procesar_pago_webhook_exitoso(client):
         "mp_payment_id": 123456789,
         "mp_status": "approved",
         "mp_status_detail": "accredited",
-        "external_reference": "PEDIDO-1",
-        "idempotency_key": "clave-unica-123",
-        "transaction_amount": 5500.0,
+        "external_reference": "PEDIDO-DELIVERY-1",
+        "idempotency_key": "pago-pizza-napolitana-1",
+        "transaction_amount": 8400.0,
         "payment_method": "credit_card"
     }
     response = client.post("/api/v1/ventas/pedidos/1/pagos", json=payload)
@@ -48,8 +48,8 @@ def test_pago_webhook_monto_negativo(client):
     payload = {
         "mp_payment_id": 987654321,
         "mp_status": "rejected",
-        "external_reference": "PEDIDO-2",
-        "idempotency_key": "clave-unica-456",
+        "external_reference": "PEDIDO-DELIVERY-2",
+        "idempotency_key": "pago-empanadas-carne-2",
         "transaction_amount": -100.0,
         "payment_method": "account_money"
     }
@@ -61,9 +61,9 @@ def test_pago_webhook_estado_excede_limite(client):
     payload = {
         "mp_payment_id": 111222,
         "mp_status": "a" * 35,
-        "external_reference": "PEDIDO-3",
-        "idempotency_key": "clave-789",
-        "transaction_amount": 1000.0
+        "external_reference": "PEDIDO-DELIVERY-3",
+        "idempotency_key": "pago-gaseosa-cola-3",
+        "transaction_amount": 1500.0
     }
     response = client.post("/api/v1/ventas/pedidos/1/pagos", json=payload)
     
@@ -73,9 +73,9 @@ def test_registrar_pago_exitoso(client):
     payload = {
         "mp_payment_id": 555666777,
         "mp_status": "approved",
-        "external_reference": "PEDIDO-TEST-1",
-        "idempotency_key": "unique-key-555",
-        "transaction_amount": 2500.50,
+        "external_reference": "PEDIDO-MOSTRADOR-1",
+        "idempotency_key": "pago-menu-almuerzo-555",
+        "transaction_amount": 10200.0,
         "payment_method": "credit_card"
     }
     response = client.post("/api/v1/ventas/pedidos/1/pagos", json=payload)
@@ -88,8 +88,8 @@ def test_pago_webhook_sin_idempotency_key(client):
     payload = {
         "mp_payment_id": 777888999,
         "mp_status": "pending",
-        "external_reference": "PEDIDO-4",
-        "transaction_amount": 3000.0,
+        "external_reference": "PEDIDO-DELIVERY-4",
+        "transaction_amount": 8500.0,
         "payment_method": "debit_card"
     }
     response = client.post("/api/v1/ventas/pedidos/1/pagos", json=payload)

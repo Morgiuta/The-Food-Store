@@ -22,14 +22,27 @@ ROLE_PERMISSIONS: dict[str, set[tuple[str, str]]] = {
         ("producto", "stock"),
         ("producto", "disponibilidad"),
         ("ingrediente", "read"),
+        ("ingrediente", "manage"),
+        ("unidad_medida", "read"),
     },
-    "PEDIDOS": {("pedido", "read"), ("pedido", "update")},
+    "PEDIDOS": {
+        ("pedido", "read"),
+        ("pedido", "update"),
+        ("pago", "read"),
+        ("venta", "read"),
+    },
     "CLIENT": {
         ("categoria", "read"),
         ("producto", "read"),
         ("ingrediente", "read"),
+        ("unidad_medida", "read"),
+        ("direccion", "manage"),
         ("pedido", "create"),
         ("pedido", "read"),
+        ("pedido", "cancel"),
+        ("pago", "create"),
+        ("pago", "read"),
+        ("venta", "read"),
     },
 }
 

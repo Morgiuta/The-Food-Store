@@ -1,5 +1,7 @@
 import pytest
-from fastapi.testclient import TestClient
+import anyio
+import anyio.to_thread
+import httpx
 from sqlmodel import Session, SQLModel, create_engine, select
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.compiler import compiles
@@ -22,6 +24,48 @@ from main import app
 from app.core.database import get_session, create_db_and_tables
 from app.modules.auth.models import Usuario, UsuarioRol
 from app.modules.auth.dependencies import get_current_user
+
+
+async def run_sync_inline(func, *args, **kwargs):
+    kwargs.pop("abandon_on_cancel", None)
+    kwargs.pop("cancellable", None)
+    kwargs.pop("limiter", None)
+    return func(*args, **kwargs)
+
+
+anyio.to_thread.run_sync = run_sync_inline
+
+
+class ASGITestClient:
+    def __init__(self, app):
+        self.app = app
+
+    def request(self, method: str, url: str, **kwargs) -> httpx.Response:
+        async def send_request() -> httpx.Response:
+            transport = httpx.ASGITransport(app=self.app)
+            async with httpx.AsyncClient(
+                transport=transport,
+                base_url="http://testserver",
+            ) as client:
+                return await client.request(method, url, **kwargs)
+
+        return anyio.run(send_request)
+
+    def get(self, url: str, **kwargs) -> httpx.Response:
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url: str, **kwargs) -> httpx.Response:
+        return self.request("POST", url, **kwargs)
+
+    def put(self, url: str, **kwargs) -> httpx.Response:
+        return self.request("PUT", url, **kwargs)
+
+    def patch(self, url: str, **kwargs) -> httpx.Response:
+        return self.request("PATCH", url, **kwargs)
+
+    def delete(self, url: str, **kwargs) -> httpx.Response:
+        return self.request("DELETE", url, **kwargs)
+
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -55,8 +99,7 @@ def client_fixture(session: Session):
 
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_current_user] = get_current_user_override
-    
-    with TestClient(app) as client:
-        yield client
-        
+
+    yield ASGITestClient(app)
+
     app.dependency_overrides.clear()

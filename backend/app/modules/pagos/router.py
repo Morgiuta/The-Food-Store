@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Request, status
 
 from app.api.deps import DbSession
-from app.modules.auth.dependencies import require_roles
+from app.modules.auth.dependencies import require_permission
 from app.modules.auth.models import Usuario
 from app.modules.auth.service import user_has_role
 from app.modules.pagos.schemas import (
@@ -36,7 +36,7 @@ def crear_pago(
     data: CrearPagoRequest,
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pago", "create")),
     ],
     session: DbSession,
     svc: PagosService = Depends(get_pagos_service),
@@ -82,7 +82,7 @@ def get_pago(
     pedido_id: Annotated[int, Path(gt=0)],
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pago", "read")),
     ],
     session: DbSession,
     svc: PagosService = Depends(get_pagos_service),

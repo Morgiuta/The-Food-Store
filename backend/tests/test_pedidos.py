@@ -1,6 +1,6 @@
 def test_crear_pedido(client):
     payload_dir = {
-        "calle": "Av Las Heras",
+        "calle": "Avenida Las Heras",
         "numero": "1550",
         "ciudad": "Mendoza",
         "provincia": "Mendoza",
@@ -11,9 +11,9 @@ def test_crear_pedido(client):
     dir_id = res_dir.json().get("id")
 
     payload_prod = {
-        "nombre": "Pizza Cuatro Quesos",
-        "descripcion": "Pizza con mozzarella, queso azul, parmesano y ricota",
-        "precio_base": 8200.0,
+        "nombre": "Pizza Napolitana",
+        "descripcion": "Pizza con queso muzzarella, tomate perita, ajo y oregano",
+        "precio_base": 7800.0,
         "stock_cantidad": 15
     }
     res_prod = client.post("/api/v1/productos/", json=payload_prod)
@@ -24,7 +24,7 @@ def test_crear_pedido(client):
         "forma_pago_codigo": "EFECTIVO",
         "descuento": "0.00",
         "costo_envio": "600.00",
-        "notas": "Extra oregano en la pizza",
+        "notas": "Extra oregano y cortar en ocho porciones",
         "detalles": [
             {"producto_id": prod_id, "cantidad": 1}
         ]
@@ -52,9 +52,9 @@ def test_cancelar_pedido(client):
     dir_id = res_dir.json().get("id")
 
     payload_prod = {
-        "nombre": "Empanadas Fritas",
-        "descripcion": "Empanadas caseras de carne fritas",
-        "precio_base": 850.0,
+        "nombre": "Empanada de Carne",
+        "descripcion": "Empanada criolla de carne cortada a cuchillo",
+        "precio_base": 900.0,
         "stock_cantidad": 60
     }
     res_prod = client.post("/api/v1/productos/", json=payload_prod)
@@ -65,7 +65,7 @@ def test_cancelar_pedido(client):
         "forma_pago_codigo": "EFECTIVO",
         "descuento": "0.00",
         "costo_envio": "500.00",
-        "notas": "Retiro en local",
+        "notas": "Enviar con salsa picante aparte",
         "detalles": [
             {"producto_id": prod_id, "cantidad": 12}
         ]
@@ -91,8 +91,8 @@ def test_actualizar_estado_pedido_admin(client):
 
     payload_prod = {
         "nombre": "Lomo Completo",
-        "descripcion": "Lomo a la parrilla con chimichurri casero",
-        "precio_base": 10500.0,
+        "descripcion": "Lomo con jamon, queso, huevo, lechuga, tomate y papas fritas",
+        "precio_base": 8500.0,
         "stock_cantidad": 20
     }
     res_prod = client.post("/api/v1/productos/", json=payload_prod)
@@ -103,7 +103,7 @@ def test_actualizar_estado_pedido_admin(client):
         "forma_pago_codigo": "EFECTIVO",
         "descuento": "0.00",
         "costo_envio": "300.00",
-        "notas": "",
+        "notas": "Sin mayonesa",
         "detalles": [
             {"producto_id": prod_id, "cantidad": 1}
         ]
@@ -141,7 +141,7 @@ def test_crear_pedido_sin_detalles(client):
         "forma_pago_codigo": "EFECTIVO",
         "descuento": "0.00",
         "costo_envio": "500.00",
-        "notas": "Test sin productos",
+        "notas": "Pedido de mostrador sin productos cargados",
         "detalles": []
     }
     response = client.post("/api/v1/pedidos/", json=payload_pedido)

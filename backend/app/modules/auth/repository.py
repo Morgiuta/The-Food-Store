@@ -1,7 +1,9 @@
 from datetime import datetime
 
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
+from app.core.utils import utcnow
 from app.modules.auth.models import RefreshToken, Usuario, UsuarioRol
 
 
@@ -31,6 +33,7 @@ class AuthRepository:
         statement = select(UsuarioRol.rol_codigo).where(
             UsuarioRol.usuario_id == usuario_id,
             UsuarioRol.deleted_at.is_(None),
+            or_(UsuarioRol.expires_at.is_(None), UsuarioRol.expires_at > utcnow()),
         )
         return list(self.session.exec(statement).all())
 

@@ -7,7 +7,7 @@ from sqlmodel import Session
 from app.api.deps import DbSession
 from app.core.database import engine
 from app.core.security import decode_access_token
-from app.modules.auth.dependencies import require_roles
+from app.modules.auth.dependencies import require_permission
 from app.modules.auth.models import Usuario
 from app.modules.auth.service import get_user_by_username, get_user_role_codes
 from app.modules.pedidos.repository import PedidoRepository
@@ -32,7 +32,7 @@ async def create_pedido(
     data: PedidoCreate,
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pedido", "create")),
     ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
@@ -43,7 +43,7 @@ async def create_pedido(
 def list_pedidos(
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pedido", "read")),
     ],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
@@ -61,7 +61,7 @@ def get_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pedido", "read")),
     ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
@@ -74,7 +74,7 @@ def get_pedido_historial(
     pedido_id: Annotated[int, Path(gt=0)],
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pedido", "read")),
     ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> list[HistorialEstadoPedidoPublic]:
@@ -86,7 +86,7 @@ def get_pedido_historial(
 async def change_estado(
     pedido_id: Annotated[int, Path(gt=0)],
     data: PedidoEstadoUpdate,
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS"))],
+    current_user: Annotated[Usuario, Depends(require_permission("pedido", "update"))],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
     return await svc.change_estado(
@@ -101,7 +101,7 @@ async def change_estado(
 async def avanzar_estado(
     pedido_id: Annotated[int, Path(gt=0)],
     data: PedidoEstadoPatch,
-    current_user: Annotated[Usuario, Depends(require_roles("ADMIN", "PEDIDOS"))],
+    current_user: Annotated[Usuario, Depends(require_permission("pedido", "update"))],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
     return await svc.avanzar_estado(
@@ -116,7 +116,7 @@ async def cancelar_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "STOCK", "PEDIDOS", "CLIENT")),
+        Depends(require_permission("pedido", "cancel")),
     ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
@@ -131,7 +131,7 @@ async def delete_pedido(
     pedido_id: Annotated[int, Path(gt=0)],
     current_user: Annotated[
         Usuario,
-        Depends(require_roles("ADMIN", "CLIENT")),
+        Depends(require_permission("pedido", "cancel")),
     ],
     svc: PedidosService = Depends(get_pedidos_service),
 ) -> PedidoPublic:
@@ -181,7 +181,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     from app.core.websocket import manager
 
     await manager.connect(websocket, roles=user_roles, user_id=user_id)
-    is_staff = bool({"ADMIN", "STOCK", "PEDIDOS"}.intersection(set(user_roles)))
+    is_staff = bool({"ADMIN", "PEDIDOS"}.intersection(set(user_roles)))
 
     try:
         while True:

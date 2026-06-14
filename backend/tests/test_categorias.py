@@ -1,6 +1,6 @@
 def test_crear_categoria_exitosa(client):
     payload = {
-        "nombre": "Bebidas",
+        "nombre": "Bebidas Sin Alcohol",
         "orden_display": 1
     }
     response = client.post("/api/v1/categorias/", json=payload)
@@ -8,7 +8,7 @@ def test_crear_categoria_exitosa(client):
     print("Categoria cargada en base de datos")
     
     assert response.status_code in [200, 201]
-    assert response.json()["nombre"] == "Bebidas"
+    assert response.json()["nombre"] == "Bebidas Sin Alcohol"
 
 def test_obtener_lista_categorias(client):
     response = client.get("/api/v1/categorias/")
@@ -18,7 +18,7 @@ def test_obtener_lista_categorias(client):
 
 def test_obtener_categoria_por_id(client):
     payload = {
-        "nombre": "Postres",
+        "nombre": "Platos Principales",
         "orden_display": 1
     }
     creacion = client.post("/api/v1/categorias/", json=payload)
@@ -27,7 +27,7 @@ def test_obtener_categoria_por_id(client):
     response = client.get(f"/api/v1/categorias/{cat_id}")
     
     assert response.status_code == 200
-    assert response.json()["nombre"] == "Postres"
+    assert response.json()["nombre"] == "Platos Principales"
 
 def test_actualizar_categoria(client):
     payload = {
@@ -43,7 +43,7 @@ def test_actualizar_categoria(client):
 
 def test_eliminar_categoria(client):
     payload = {
-        "nombre": "Bebidas Frias"
+        "nombre": "Entradas"
     }
     creacion = client.post("/api/v1/categorias/", json=payload)
     cat_id = creacion.json()["id"]

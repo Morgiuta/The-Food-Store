@@ -69,7 +69,7 @@ def test_eliminar_unidad_medida(client):
 
 def test_crear_unidad_medida_falta_dato(client):
     payload = {
-        "nombre": "Unidad"
+        "nombre": "Porcion"
     }
     response = client.post("/api/v1/unidades-medida/", json=payload)
     

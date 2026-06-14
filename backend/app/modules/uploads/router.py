@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, status
 from typing import Annotated
 from urllib.parse import unquote
 
-from app.modules.auth.dependencies import require_roles
+from app.modules.auth.dependencies import require_permission
 from app.modules.auth.models import Usuario
 from app.modules.uploads.schemas import CloudinaryResponse
 from app.modules.uploads import service as uploads_service
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/uploads", tags=["Uploads"])
 def upload_imagen(
     file: UploadFile = File(...),
     folder: str = "foodstore/productos",
-    _current_user=Depends(require_roles("ADMIN"))
+    _current_user=Depends(require_permission("upload", "manage"))
 ):
     """
     Sube una imagen a Cloudinary. Recibe multipart/form-data.
@@ -32,7 +32,7 @@ def upload_imagen(
 @router.delete("/imagen/{public_id:path}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_imagen(
     public_id: str,
-    _current_user=Depends(require_roles("ADMIN"))
+    _current_user=Depends(require_permission("upload", "manage"))
 ):
     """
     Elimina una imagen de Cloudinary por su public_id.

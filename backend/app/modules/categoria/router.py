@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 
 from app.api.deps import DbSession
-from app.modules.auth.dependencies import require_roles
+from app.modules.auth.dependencies import require_permission
 from app.modules.categoria.schemas import (
     CategoriaCreate,
     CategoriaList,
@@ -23,7 +23,7 @@ def get_categoria_service(session: DbSession) -> CategoriaService:
 @router.post("/", response_model=CategoriaPublic, status_code=status.HTTP_201_CREATED)
 def create_categoria(
     data: CategoriaCreate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("categoria", "manage")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.create(data)
@@ -87,7 +87,7 @@ def get_categoria(
 def update_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
     data: CategoriaUpdate,
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("categoria", "manage")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.update(categoria_id, data)
@@ -96,7 +96,7 @@ def update_categoria(
 @router.delete("/{categoria_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("categoria", "manage")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> None:
     svc.soft_delete(categoria_id)
@@ -105,7 +105,7 @@ def delete_categoria(
 @router.patch("/{categoria_id}/restore", response_model=CategoriaPublic)
 def restore_categoria(
     categoria_id: Annotated[int, Path(gt=0)],
-    _current_user=Depends(require_roles("ADMIN")),
+    _current_user=Depends(require_permission("categoria", "manage")),
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.restore(categoria_id)
