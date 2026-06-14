@@ -31,3 +31,52 @@ backend/app/api/__pycache__/
 backend/app/core/__pycache__/
 backend/app/modules/__pycache__/
 backend/app/shared/__pycache__/
+
+# ============================================================
+# Asistentes de IA / herramientas de generacion de codigo
+# ============================================================
+
+# Claude / Claude Code / Anthropic
+.claude/
+.claude.json
+.claude.local.json
+CLAUDE.md
+CLAUDE.local.md
+.anthropic/
+.mcp.json
+
+# Memoria persistente (engram)
+.engram/
+engram.db
+*.engram
+
+# Cursor
+.cursor/
+.cursorrules
+.cursorignore
+
+# Aider
+.aider*
+.aiderignore
+
+# GitHub Copilot
+.github/copilot-instructions.md
+
+# Otros asistentes (Gemini, Windsurf, Continue, Codeium, SpecStory, OpenCode)
+.gemini/
+GEMINI.md
+AGENTS.md
+.windsurf/
+.windsurfrules
+.continue/
+.codeium/
+.specstory/
+.opencode/
+
+# Logs (incluye los de herramientas de IA)
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

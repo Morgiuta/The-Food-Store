@@ -13,6 +13,7 @@ import { UsuariosPage } from '../pages/UsuariosPage/UsuariosPage';
 import { StoreHomePage } from '../pages/StoreHomePage/StoreHomePage';
 import { CartPage } from '../pages/CartPage/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage/CheckoutPage';
+import { CheckoutResultPage } from '../pages/CheckoutResultPage/CheckoutResultPage';
 import { AddressesPage } from '../pages/AddressesPage/AddressesPage';
 import { MyOrdersPage } from '../pages/MyOrdersPage/MyOrdersPage';
 
@@ -36,6 +37,7 @@ export function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="checkout/pago/:status" element={<CheckoutResultPage />} />
         <Route
           path="mis-direcciones"
           element={

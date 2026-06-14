@@ -15,6 +15,15 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
+    # MercadoPago (Checkout Pro)
+    mp_access_token: str = ""
+    mp_public_key: str = ""
+    mp_notification_url: str = ""
+    mp_webhook_secret: str = ""
+
+    # URL base del frontend para construir las back_urls de Checkout Pro
+    frontend_url: str = "http://localhost:5173"
+
     @computed_field
     @property
     def database_url(self) -> str:

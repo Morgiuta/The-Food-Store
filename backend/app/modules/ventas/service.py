@@ -5,8 +5,6 @@ from app.modules.ventas.repository import VentasRepository
 from app.modules.ventas.schemas import (
     EstadoPedidoPublic,
     FormaPagoPublic,
-    PagoCreate,
-    PagoPublic,
 )
 
 
@@ -27,6 +25,3 @@ class VentasService:
             EstadoPedidoPublic.model_validate(item)
             for item in self.ventas.list_estados_activos()
         ]
-
-    def register_pago(self, pedido_id: int, data: PagoCreate) -> PagoPublic:
-        return self.pedidos.register_pago(pedido_id, data)

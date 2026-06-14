@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from app.core.base_model import utcnow
@@ -13,7 +12,6 @@ from app.modules.ventas.models import DetallePedido, HistorialEstadoPedido, Pago
 from app.modules.ventas.schemas import (
     DetallePedidoPublic,
     HistorialEstadoPedidoPublic,
-    PagoCreate,
     PagoPublic,
     PedidoCreate,
     PedidoPublic,
@@ -23,14 +21,6 @@ TRANSICIONES_VALIDAS = {
     "PENDIENTE": {"CONFIRMADO", "CANCELADO"},
     "CONFIRMADO": {"EN_PREP", "CANCELADO"},
     "EN_PREP": {"ENTREGADO", "CANCELADO"},
-}
-
-MP_STATUS_TO_ESTADO = {
-    "approved": "CONFIRMADO",
-    "rejected": "CANCELADO",
-    "cancelled": "CANCELADO",
-    "refunded": "CANCELADO",
-    "charged_back": "CANCELADO",
 }
 
 
@@ -149,6 +139,10 @@ class PedidosService:
 
             for detalle_data in data.detalles:
                 producto = productos[detalle_data.producto_id]
+                personalizacion = detalle_data.personalizacion
+                if hasattr(personalizacion, "model_dump"):
+                    # La columna es JSONB: persistir un dict, no el modelo Pydantic.
+                    personalizacion = personalizacion.model_dump()
                 uow.pedidos.add_detalle(
                     DetallePedido(
                         pedido_id=pedido.id,
@@ -157,7 +151,7 @@ class PedidosService:
                         nombre_snapshot=producto.nombre,
                         precio_snapshot=producto.precio_base,
                         subtotal_snapshot=producto.precio_base * detalle_data.cantidad,
-                        personalizacion=detalle_data.personalizacion,
+                        personalizacion=personalizacion,
                     )
                 )
 
@@ -288,60 +282,6 @@ class PedidosService:
 
         result = self.get_pedido(pedido_id)
         await self._emit_ws_events(result)
-        return result
-
-    async def register_pago(self, pedido_id: int, data: PagoCreate) -> PagoPublic:
-        estado_actualizado = False
-        try:
-            with PedidosUnitOfWork(self.session) as uow:
-                pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
-
-                existing = uow.pedidos.get_pago_by_idempotency_key(data.idempotency_key)
-                if existing is not None:
-                    return self._pago_to_public(existing)
-
-                pago = Pago(
-                    pedido_id=pedido.id,
-                    mp_payment_id=data.mp_payment_id,
-                    mp_status=data.mp_status,
-                    mp_status_detail=data.mp_status_detail,
-                    external_reference=data.external_reference,
-                    idempotency_key=data.idempotency_key,
-                    transaction_amount=data.transaction_amount,
-                    payment_method=data.payment_method,
-                )
-                uow.pedidos.add_pago(pago)
-
-                next_estado = MP_STATUS_TO_ESTADO.get(data.mp_status)
-                if next_estado is not None and pedido.estado_codigo != next_estado:
-                    try:
-                        self._validate_transition(
-                            pedido.estado_codigo,
-                            next_estado,
-                            data.mp_status_detail,
-                            uow.pedidos,
-                        )
-                        pedido.updated_at = utcnow()
-                        uow.pedidos.update_estado(
-                            pedido,
-                            next_estado,
-                            usuario_id=None,
-                            motivo=data.mp_status_detail or f"Pago {data.mp_status}",
-                        )
-                        estado_actualizado = True
-                    except HTTPException:
-                        pass
-
-        except IntegrityError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="El pago ya fue registrado",
-            ) from exc
-
-        self.session.refresh(pago)
-        result = self._pago_to_public(pago)
-        if estado_actualizado:
-            await self._emit_ws_events(self.get_pedido(pedido_id))
         return result
 
     async def _emit_ws_events(self, pedido: PedidoPublic) -> None:
