@@ -63,7 +63,8 @@ export function ProductoForm({
               ingrediente_id: i.ingrediente_id,
               es_removible: i.es_removible,
               es_opcional: i.es_opcional,
-              cantidad_requerida: i.cantidad_requerida,
+              cantidad: i.cantidad,
+              unidad_medida_id: i.unidad_medida_id,
             })),
           }
         : initialValues,
@@ -182,9 +183,9 @@ export function ProductoForm({
       let changed = false;
       const ingredientes = current.ingredientes.map((ing) => {
         const selectedIngrediente = ingredientesActivos.find((s) => s.id === ing.ingrediente_id);
-        if (selectedIngrediente?.es_producto_terminado === true && ing.cantidad_requerida !== 1) {
+        if (selectedIngrediente?.es_producto_terminado === true && ing.cantidad !== 1) {
           changed = true;
-          return { ...ing, cantidad_requerida: 1 };
+          return { ...ing, cantidad: 1 };
         }
         return ing;
       });
@@ -200,7 +201,7 @@ export function ProductoForm({
       if (ing.ingrediente_id === 0) return acc;
       const supply = ingredientesActivos.find(s => s.id === ing.ingrediente_id);
       if (!supply || supply.costo_unitario == null) return acc;
-      return acc + Number(ing.cantidad_requerida) * supply.costo_unitario;
+      return acc + Number(ing.cantidad) * supply.costo_unitario;
     }, 0);
   }, [values.ingredientes, ingredientesActivos]);
 
@@ -505,7 +506,7 @@ export function ProductoForm({
                   type="button"
                   onClick={() => setValues(v => ({ 
                     ...v, 
-                    ingredientes: [...v.ingredientes, { ingrediente_id: 0, cantidad_requerida: 1, es_removible: true, es_opcional: false }] 
+                    ingredientes: [...v.ingredientes, { ingrediente_id: 0, cantidad: 1, es_removible: true, es_opcional: false, unidad_medida_id: 0 }] 
                   }))}
                   className="text-sm font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
                 >
@@ -540,7 +541,8 @@ export function ProductoForm({
                                     ? {
                                         ...c,
                                         ingrediente_id: val,
-                                        cantidad_requerida: ingredienteSeleccionado?.es_producto_terminado ? 1 : c.cantidad_requerida,
+                                        cantidad: ingredienteSeleccionado?.es_producto_terminado ? 1 : c.cantidad,
+                                        unidad_medida_id: ingredienteSeleccionado?.unidad_medida_id ?? c.unidad_medida_id,
                                       }
                                     : c,
                                 )
@@ -566,13 +568,29 @@ export function ProductoForm({
                           step="0.01"
                           placeholder="Cant."
                           className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          value={isProductoTerminado ? 1 : ing.cantidad_requerida}
+                          value={isProductoTerminado ? 1 : ing.cantidad}
                           disabled={isProductoTerminado}
                           onChange={(e) => setValues(v => ({
                             ...v,
-                            ingredientes: v.ingredientes.map((c, i) => i === idx ? { ...c, cantidad_requerida: Number(e.target.value) } : c)
+                            ingredientes: v.ingredientes.map((c, i) => i === idx ? { ...c, cantidad: Number(e.target.value) } : c)
                           }))}
                         />
+                      </div>
+                      <div className="w-32">
+                        <select
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          value={ing.unidad_medida_id || 0}
+                          disabled={isProductoTerminado || ing.ingrediente_id === 0}
+                          onChange={(e) => setValues(v => ({
+                            ...v,
+                            ingredientes: v.ingredientes.map((c, i) => i === idx ? { ...c, unidad_medida_id: Number(e.target.value) } : c)
+                          }))}
+                        >
+                          <option value={0} disabled>Unidad...</option>
+                          {unidadesMedida.map((u) => (
+                            <option key={u.id} value={u.id}>{u.simbolo}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="flex-1 flex gap-4 text-sm">
                         <label className="flex items-center gap-1 cursor-pointer">

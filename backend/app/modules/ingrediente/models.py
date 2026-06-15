@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Integer, ForeignKey, Numeric, String, Text, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.utils import utcnow
@@ -18,7 +18,7 @@ class Ingrediente(SQLModel, table=True):
         default=False,
         sa_column=Column(Boolean, nullable=False, default=False),
     )
-    stock_actual: Decimal = Field(
+    stock_cantidad: Decimal = Field(
         default=Decimal("0.00"),
         sa_column=Column(Numeric(10, 2), nullable=False, default=0),
     )
@@ -26,9 +26,8 @@ class Ingrediente(SQLModel, table=True):
         default=Decimal("0.00"),
         sa_column=Column(Numeric(10, 2), nullable=False, default=0),
     )
-    unidad: str = Field(
-        default="unidad",
-        sa_column=Column(String(20), nullable=False, default="unidad"),
+    unidad_medida_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("unidades_medida.id", ondelete="RESTRICT"), nullable=False)
     )
     es_producto_terminado: bool = Field(
         default=False,
@@ -50,9 +49,11 @@ class Ingrediente(SQLModel, table=True):
     productos_ingrediente: list["ProductoIngrediente"] = Relationship(
         back_populates="ingrediente"
     )
+    unidad_medida: Optional["UnidadMedida"] = Relationship(back_populates="ingredientes")
 
     __table_args__ = (UniqueConstraint("nombre", name="uq_ingrediente_nombre"),)
 
 
 if TYPE_CHECKING:
     from app.modules.producto_ingrediente.models import ProductoIngrediente
+    from app.modules.unidad_medida.models import UnidadMedida

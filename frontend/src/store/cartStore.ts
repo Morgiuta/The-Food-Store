@@ -3,15 +3,17 @@ import { persist } from 'zustand/middleware';
 import type { Producto } from '../types/producto';
 
 export interface CartItem {
+  id: string; // Unique ID for the cart item since the same product can have different personalizations
   producto: Producto;
   cantidad: number;
+  personalizacion?: Record<string, any>;
 }
 
 interface CartState {
   items: CartItem[];
-  addItem: (producto: Producto, cantidad?: number) => void;
-  updateQuantity: (productoId: number, cantidad: number) => void;
-  removeItem: (productoId: number) => void;
+  addItem: (producto: Producto, cantidad?: number, personalizacion?: Record<string, any>) => void;
+  updateQuantity: (cartItemId: string, cantidad: number) => void;
+  removeItem: (cartItemId: string) => void;
   clearCart: () => void;
 }
 
@@ -19,13 +21,18 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
-      addItem: (producto, cantidad = 1) =>
+      addItem: (producto, cantidad = 1, personalizacion) =>
         set((state) => {
-          const current = state.items.find((item) => item.producto.id === producto.id);
+          // Check if there is an identical product with the exact same personalization
+          const persStr = JSON.stringify(personalizacion || null);
+          const current = state.items.find(
+            (item) => item.producto.id === producto.id && JSON.stringify(item.personalizacion || null) === persStr
+          );
+
           if (current) {
             return {
               items: state.items.map((item) =>
-                item.producto.id === producto.id
+                item.id === current.id
                   ? {
                       ...item,
                       producto,
@@ -43,17 +50,19 @@ export const useCartStore = create<CartState>()(
             items: [
               ...state.items,
               {
+                id: crypto.randomUUID(),
                 producto,
                 cantidad: Math.min(cantidad, Math.max(producto.stock_cantidad, 1)),
+                personalizacion,
               },
             ],
           };
         }),
-      updateQuantity: (productoId, cantidad) =>
+      updateQuantity: (cartItemId, cantidad) =>
         set((state) => ({
           items: state.items
             .map((item) =>
-              item.producto.id === productoId
+              item.id === cartItemId
                 ? {
                     ...item,
                     cantidad: Math.min(
@@ -65,9 +74,9 @@ export const useCartStore = create<CartState>()(
             )
             .filter((item) => item.cantidad > 0),
         })),
-      removeItem: (productoId) =>
+      removeItem: (cartItemId) =>
         set((state) => ({
-          items: state.items.filter((item) => item.producto.id !== productoId),
+          items: state.items.filter((item) => item.id !== cartItemId),
         })),
       clearCart: () => set({ items: [] }),
     }),

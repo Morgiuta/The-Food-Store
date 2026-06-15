@@ -29,9 +29,11 @@ class UnidadMedida(SQLModel, table=True):
     )
 
     productos: list["Producto"] = Relationship(back_populates="unidad_venta")
+    ingredientes: list["Ingrediente"] = Relationship(back_populates="unidad_medida")
 
     __table_args__ = (UniqueConstraint("codigo", name="uq_unidad_medida_codigo"),)
 
 
 if TYPE_CHECKING:
     from app.modules.producto.models import Producto
+    from app.modules.ingrediente.models import Ingrediente

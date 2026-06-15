@@ -242,18 +242,22 @@ class HistorialEstadoPedido(SQLModel, table=True):
 class DetallePedido(SQLModel, table=True):
     __tablename__ = "detalle_pedidos"
 
+    id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
+    )
     pedido_id: int = Field(
         sa_column=Column(
             BigInteger,
             ForeignKey("pedidos.id", ondelete="CASCADE"),
-            primary_key=True,
+            nullable=False,
         ),
     )
     producto_id: int = Field(
         sa_column=Column(
             Integer,
             ForeignKey("productos.id", ondelete="RESTRICT"),
-            primary_key=True,
+            nullable=False,
         ),
     )
     cantidad: int = Field(sa_column=Column(SmallInteger, nullable=False))

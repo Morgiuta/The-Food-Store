@@ -8,16 +8,13 @@ from app.shared.schemas.base import PublicSchema
 from app.shared.schemas.pagination import PaginatedResponse
 
 
-UnidadIngrediente = Literal["unidad", "kg", "litros", "gramos", "ml"]
-
-
 class IngredienteCreate(SQLModel):
     nombre: str = Field(min_length=1, max_length=100)
     descripcion: Optional[str] = None
     es_alergeno: bool = False
-    stock_actual: Decimal = Field(default=Decimal("0.00"), ge=0)
+    stock_cantidad: Decimal = Field(default=Decimal("0.00"), ge=0)
     costo_unitario: Decimal = Field(default=Decimal("0.00"), ge=0)
-    unidad: UnidadIngrediente = "unidad"
+    unidad_medida_id: int
     es_producto_terminado: bool = False
 
 
@@ -25,10 +22,10 @@ class IngredienteUpdate(SQLModel):
     nombre: Optional[str] = Field(default=None, min_length=1, max_length=100)
     descripcion: Optional[str] = None
     es_alergeno: Optional[bool] = None
-    stock_actual: Optional[Decimal] = Field(default=None, ge=0)
+    stock_cantidad: Optional[Decimal] = Field(default=None, ge=0)
     costo_unitario: Optional[Decimal] = Field(default=None, ge=0)
-    unidad: UnidadIngrediente = "unidad"
-    es_producto_terminado: bool = False
+    unidad_medida_id: Optional[int] = None
+    es_producto_terminado: Optional[bool] = None
 
 
 class IngredientePublic(PublicSchema):
@@ -36,9 +33,9 @@ class IngredientePublic(PublicSchema):
     nombre: str
     descripcion: Optional[str]
     es_alergeno: bool
-    stock_actual: Decimal
+    stock_cantidad: Decimal
     costo_unitario: Decimal
-    unidad: UnidadIngrediente = "unidad"
+    unidad_medida_id: int
     es_producto_terminado: bool = False
     created_at: datetime
     updated_at: datetime

@@ -36,7 +36,7 @@ UNIDADES_MEDIDA_SEED = [
     ("g", "Gramo", "g"),
     ("L", "Litro", "L"),
     ("ml", "Mililitro", "ml"),
-    ("ud", "Unidad", "ud"),
+    ("un", "Unidad", "un"),
     ("porciones", "Porciones", "porciones"),
 ]
 

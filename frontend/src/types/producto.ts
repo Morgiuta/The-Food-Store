@@ -7,7 +7,8 @@ export interface ProductoIngredienteLink {
   ingrediente_id: number;
   es_removible: boolean;
   es_opcional: boolean;
-  cantidad_requerida: number;
+  cantidad: number;
+  unidad_medida_id: number;
 }
 
 export interface ProductoIngredientePublic extends ProductoIngredienteLink {

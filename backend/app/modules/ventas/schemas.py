@@ -25,6 +25,14 @@ class PedidoCreate(SQLModel):
     notas: str | None = None
     detalles: list[DetallePedidoCreate] = Field(min_length=1)
 
+class PedidoEditDetail(SQLModel):
+    producto_id: int = Field(gt=0)
+    cantidad: int = Field(ge=1)
+    personalizacion: PedidoPersonalizacion | dict[str, Any] | None = None
+
+class PedidoEditRequest(SQLModel):
+    detalles: list[PedidoEditDetail] = Field(min_length=1)
+
 
 class PedidoEstadoUpdate(SQLModel):
     estado_hacia: str = Field(min_length=1, max_length=20)

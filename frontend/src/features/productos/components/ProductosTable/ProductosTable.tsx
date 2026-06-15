@@ -100,27 +100,34 @@ export function ProductosTable({
               <td className="p-4">
                 <div className="flex flex-col items-start gap-1">
                   {(() => {
-                    if (!stockPosibleMap || prod.ingredientes.length === 0) return (
+                    const stockBase = (
                       <span className={`font-bold ${prod.stock_cantidad <= 5 ? 'text-red-500' : 'text-gray-600'}`}>
                         {prod.stock_cantidad} {prod.unidad_venta?.simbolo ?? 'u.'}
                       </span>
                     );
+                    
+                    if (!stockPosibleMap || prod.ingredientes.length === 0) return stockBase;
+                    
                     const posible = stockPosibleMap.get(prod.id);
-                    if (posible === undefined) return null;
-                    if (posible >= 10) return (
-                      <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                        Elaborables: {posible}
-                      </span>
-                    );
-                    if (posible >= 1) return (
-                      <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
-                        ⚠ Solo {posible} posibles
-                      </span>
-                    );
+                    if (posible === undefined) return stockBase;
+                    
                     return (
-                      <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
-                        ✗ Sin stock de insumos
-                      </span>
+                      <>
+                        {stockBase}
+                        {posible >= 10 ? (
+                          <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full mt-1">
+                            Elaborables: {posible}
+                          </span>
+                        ) : posible >= 1 ? (
+                          <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full mt-1">
+                            ⚠ Solo {posible} posibles
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full mt-1">
+                            ✗ Sin stock de insumos
+                          </span>
+                        )}
+                      </>
                     );
                   })()}
                 </div>

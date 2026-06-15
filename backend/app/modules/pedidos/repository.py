@@ -115,6 +115,17 @@ class PedidoRepository:
         self.session.flush()
         return detalle
 
+    def delete_detalles(self, pedido_id: int) -> None:
+        detalles = self.list_detalles(pedido_id)
+        for d in detalles:
+            self.session.delete(d)
+        self.session.flush()
+
+    def update(self, pedido: Pedido) -> Pedido:
+        self.session.add(pedido)
+        self.session.flush()
+        return pedido
+
     def add_historial(self, historial: HistorialEstadoPedido) -> HistorialEstadoPedido:
         self.session.add(historial)
         self.session.flush()

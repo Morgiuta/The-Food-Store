@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import cloudinary
 
 from app.api.router import api_router
+from app.api.error_handlers import register_error_handlers
 from app.core.database import create_db_and_tables
 from app.core.config import settings
 
@@ -27,6 +28,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+register_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,

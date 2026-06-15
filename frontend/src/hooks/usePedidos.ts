@@ -9,7 +9,6 @@ export function usePedidos() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['pedidos'],
     queryFn: () => pedidosService.getAll(1, 100), // Get latest 100 orders
-    refetchInterval: 15000, 
     staleTime: 5000,
   });
 

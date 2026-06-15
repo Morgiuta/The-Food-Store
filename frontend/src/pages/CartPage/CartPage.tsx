@@ -32,7 +32,7 @@ export function CartPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-3">
             {items.map((item) => (
-              <article key={item.producto.id} className="rounded-lg border border-border bg-surface p-4">
+              <article key={item.id} className="rounded-lg border border-border bg-surface p-4">
                 <div className="flex gap-4">
                   <div className="h-20 w-24 overflow-hidden rounded-md bg-surface-warm">
                     {item.producto.imagen_url ? (
@@ -50,10 +50,17 @@ export function CartPage() {
                   <div className="min-w-0 flex-1">
                     <h2 className="font-black">{item.producto.nombre}</h2>
                     <p className="text-sm font-medium text-muted">${item.producto.precio_base} c/u</p>
+                    
+                    {item.personalizacion?.removed_ingredients && item.personalizacion.removed_ingredients.length > 0 && (
+                      <p className="mt-1 text-xs text-red-500 font-bold">
+                        Sin: {item.producto.ingredientes?.filter(i => item.personalizacion?.removed_ingredients.includes(i.ingrediente_id))?.map(i => i.nombre)?.join(', ') || item.personalizacion.removed_ingredients.length + ' ingredientes'}
+                      </p>
+                    )}
+
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
+                        onClick={() => updateQuantity(item.id, item.cantidad - 1)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:border-primary"
                         title="Restar"
                       >
@@ -64,7 +71,7 @@ export function CartPage() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
+                        onClick={() => updateQuantity(item.id, item.cantidad + 1)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:border-primary"
                         title="Sumar"
                       >
@@ -72,7 +79,7 @@ export function CartPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.producto.id)}
+                        onClick={() => removeItem(item.id)}
                         className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-ketchup hover:border-ketchup"
                         title="Quitar"
                       >

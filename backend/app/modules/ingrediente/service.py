@@ -85,7 +85,7 @@ class IngredienteService(BaseService):
             uow.ingredientes.add(ingrediente)
             uow.ingredientes.flush()
 
-            if "stock_actual" in patch:
+            if "stock_cantidad" in patch:
                 with ProductoUnitOfWork(self._session) as prod_uow:
                     prod_svc = ProductoService(self._session)
                     links = prod_uow.producto_ingredientes.list_by_ingrediente(ingrediente.id)

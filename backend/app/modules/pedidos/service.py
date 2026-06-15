@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -15,6 +17,7 @@ from app.modules.ventas.schemas import (
     PagoPublic,
     PedidoCreate,
     PedidoPublic,
+    PedidoEditRequest,
 )
 
 TRANSICIONES_VALIDAS = {
@@ -284,6 +287,130 @@ class PedidosService:
         await self._emit_ws_events(result)
         return result
 
+    async def editar_pedido(
+        self,
+        pedido_id: int,
+        usuario_id: int,
+        data: "PedidoEditRequest",
+        is_staff: bool = False,
+    ) -> PedidoPublic:
+        with PedidosUnitOfWork(self.session) as uow:
+            pedido = self._get_pedido_or_404(pedido_id, uow.pedidos)
+
+            if not is_staff and pedido.usuario_id != usuario_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No tiene permiso para editar este pedido",
+                )
+
+            if pedido.forma_pago_codigo != "EFECTIVO":
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Solo se pueden editar pedidos con pago en EFECTIVO",
+                )
+
+            if pedido.estado_codigo not in {"PENDIENTE", "CONFIRMADO", "EN_PREP"}:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"No se puede editar un pedido en estado {pedido.estado_codigo}",
+                )
+
+            productos = self._get_productos_for_detalles(data, uow.pedidos)
+
+            # Validar restricciones de EN_PREP
+            if pedido.estado_codigo == "EN_PREP":
+                from collections import defaultdict
+                old_detalles = uow.pedidos.list_detalles(pedido_id)
+                old_counts = defaultdict(int)
+                for od in old_detalles:
+                    old_counts[(od.producto_id, str(od.personalizacion))] += od.cantidad
+                
+                new_counts = defaultdict(int)
+                for nd in data.detalles:
+                    new_counts[(nd.producto_id, str(nd.personalizacion))] += nd.cantidad
+                
+                for key, old_qty in old_counts.items():
+                    if new_counts[key] < old_qty:
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="No se pueden eliminar o reducir productos de un pedido EN PREPARACION",
+                        )
+                
+                # Todo lo nuevo debe tener tiempo_prep_min <= 0
+                for nd in data.detalles:
+                    key = (nd.producto_id, str(nd.personalizacion))
+                    added_qty = nd.cantidad - old_counts.get(key, 0)
+                    if added_qty > 0:
+                        prod = productos[nd.producto_id]
+                        if prod.tiempo_prep_min is not None and prod.tiempo_prep_min > 0:
+                            raise HTTPException(
+                                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail=f"El producto {prod.nombre} requiere preparacion y no puede ser agregado a un pedido EN PREPARACION",
+                            )
+
+            # Devolver el stock de los productos anteriores
+            old_detalles = uow.pedidos.list_detalles(pedido_id)
+            for old_detalle in old_detalles:
+                producto = uow.pedidos.session.get(Producto, old_detalle.producto_id)
+                if producto:
+                    producto.stock_cantidad += old_detalle.cantidad
+                    producto.disponible = True
+                    uow.pedidos.save_producto(producto)
+
+            # Validar disponibilidad y stock con el nuevo carrito
+            self._validate_productos_disponibles(data, productos)
+            self._validate_stock_suficiente(data, productos)
+
+            # Eliminar detalles anteriores
+            uow.pedidos.delete_detalles(pedido_id)
+
+            # Guardar nuevos detalles y descontar stock
+            subtotal = Decimal("0.00")
+            for detalle_data in data.detalles:
+                producto = productos[detalle_data.producto_id]
+                producto.stock_cantidad -= detalle_data.cantidad
+                if producto.stock_cantidad <= 0:
+                    producto.stock_cantidad = 0
+                    producto.disponible = False
+                producto.updated_at = utcnow()
+                uow.pedidos.save_producto(producto)
+
+                personalizacion = detalle_data.personalizacion
+                if hasattr(personalizacion, "model_dump"):
+                    personalizacion = personalizacion.model_dump()
+                
+                uow.pedidos.add_detalle(
+                    DetallePedido(
+                        pedido_id=pedido.id,
+                        producto_id=producto.id,
+                        cantidad=detalle_data.cantidad,
+                        nombre_snapshot=producto.nombre,
+                        precio_snapshot=producto.precio_base,
+                        subtotal_snapshot=producto.precio_base * detalle_data.cantidad,
+                        personalizacion=personalizacion,
+                    )
+                )
+                subtotal += producto.precio_base * detalle_data.cantidad
+
+            pedido.subtotal = subtotal
+            pedido.total = subtotal - pedido.descuento + pedido.costo_envio
+            pedido.updated_at = utcnow()
+            uow.pedidos.update(pedido)
+
+            uow.pedidos.add_historial(
+                HistorialEstadoPedido(
+                    pedido_id=pedido.id,
+                    estado_desde=pedido.estado_codigo,
+                    estado_hacia=pedido.estado_codigo,
+                    usuario_id=usuario_id,
+                    motivo="Edicion del pedido por el cliente",
+                )
+            )
+
+        result = self.get_pedido(pedido_id)
+        await self._emit_ws_events(result)
+        return result
+
     async def _emit_ws_events(self, pedido: PedidoPublic) -> None:
         event_type = EVENTOS_WS.get(pedido.estado_codigo)
         if not event_type:
@@ -317,16 +444,11 @@ class PedidosService:
 
     def _get_productos_for_detalles(
         self,
-        data: PedidoCreate,
+        data: PedidoCreate | "PedidoEditRequest",
         repo: PedidoRepository | None = None,
     ) -> dict[int, Producto]:
         repo = repo or self.pedidos
-        producto_ids = [detalle.producto_id for detalle in data.detalles]
-        if len(producto_ids) != len(set(producto_ids)):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="DetallePedido no permite repetir producto_id en el mismo pedido",
-            )
+        producto_ids = list(set(detalle.producto_id for detalle in data.detalles))
 
         productos = {
             producto.id: producto
@@ -343,7 +465,7 @@ class PedidosService:
 
     def _validate_productos_disponibles(
         self,
-        data: PedidoCreate,
+        data: PedidoCreate | "PedidoEditRequest",
         productos: dict[int, Producto],
     ) -> None:
         unavailable = [
@@ -359,17 +481,22 @@ class PedidosService:
 
     def _validate_stock_suficiente(
         self,
-        data: PedidoCreate,
+        data: PedidoCreate | "PedidoEditRequest",
         productos: dict[int, Producto],
     ) -> None:
+        from collections import defaultdict
+        cantidades_totales = defaultdict(int)
+        for detalle in data.detalles:
+            cantidades_totales[detalle.producto_id] += detalle.cantidad
+            
         insufficient = [
             {
-                "producto_id": detalle.producto_id,
-                "stock_disponible": productos[detalle.producto_id].stock_cantidad,
-                "cantidad_pedida": detalle.cantidad,
+                "producto_id": prod_id,
+                "stock_disponible": productos[prod_id].stock_cantidad,
+                "cantidad_pedida": cant,
             }
-            for detalle in data.detalles
-            if productos[detalle.producto_id].stock_cantidad < detalle.cantidad
+            for prod_id, cant in cantidades_totales.items()
+            if productos[prod_id].stock_cantidad < cant
         ]
         if insufficient:
             raise HTTPException(
@@ -382,7 +509,7 @@ class PedidosService:
 
     def _calculate_subtotal(
         self,
-        data: PedidoCreate,
+        data: PedidoCreate | "PedidoEditRequest",
         productos: dict[int, Producto],
     ) -> Decimal:
         subtotal = Decimal("0.00")

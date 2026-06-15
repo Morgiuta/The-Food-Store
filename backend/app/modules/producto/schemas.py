@@ -18,7 +18,8 @@ class ProductoIngredienteLink(SQLModel):
     ingrediente_id: int
     es_removible: bool = False
     es_opcional: bool = False
-    cantidad_requerida: Decimal = Field(default=Decimal("1.00"), ge=0)
+    cantidad: Decimal = Field(default=Decimal("1.00"), ge=0)
+    unidad_medida_id: int
 
 
 class ProductoIngredientePublic(ProductoIngredienteLink):

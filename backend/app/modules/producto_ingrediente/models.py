@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, Column, ForeignKey, Numeric
+from sqlalchemy import Boolean, Column, ForeignKey, Numeric, Integer
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -22,15 +22,20 @@ class ProductoIngrediente(SQLModel, table=True):
         default=False,
         sa_column=Column(Boolean, nullable=False, default=False),
     )
-    cantidad_requerida: Decimal = Field(
+    cantidad: Decimal = Field(
         default=Decimal("1.00"),
         sa_column=Column(Numeric(10, 2), nullable=False, default=1),
+    )
+    unidad_medida_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("unidades_medida.id", ondelete="RESTRICT"), nullable=False)
     )
 
     producto: "Producto" = Relationship(back_populates="productos_ingrediente")
     ingrediente: "Ingrediente" = Relationship(back_populates="productos_ingrediente")
+    unidad_medida: Optional["UnidadMedida"] = Relationship()
 
 
 if TYPE_CHECKING:
     from app.modules.ingrediente.models import Ingrediente
     from app.modules.producto.models import Producto
+    from app.modules.unidad_medida.models import UnidadMedida

@@ -111,6 +111,24 @@ async def avanzar_estado(
     )
 
 
+from app.modules.ventas.schemas import PedidoEditRequest
+
+@router.patch("/{pedido_id}/editar", response_model=PedidoPublic)
+async def editar_pedido(
+    pedido_id: Annotated[int, Path(gt=0)],
+    data: PedidoEditRequest,
+    current_user: Annotated[Usuario, Depends(require_permission("pedido", "update"))],
+    svc: PedidosService = Depends(get_pedidos_service),
+) -> PedidoPublic:
+    is_staff = svc.is_admin(current_user.id or 0) or svc._has_any_role(current_user.id or 0, {"PEDIDOS"})
+    return await svc.editar_pedido(
+        pedido_id=pedido_id,
+        usuario_id=current_user.id or 0,
+        data=data,
+        is_staff=is_staff,
+    )
+
+
 @router.patch("/{pedido_id}/cancelar", response_model=PedidoPublic)
 async def cancelar_pedido(
     pedido_id: Annotated[int, Path(gt=0)],

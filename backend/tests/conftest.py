@@ -89,6 +89,13 @@ def client_fixture(session: Session):
         session.refresh(admin_user)
 
         session.add(UsuarioRol(usuario_id=admin_user.id, rol_codigo="ADMIN"))
+        
+        from app.modules.unidad_medida.models import UnidadMedida
+        unidad = session.exec(select(UnidadMedida).where(UnidadMedida.id == 1)).first()
+        if not unidad:
+            unidad = UnidadMedida(id=1, codigo="KG", nombre="Kilogramo", simbolo="kg")
+            session.add(unidad)
+            session.commit()
         session.commit()
 
     def get_session_override():

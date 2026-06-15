@@ -1,6 +1,7 @@
 import { Button } from '../../../../components/ui/Button/Button';
 import { EmptyState } from '../../../../components/ui/EmptyState/EmptyState';
 import type { Supply } from '../../../../types/supply';
+import type { UnidadMedida } from '../../../../types/unidadMedida';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 interface SuppliesTableProps {
@@ -14,6 +15,7 @@ interface SuppliesTableProps {
   onEdit: (supply: Supply) => void;
   onDelete: (supply: Supply) => void;
   onRestore: (supply: Supply) => void;
+  unidadesMedida: UnidadMedida[];
 }
 
 function formatCurrency(value: number): string {
@@ -34,6 +36,7 @@ export function SuppliesTable({
   onEdit,
   onDelete,
   onRestore,
+  unidadesMedida,
 }: SuppliesTableProps) {
   const renderSortIcon = (field: string) => {
     if (sortBy !== field) return null;
@@ -109,7 +112,7 @@ export function SuppliesTable({
               </td>
               <td className="p-4 font-medium text-charcoal">
                 <div className="flex flex-col items-start gap-1">
-                  <span>{supply.stock_actual ?? 0}</span>
+                  <span>{supply.stock_cantidad ?? 0}</span>
                   {lowStockIds?.has(supply.id) && !supply.deleted_at && (
                     <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
                       ¡Poco Stock!
@@ -117,7 +120,9 @@ export function SuppliesTable({
                   )}
                 </div>
               </td>
-              <td className="p-4 text-sm text-gray-600">{supply.unidad}</td>
+              <td className="p-4 text-sm text-gray-600">
+                {unidadesMedida.find(u => u.id === supply.unidad_medida_id)?.simbolo ?? 'N/A'}
+              </td>
               <td className="p-4 pr-8 text-sm font-medium text-charcoal whitespace-nowrap">
                 {formatCurrency(supply.costo_unitario ?? 0)}
               </td>

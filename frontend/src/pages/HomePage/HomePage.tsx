@@ -1,7 +1,13 @@
 import { Clock, Package, CircleDollarSign, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, Legend
+} from 'recharts';
 import { useAuthStore } from '../../store/authStore';
 import { useDashboard } from '../../hooks/useDashboard';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const estadoStyles: Record<string, string> = {
   PENDIENTE: 'bg-yellow-100 text-yellow-800',
@@ -75,6 +81,96 @@ export function HomePage() {
               <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md"></div>
             ) : (
               <p className="text-3xl font-black text-charcoal">{metrics?.productosBajoStock}</p>
+            )}
+          </div>
+        </article>
+      </div>
+
+      {/* Gráficos y Estadísticas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-black text-charcoal mb-4">Ingresos por Día</h2>
+          <div className="h-64">
+            {isLoadingMetrics ? (
+              <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={metrics?.ventasPorDia || []}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="fecha" />
+                  <YAxis tickFormatter={(val) => `$${val}`} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Line type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
+
+        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-black text-charcoal mb-4">Productos Más Vendidos</h2>
+          <div className="h-64">
+            {isLoadingMetrics ? (
+              <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={metrics?.productosTop || []} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" />
+                  <YAxis dataKey="nombre" type="category" width={100} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="cantidad_vendida" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
+        
+        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-black text-charcoal mb-4">Pedidos por Estado</h2>
+          <div className="h-64">
+            {isLoadingMetrics ? (
+              <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={metrics?.pedidosPorEstado || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="cantidad"
+                    nameKey="estado"
+                  >
+                    {(metrics?.pedidosPorEstado || []).map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
+
+        <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-black text-charcoal mb-4">Ingresos por Forma de Pago</h2>
+          <div className="h-64">
+            {isLoadingMetrics ? (
+              <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={metrics?.ingresosPorFormaPago || []}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="forma_pago" />
+                  <YAxis tickFormatter={(val) => `$${val}`} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Bar dataKey="ingresos" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </div>
         </article>

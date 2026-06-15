@@ -3,9 +3,9 @@ def test_crear_ingrediente(client):
         "nombre": "Tomate Perita",
         "descripcion": "Tomate fresco para salsas y preparaciones",
         "es_alergeno": False,
-        "stock_actual": 25.0,
+        "stock_cantidad": 25.0,
         "costo_unitario": 1800.0,
-        "unidad": "kg"
+        "unidad_medida_id": 1
     }
     response = client.post("/api/v1/ingredientes/", json=payload)
     
@@ -25,9 +25,9 @@ def test_obtener_ingrediente_por_id(client):
     payload = {
         "nombre": "Queso Muzzarella",
         "descripcion": "Queso muzzarella para pizzas y lomos",
-        "stock_actual": 15.0,
+        "stock_cantidad": 15.0,
         "costo_unitario": 5200.0,
-        "unidad": "kg"
+        "unidad_medida_id": 1
     }
     creacion = client.post("/api/v1/ingredientes/", json=payload)
     ing_id = creacion.json()["id"]
@@ -41,25 +41,25 @@ def test_actualizar_ingrediente(client):
     payload = {
         "nombre": "Lechuga Criolla",
         "descripcion": "Lechuga fresca para lomos y hamburguesas",
-        "stock_actual": 12.0,
+        "stock_cantidad": 12.0,
         "costo_unitario": 1300.0,
-        "unidad": "kg"
+        "unidad_medida_id": 1
     }
     creacion = client.post("/api/v1/ingredientes/", json=payload)
     ing_id = creacion.json()["id"]
 
-    response = client.patch(f"/api/v1/ingredientes/{ing_id}", json={"stock_actual": 18.0})
+    response = client.patch(f"/api/v1/ingredientes/{ing_id}", json={"stock_cantidad": 18.0})
     
     assert response.status_code == 200
-    assert float(response.json()["stock_actual"]) == 18.0
+    assert float(response.json()["stock_cantidad"]) == 18.0
 
 def test_eliminar_ingrediente(client):
     payload = {
         "nombre": "Jamon Cocido",
         "descripcion": "Jamon cocido feteado para lomos y pizzas",
-        "unidad": "kg",
+        "unidad_medida_id": 1,
         "costo_unitario": 4800.0,
-        "stock_actual": 5.0
+        "stock_cantidad": 5.0
     }
     creacion = client.post("/api/v1/ingredientes/", json=payload)
     ing_id = creacion.json()["id"]
@@ -67,17 +67,6 @@ def test_eliminar_ingrediente(client):
     response = client.delete(f"/api/v1/ingredientes/{ing_id}")
     
     assert response.status_code in [200, 204]
-
-def test_crear_ingrediente_unidad_invalida(client):
-    payload = {
-        "nombre": "Harina 0000",
-        "unidad": "tonelada",
-        "costo_unitario": 950.0,
-        "stock_actual": 50.0
-    }
-    response = client.post("/api/v1/ingredientes/", json=payload)
-    
-    assert response.status_code == 422
 
 def test_actualizar_ingrediente_inexistente(client):
     response = client.patch("/api/v1/ingredientes/99999", json={"nombre": "Sal Fina"})

@@ -110,9 +110,9 @@ def test_producto_ingredientes_endpoints(client):
     ingrediente = client.post("/api/v1/ingredientes/", json={
         "nombre": "Muzzarella",
         "descripcion": "Queso para pizza",
-        "stock_actual": 50,
+        "stock_cantidad": 50,
         "costo_unitario": 1200,
-        "unidad": "gramos"
+        "unidad_medida_id": 1
     })
     ingrediente_id = ingrediente.json()["id"]
 
@@ -123,7 +123,8 @@ def test_producto_ingredientes_endpoints(client):
                 "ingrediente_id": ingrediente_id,
                 "es_removible": True,
                 "es_opcional": False,
-                "cantidad_requerida": 2
+                "cantidad": 2,
+                "unidad_medida_id": 1
             }
         ],
     )

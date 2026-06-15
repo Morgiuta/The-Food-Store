@@ -41,9 +41,9 @@ export function CheckoutPage() {
         detalles: items.map((item) => ({
           producto_id: item.producto.id,
           cantidad: item.cantidad,
-          personalizacion: {
-            ingredientes_removidos: [],
-          },
+          personalizacion: item.personalizacion
+            ? { ingredientes_removidos: item.personalizacion.removed_ingredients || [] }
+            : null,
         })),
       }),
     onSuccess: () => {
@@ -200,11 +200,18 @@ export function CheckoutPage() {
             <h2 className="text-lg font-black">Resumen</h2>
             <div className="mt-4 space-y-3">
               {items.map((item) => (
-                <div key={item.producto.id} className="flex justify-between gap-3 text-sm font-bold">
-                  <span>
-                    {item.cantidad} x {item.producto.nombre}
-                  </span>
-                  <span>${item.producto.precio_base * item.cantidad}</span>
+                <div key={item.id} className="flex flex-col gap-1">
+                  <div className="flex justify-between gap-3 text-sm font-bold">
+                    <span>
+                      {item.cantidad} x {item.producto.nombre}
+                    </span>
+                    <span>${item.producto.precio_base * item.cantidad}</span>
+                  </div>
+                  {item.personalizacion?.removed_ingredients && item.personalizacion.removed_ingredients.length > 0 && (
+                    <span className="text-xs text-red-500">
+                      Sin: {item.producto.ingredientes?.filter(i => item.personalizacion?.removed_ingredients.includes(i.ingrediente_id))?.map(i => i.nombre)?.join(', ') || item.personalizacion.removed_ingredients.length + ' ingredientes'}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

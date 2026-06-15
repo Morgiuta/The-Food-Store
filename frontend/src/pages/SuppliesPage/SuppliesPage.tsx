@@ -5,6 +5,7 @@ import { SupplyForm } from '../../features/supplies/components/SupplyForm/Supply
 import { SuppliesTable } from '../../features/supplies/components/SuppliesTable/SuppliesTable';
 import { useSupplies } from '../../hooks/useSupplies';
 import { useProductos } from '../../hooks/useProductos';
+import { useUnidadesMedida } from '../../hooks/useUnidadesMedida';
 import { suppliesService } from '../../services/suppliesService';
 import type { SuppliesQuery, Supply, SupplyFormValues } from '../../types/supply';
 import { Download, Plus } from 'lucide-react';
@@ -84,16 +85,17 @@ export function SuppliesPage() {
   } = useSupplies(stableQuery);
 
   const { productos } = useProductos({ page: 1, size: 1000 });
+  const { unidades: unidadesMedida } = useUnidadesMedida({ page: 1, size: 100 });
 
   const lowStockIds = useMemo(() => {
     const ids = new Set<number>();
     productos.forEach((p) => {
       if (!p.ingredientes || p.ingredientes.length === 0) return;
       p.ingredientes.forEach((ing) => {
-        if (ing.cantidad_requerida > 0) {
+        if (ing.cantidad > 0) {
           const supply = supplies.find((s) => s.id === ing.ingrediente_id);
           if (supply) {
-            const canMake = (supply.stock_actual || 0) / ing.cantidad_requerida;
+            const canMake = (supply.stock_cantidad || 0) / ing.cantidad;
             if (canMake < 10) {
               ids.add(supply.id);
             }
@@ -306,6 +308,7 @@ export function SuppliesPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onRestore={handleRestore}
+            unidadesMedida={unidadesMedida}
           />
 
           <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
@@ -346,6 +349,7 @@ export function SuppliesPage() {
             selectedSupply={selectedSupply}
             isSubmitting={isMutating}
             existingNames={existingNames}
+            unidadesMedida={unidadesMedida}
             onSubmit={handleSubmit}
             onCancelEdit={() => {
               setIsFormOpen(false);
@@ -377,7 +381,7 @@ export function SuppliesPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Stock Actual</p>
-                <p className="text-charcoal font-medium">{detailSupply.stock_actual ?? 0}</p>
+                <p className="text-charcoal font-medium">{detailSupply.stock_cantidad ?? 0}</p>
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Actualizado</p>

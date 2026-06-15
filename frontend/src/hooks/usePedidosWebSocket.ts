@@ -64,10 +64,14 @@ export function usePedidosWebSocket(orderIds: number[]) {
           }
 
           queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+          queryClient.invalidateQueries({ queryKey: ['pedidos-recientes'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
           const pedidoId = message.data?.id;
           info(pedidoId ? `Pedido #${pedidoId}: ${message.event}` : 'Pedidos actualizados');
         } catch {
           queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+          queryClient.invalidateQueries({ queryKey: ['pedidos-recientes'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
         }
       };
 

@@ -6,13 +6,11 @@ export function useDashboard() {
   const metricsQuery = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: () => dashboardService.getMetrics(),
-    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const recientesQuery = useQuery({
     queryKey: ['pedidos-recientes'],
     queryFn: () => pedidosService.getAll(1, 5),
-    refetchInterval: 30000,
   });
 
   return {

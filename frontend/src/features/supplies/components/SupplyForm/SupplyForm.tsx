@@ -1,13 +1,15 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Supply, SupplyFormValues } from '../../../../types/supply';
 
+import type { UnidadMedida } from '../../../../types/unidadMedida';
+
 const initialValues: SupplyFormValues = {
   nombre: '',
   descripcion: '',
   es_alergeno: false,
-  stock_actual: 0,
+  stock_cantidad: 0,
   costo_unitario: 0,
-  unidad: 'unidad',
+  unidad_medida_id: null,
   es_producto_terminado: false,
 };
 
@@ -15,6 +17,7 @@ interface SupplyFormProps {
   selectedSupply: Supply | null;
   isSubmitting?: boolean;
   existingNames: string[];
+  unidadesMedida: UnidadMedida[];
   onSubmit: (values: SupplyFormValues) => Promise<void>;
   onCancelEdit: () => void;
 }
@@ -23,6 +26,7 @@ export function SupplyForm({
   selectedSupply,
   isSubmitting = false,
   existingNames,
+  unidadesMedida,
   onSubmit,
   onCancelEdit,
 }: SupplyFormProps) {
@@ -36,9 +40,9 @@ export function SupplyForm({
             nombre: selectedSupply.nombre,
             descripcion: selectedSupply.descripcion ?? '',
             es_alergeno: selectedSupply.es_alergeno,
-            stock_actual: selectedSupply.stock_actual ?? 0,
+            stock_cantidad: selectedSupply.stock_cantidad ?? 0,
             costo_unitario: Number(selectedSupply.costo_unitario ?? 0),
-            unidad: selectedSupply.unidad ?? 'unidad',
+            unidad_medida_id: selectedSupply.unidad_medida_id ?? null,
             es_producto_terminado: selectedSupply.es_producto_terminado ?? false,
           }
         : initialValues,
@@ -64,11 +68,12 @@ export function SupplyForm({
       values.descripcion.trim().length > 300
         ? 'La descripción no puede superar 300 caracteres.'
         : '',
-    stock_actual: values.stock_actual < 0 ? 'El stock no puede ser negativo.' : '',
+    stock_cantidad: values.stock_cantidad < 0 ? 'El stock no puede ser negativo.' : '',
     costo_unitario: values.costo_unitario < 0 ? 'El costo no puede ser negativo.' : '',
+    unidad_medida_id: values.unidad_medida_id === null ? 'Debe seleccionar una unidad.' : '',
   };
   
-  const isSubmitDisabled = Boolean(errors.nombre || errors.descripcion || errors.stock_actual || errors.costo_unitario) || isSubmitting;
+  const isSubmitDisabled = Boolean(errors.nombre || errors.descripcion || errors.stock_cantidad || errors.costo_unitario || errors.unidad_medida_id) || isSubmitting;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,9 +87,9 @@ export function SupplyForm({
       nombre: values.nombre.trim(),
       descripcion: values.descripcion.trim(),
       es_alergeno: values.es_alergeno,
-      stock_actual: Number(values.stock_actual),
+      stock_cantidad: Number(values.stock_cantidad),
       costo_unitario: Number(values.costo_unitario),
-      unidad: values.unidad,
+      unidad_medida_id: values.unidad_medida_id,
       es_producto_terminado: values.es_producto_terminado,
     });
 
@@ -130,12 +135,12 @@ export function SupplyForm({
             type="number"
             min="0"
             step="0.01"
-            className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${submitAttempted && errors.stock_actual ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            name="stock_actual"
-            value={values.stock_actual}
-            onChange={(event) => setValues((current) => ({ ...current, stock_actual: Number(event.target.value) }))}
+            className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${submitAttempted && errors.stock_cantidad ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+            name="stock_cantidad"
+            value={values.stock_cantidad}
+            onChange={(event) => setValues((current) => ({ ...current, stock_cantidad: Number(event.target.value) }))}
           />
-          {submitAttempted && errors.stock_actual && <p className="text-red-500 text-xs mt-1 font-medium">{errors.stock_actual}</p>}
+          {submitAttempted && errors.stock_cantidad && <p className="text-red-500 text-xs mt-1 font-medium">{errors.stock_cantidad}</p>}
         </div>
 
         <div>
@@ -156,22 +161,23 @@ export function SupplyForm({
         <div>
           <label className="block text-sm font-bold text-charcoal mb-2">Unidad de medida</label>
           <select
-            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent border-gray-300 bg-white"
-            name="unidad"
-            value={values.unidad}
-            onChange={(event) =>
+            className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white ${submitAttempted && errors.unidad_medida_id ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+            name="unidad_medida_id"
+            value={values.unidad_medida_id ?? 0}
+            onChange={(event) => {
+              const val = Number(event.target.value);
               setValues((current) => ({
                 ...current,
-                unidad: event.target.value as SupplyFormValues['unidad'],
-              }))
-            }
+                unidad_medida_id: val === 0 ? null : val,
+              }));
+            }}
           >
-            <option value="unidad">Unidad</option>
-            <option value="kg">Kilogramos</option>
-            <option value="litros">Litros</option>
-            <option value="gramos">Gramos</option>
-            <option value="ml">Mililitros</option>
+            <option value={0} disabled>Seleccione unidad...</option>
+            {unidadesMedida.map((u) => (
+              <option key={u.id} value={u.id}>{u.nombre} ({u.simbolo})</option>
+            ))}
           </select>
+          {submitAttempted && errors.unidad_medida_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.unidad_medida_id}</p>}
         </div>
 
         <div className="flex items-end pb-3">

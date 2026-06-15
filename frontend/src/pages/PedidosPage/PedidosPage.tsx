@@ -65,7 +65,12 @@ export function PedidosPage() {
   };
 
   // Group by status
-  const pendientes = pedidos.filter(p => p.estado_codigo === 'PENDIENTE' || p.estado_codigo === 'CONFIRMADO');
+  const pendientes = pedidos.filter(p => {
+    if (p.estado_codigo === 'PENDIENTE') {
+      return p.forma_pago_codigo !== 'MERCADOPAGO'; // Ocultar pedidos de MP hasta que se paguen y pasen a CONFIRMADO
+    }
+    return p.estado_codigo === 'CONFIRMADO';
+  });
   const preparando = pedidos.filter(p => p.estado_codigo === 'EN_PREP');
   const terminales = pedidos.filter(p => p.estado_codigo === 'ENTREGADO' || p.estado_codigo === 'CANCELADO').slice(0, 10); // Show only last 10 terminales
 

@@ -147,12 +147,14 @@ class ProductoService(BaseService):
                     ingrediente_id=ingrediente.ingrediente_id,
                     es_removible=ingrediente.es_removible,
                     es_opcional=ingrediente.es_opcional,
-                    cantidad_requerida=ingrediente.cantidad_requerida,
+                    cantidad=ingrediente.cantidad,
+                    unidad_medida_id=ingrediente.unidad_medida_id,
                 )
             else:
                 link.es_removible = ingrediente.es_removible
                 link.es_opcional = ingrediente.es_opcional
-                link.cantidad_requerida = ingrediente.cantidad_requerida
+                link.cantidad = ingrediente.cantidad
+                link.unidad_medida_id = ingrediente.unidad_medida_id
             uow.producto_ingredientes.add(link)
 
         for ingrediente_id, link in existentes.items():
@@ -170,8 +172,8 @@ class ProductoService(BaseService):
         posibles = []
         for link in links:
             ingrediente = ingredientes_by_id.get(link.ingrediente_id)
-            if ingrediente and link.cantidad_requerida > 0:
-                posibles.append(int(ingrediente.stock_actual / link.cantidad_requerida))
+            if ingrediente and link.cantidad > 0:
+                posibles.append(int(ingrediente.stock_cantidad / link.cantidad))
         
         if posibles:
             producto.stock_cantidad = min(posibles)
@@ -237,7 +239,8 @@ class ProductoService(BaseService):
                     deleted_at=ingredientes_by_id[link.ingrediente_id].deleted_at,
                     es_removible=link.es_removible,
                     es_opcional=link.es_opcional,
-                    cantidad_requerida=link.cantidad_requerida,
+                    cantidad=link.cantidad,
+                    unidad_medida_id=link.unidad_medida_id,
                 )
                 for link in ingredientes
                 if link.ingrediente_id in ingredientes_by_id
@@ -261,7 +264,8 @@ class ProductoService(BaseService):
                 deleted_at=ingredientes_by_id[link.ingrediente_id].deleted_at,
                 es_removible=link.es_removible,
                 es_opcional=link.es_opcional,
-                cantidad_requerida=link.cantidad_requerida,
+                cantidad=link.cantidad,
+                unidad_medida_id=link.unidad_medida_id,
             )
             for link in ingredientes
             if link.ingrediente_id in ingredientes_by_id
