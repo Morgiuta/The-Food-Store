@@ -4,9 +4,11 @@ import { PedidoCard } from '../../features/pedidos/components/PedidoCard/PedidoC
 import { PedidoDetailModal } from '../../features/pedidos/components/PedidoDetailModal/PedidoDetailModal';
 import { usePedidos } from '../../hooks/usePedidos';
 import type { Pedido } from '../../types/pedido';
+import { ModalEditarPedido } from '../MyOrdersPage/ModalEditarPedido';
 
 export function PedidosPage() {
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  const [editingPedido, setEditingPedido] = useState<Pedido | null>(null);
   const { confirm, notify } = useToast();
 
   const {
@@ -16,6 +18,7 @@ export function PedidosPage() {
     isMutating,
     avanzarEstado,
     cancelarPedido,
+    editarPedido,
   } = usePedidos();
 
   const statusMap: Record<string, string> = {
@@ -64,12 +67,19 @@ export function PedidosPage() {
     }
   };
 
+  const handleEditSave = async (pedidoId: number, detalles: any[]) => {
+    try {
+      await editarPedido(pedidoId, detalles);
+      setEditingPedido(null);
+      notify('success', 'Pedido actualizado correctamente.');
+    } catch {
+      notify('error', 'No se pudo actualizar el pedido.');
+    }
+  };
+
   // Group by status
   const pendientes = pedidos.filter(p => {
-    if (p.estado_codigo === 'PENDIENTE') {
-      return p.forma_pago_codigo !== 'MERCADOPAGO'; // Ocultar pedidos de MP hasta que se paguen y pasen a CONFIRMADO
-    }
-    return p.estado_codigo === 'CONFIRMADO';
+    return p.estado_codigo === 'PENDIENTE' || p.estado_codigo === 'CONFIRMADO';
   });
   const preparando = pedidos.filter(p => p.estado_codigo === 'EN_PREP');
   const terminales = pedidos.filter(p => p.estado_codigo === 'ENTREGADO' || p.estado_codigo === 'CANCELADO').slice(0, 10); // Show only last 10 terminales
@@ -146,7 +156,20 @@ export function PedidosPage() {
             onClose={() => setSelectedPedido(null)}
             onAdvance={handleAdvance}
             onCancel={handleCancel}
+            onEdit={() => {
+              setSelectedPedido(null);
+              setEditingPedido(selectedPedido);
+            }}
          />
+      )}
+
+      {editingPedido && (
+        <ModalEditarPedido
+          pedido={editingPedido}
+          isMutating={isMutating}
+          onClose={() => setEditingPedido(null)}
+          onSave={handleEditSave}
+        />
       )}
 
     </section>

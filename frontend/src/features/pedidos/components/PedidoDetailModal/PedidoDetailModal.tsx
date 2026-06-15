@@ -10,6 +10,7 @@ interface PedidoDetailModalProps {
   onClose: () => void;
   onAdvance: (pedido: Pedido) => void;
   onCancel: (pedido: Pedido) => void;
+  onEdit: () => void;
 }
 
 function formatCurrency(value: number): string {
@@ -45,7 +46,7 @@ const statusConfig: Record<string, { label: string; buttonColor: string; next?: 
   },
 };
 
-export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCancel }: PedidoDetailModalProps) {
+export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCancel, onEdit }: PedidoDetailModalProps) {
   const isTerminal = pedido.estado_codigo === 'ENTREGADO' || pedido.estado_codigo === 'CANCELADO';
   
   const currentConfig = statusConfig[pedido.estado_codigo];
@@ -153,6 +154,16 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
                 >
                    {isMutating ? 'Actualizando...' : nextConfig.label}
                 </Button>
+                {['PENDIENTE', 'CONFIRMADO', 'EN_PREP'].includes(pedido.estado_codigo) && pedido.forma_pago_codigo === 'EFECTIVO' && (
+                  <Button
+                    variant="secondary"
+                    className="w-full py-3 text-lg border border-gray-300 text-charcoal hover:bg-gray-100"
+                    disabled={isMutating}
+                    onClick={onEdit}
+                  >
+                    Modificar Pedido
+                  </Button>
+                )}
                 <Button 
                    variant="ghost" 
                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"

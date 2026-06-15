@@ -14,6 +14,7 @@ from app.modules.ventas.schemas import (
     PedidoCreate,
     PedidoEstadoUpdate,
     PedidoPublic,
+    PedidoEditRequest,
 )
 from app.modules.ventas.service import VentasService
 
@@ -135,4 +136,23 @@ async def change_estado(
         estado_hacia=data.estado_hacia,
         usuario_id=current_user.id,
         motivo=data.motivo,
+    )
+
+
+@router.patch("/pedidos/{pedido_id}/editar", response_model=PedidoPublic)
+async def editar_pedido(
+    pedido_id: Annotated[int, Path(gt=0)],
+    data: PedidoEditRequest,
+    current_user: Annotated[Usuario, Depends(require_permission("pedido", "create"))],
+    session: DbSession,
+    svc: PedidosService = Depends(get_pedidos_service),
+) -> PedidoPublic:
+    is_staff = False
+    if current_user.id is not None and user_has_role(session, current_user.id, {"ADMIN", "PEDIDOS"}):
+        is_staff = True
+    return await svc.editar_pedido(
+        pedido_id=pedido_id,
+        usuario_id=current_user.id or 0,
+        data=data,
+        is_staff=is_staff,
     )

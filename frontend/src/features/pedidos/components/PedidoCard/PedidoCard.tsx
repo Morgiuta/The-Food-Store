@@ -78,9 +78,15 @@ export function PedidoCard({ pedido, onClick, onAdvance }: PedidoCardProps) {
              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Orden #{pedido.id}</span>
              <h4 className="font-black text-charcoal">{formatCurrency(pedido.total)}</h4>
           </div>
-          <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded ${config.color}`}>
-             <Icon size={14} />
-             {timeAgo}
+          <div className="flex flex-col items-end gap-1">
+            <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded ${config.color}`}>
+               <Icon size={14} />
+               <span>{config.label}</span>
+               <span className="opacity-75 font-normal ml-1">• {timeAgo}</span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+              {pedido.forma_pago_codigo === 'MERCADOPAGO' ? 'Mercado Pago' : 'Efectivo'}
+            </span>
           </div>
         </div>
         

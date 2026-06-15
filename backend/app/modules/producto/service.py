@@ -178,6 +178,19 @@ class ProductoService(BaseService):
         if posibles:
             producto.stock_cantidad = min(posibles)
 
+    def recalcular_tiempo_prep(self, uow: ProductoUnitOfWork, producto: Producto) -> None:
+        links = uow.producto_ingredientes.list_by_producto(producto.id)
+        if not links:
+            return
+        
+        ingredientes_by_id = self._ingredientes_by_id(uow, links)
+        for link in links:
+            ingrediente = ingredientes_by_id.get(link.ingrediente_id)
+            if ingrediente and ingrediente.es_producto_terminado:
+                producto.tiempo_prep_min = 0
+                return
+
+
     def _to_public(
         self,
         producto: Producto,
@@ -310,6 +323,7 @@ class ProductoService(BaseService):
             self._sync_categorias(uow, producto.id, data.categorias)
             self._sync_ingredientes(uow, producto.id, data.ingredientes)
             self.recalcular_stock(uow, producto)
+            self.recalcular_tiempo_prep(uow, producto)
             uow.productos.flush()
             result = self._to_public(
                 producto,
@@ -427,6 +441,7 @@ class ProductoService(BaseService):
                 self._sync_ingredientes(uow, producto_id, ingredientes_payload)
                 
             self.recalcular_stock(uow, producto)
+            self.recalcular_tiempo_prep(uow, producto)
             uow.productos.flush()
 
             result = self._to_public(
@@ -485,6 +500,7 @@ class ProductoService(BaseService):
                 )
             self._sync_ingredientes(uow, producto_id, ingredientes)
             self.recalcular_stock(uow, producto)
+            self.recalcular_tiempo_prep(uow, producto)
             producto.updated_at = utcnow()
             uow.productos.add(producto)
             uow.productos.flush()
@@ -561,6 +577,7 @@ class ProductoService(BaseService):
             producto.deleted_at = None
             producto.updated_at = utcnow()
             self.recalcular_stock(uow, producto)
+            self.recalcular_tiempo_prep(uow, producto)
             uow.productos.add(producto)
             uow.productos.flush()
 

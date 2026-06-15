@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Modal } from '../../components/ui/Modal/Modal';
 import { Button } from '../../components/ui/Button/Button';
 import { useProductos } from '../../hooks/useProductos';
@@ -18,18 +18,30 @@ export function ModalEditarPedido({ pedido, isMutating, onClose, onSave }: Modal
       cantidad: d.cantidad,
       personalizacion: d.personalizacion || null,
       nombre_snapshot: d.nombre_snapshot,
-      precio_snapshot: d.precio_snapshot,
-      subtotal_snapshot: d.subtotal_snapshot,
+      precio_snapshot: Number(d.precio_snapshot),
+      subtotal_snapshot: Number(d.subtotal_snapshot),
       isOriginal: true,
       originalCantidad: d.cantidad
     }))
   );
 
-  const [selectedProductId, setSelectedProductId] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { productos, isLoading } = useProductos({ page: 1, size: 100, disponible: true });
 
   const estado = pedido.estado_codigo;
   const isEnPrep = estado === 'EN_PREP';
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const addProducto = (prodId: number) => {
     const prod = productos.find(p => p.id === prodId);
@@ -43,7 +55,7 @@ export function ModalEditarPedido({ pedido, isMutating, onClose, onSave }: Modal
         updated[existingIndex] = { 
           ...d, 
           cantidad: d.cantidad + 1, 
-          subtotal_snapshot: (d.cantidad + 1) * prod.precio_base 
+          subtotal_snapshot: (d.cantidad + 1) * Number(prod.precio_base) 
         };
         return updated;
       }
@@ -52,8 +64,8 @@ export function ModalEditarPedido({ pedido, isMutating, onClose, onSave }: Modal
         cantidad: 1,
         personalizacion: null,
         nombre_snapshot: prod.nombre,
-        precio_snapshot: prod.precio_base,
-        subtotal_snapshot: prod.precio_base,
+        precio_snapshot: Number(prod.precio_base),
+        subtotal_snapshot: Number(prod.precio_base),
         isOriginal: false,
         originalCantidad: 0
       }];
@@ -97,11 +109,14 @@ export function ModalEditarPedido({ pedido, isMutating, onClose, onSave }: Modal
   };
 
   const availableProducts = useMemo(() => {
+    let prods = productos;
     if (isEnPrep) {
-      return productos.filter(p => p.tiempo_prep_min == null || p.tiempo_prep_min <= 0);
+      prods = productos.filter(p => p.tiempo_prep_min == null || p.tiempo_prep_min <= 0);
     }
-    return productos;
-  }, [productos, isEnPrep]);
+    const term = searchTerm.toLowerCase();
+    if (!term) return prods;
+    return prods.filter(p => p.nombre.toLowerCase().includes(term));
+  }, [productos, isEnPrep, searchTerm]);
 
   const subtotalTotal = detalles.reduce((acc, curr) => acc + curr.subtotal_snapshot, 0);
 
@@ -132,7 +147,7 @@ export function ModalEditarPedido({ pedido, isMutating, onClose, onSave }: Modal
                 <li key={i} className="flex items-center justify-between rounded border border-gray-200 p-3">
                   <div>
                     <div className="font-bold">{d.nombre_snapshot}</div>
-                    <div className="text-sm text-gray-500">${d.precio_snapshot} c/u</div>
+                    <div className="text-sm text-gray-500">${d.precio_snapshot.toFixed(2)} c/u</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
@@ -163,35 +178,47 @@ export function ModalEditarPedido({ pedido, isMutating, onClose, onSave }: Modal
           {isLoading ? (
             <div className="text-sm text-gray-500">Cargando catálogo...</div>
           ) : (
-            <div className="flex gap-2">
-              <select
-                className="flex-1 rounded-md border border-gray-300 p-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                value={selectedProductId}
-                onChange={(e) => setSelectedProductId(Number(e.target.value))}
-              >
-                <option value={0}>Seleccionar producto...</option>
-                {availableProducts.map(p => (
-                  <option key={p.id} value={p.id}>{p.nombre} - ${p.precio_base}</option>
-                ))}
-              </select>
-              <Button 
-                type="button" 
-                onClick={() => {
-                  if (selectedProductId > 0) {
-                    addProducto(selectedProductId);
-                    setSelectedProductId(0);
-                  }
+            <div className="relative" ref={dropdownRef}>
+              <input
+                type="text"
+                placeholder="Buscar por nombre..."
+                value={searchTerm}
+                onFocus={() => setIsDropdownOpen(true)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setIsDropdownOpen(true);
                 }}
-                disabled={selectedProductId === 0}
-              >
-                Agregar
-              </Button>
+                className="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              {isDropdownOpen && (
+                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                  {availableProducts.length > 0 ? (
+                    <ul className="py-1">
+                      {availableProducts.map(p => (
+                        <li 
+                          key={p.id}
+                          className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100"
+                          onClick={() => {
+                            addProducto(p.id);
+                            setSearchTerm('');
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <span className="font-bold">{p.nombre}</span> <span className="text-gray-500">- ${Number(p.precio_base).toFixed(2)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-gray-500">No se encontraron productos</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-          <div className="text-xl font-black">Subtotal: ${subtotalTotal}</div>
+          <div className="text-xl font-black">Subtotal: ${subtotalTotal.toFixed(2)}</div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onClose} disabled={isMutating}>Cancelar</Button>
             <Button onClick={handleSave} disabled={isMutating || detalles.length === 0}>
