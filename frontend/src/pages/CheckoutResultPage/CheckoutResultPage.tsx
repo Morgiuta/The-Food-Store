@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 import { pedidosService } from '../../services/pedidosService';
+import { pagosService } from '../../services/pagosService';
 
 type ResultStatus = 'exito' | 'fallo' | 'pendiente';
 
@@ -78,6 +79,12 @@ export function CheckoutResultPage() {
   const pago = pedido?.pagos?.[pedido.pagos.length - 1];
   const esperandoConfirmacion =
     resultStatus === 'exito' && pedido?.estado_codigo === 'PENDIENTE';
+
+  useEffect(() => {
+    if (paymentId && esperandoConfirmacion) {
+      pagosService.sincronizar(paymentId).catch(console.error);
+    }
+  }, [paymentId, esperandoConfirmacion]);
 
   return (
     <section className="mx-auto flex max-w-xl flex-col items-center px-4 py-16 text-center">

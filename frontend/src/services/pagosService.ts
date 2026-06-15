@@ -23,4 +23,10 @@ export const pagosService = {
     const { data } = await api.get<PagoPublic>(`/pagos/${pedidoId}`);
     return data;
   },
+
+  /** Sincroniza el estado del pago con MercadoPago usando el payment_id */
+  async sincronizar(paymentId: string): Promise<{status: string}> {
+    const { data } = await api.post<{status: string}>(`/pagos/sincronizar/${paymentId}`);
+    return data;
+  },
 };

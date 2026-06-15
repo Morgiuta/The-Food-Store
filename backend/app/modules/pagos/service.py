@@ -155,10 +155,12 @@ class PagosService:
             return
 
         self._validar_firma(data_id, x_signature, x_request_id)
+        await self.sincronizar_pago(data_id)
 
+    async def sincronizar_pago(self, payment_id: str) -> None:
         try:
             gateway = MercadoPagoGateway()
-            payment = gateway.get_payment(data_id)
+            payment = gateway.get_payment(payment_id)
         except MercadoPagoError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,

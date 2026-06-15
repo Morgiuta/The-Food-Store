@@ -21,6 +21,7 @@ export function CheckoutPage() {
     preferenceId: string;
     publicKey: string;
   } | null>(null);
+  const [modalData, setModalData] = useState<{ items: any[], subtotal: number, envio: number } | null>(null);
 
   const subtotal = getCartSubtotal(items);
   const envio = items.length > 0 ? 50 : 0;
@@ -72,6 +73,7 @@ export function CheckoutPage() {
     }
 
     // Instead of creating the order, open the payment modal
+    setModalData({ items, subtotal, envio });
     setMpPreference(null);
     setIsModalOpen(true);
   };
@@ -79,6 +81,7 @@ export function CheckoutPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setMpPreference(null);
+    setModalData(null);
   };
 
   const handleConfirmOrder = async (formaPagoCodigo: string) => {
@@ -243,9 +246,9 @@ export function CheckoutPage() {
       <ModalFinalizarCompra
         isOpen={isModalOpen}
         onClose={closeModal}
-        items={items}
-        subtotal={subtotal}
-        envio={envio}
+        items={modalData?.items || items}
+        subtotal={modalData?.subtotal ?? subtotal}
+        envio={modalData?.envio ?? envio}
         isMutating={isMutating}
         onConfirm={handleConfirmOrder}
         error={error}

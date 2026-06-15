@@ -92,3 +92,16 @@ def get_pago(
         usuario_id=current_user.id or 0,
         is_staff=_is_staff(session, current_user.id),
     )
+
+
+from pydantic import BaseModel
+class SyncResponse(BaseModel):
+    status: str
+
+@router.post("/sincronizar/{payment_id}", response_model=SyncResponse)
+async def sincronizar_pago_endpoint(
+    payment_id: Annotated[str, Path(min_length=1)],
+    svc: PagosService = Depends(get_pagos_service),
+) -> SyncResponse:
+    await svc.sincronizar_pago(payment_id)
+    return SyncResponse(status="ok")

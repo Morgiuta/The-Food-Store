@@ -32,9 +32,18 @@ export function usePedidos() {
     },
   });
 
+  const editarPedidoMutation = useMutation({
+    mutationFn: ({ id, detalles }: { id: number; detalles: any[] }) => 
+      pedidosService.editarPedido(id, detalles),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+    },
+  });
+
   const isMutating = 
     avanzarEstadoMutation.isPending || 
-    cancelarMutation.isPending;
+    cancelarMutation.isPending ||
+    editarPedidoMutation.isPending;
 
   return {
     pedidos,
@@ -46,5 +55,6 @@ export function usePedidos() {
     reload: refetch,
     avanzarEstado: async (id: number, nuevoEstado: string) => avanzarEstadoMutation.mutateAsync({ id, nuevoEstado }),
     cancelarPedido: cancelarMutation.mutateAsync,
+    editarPedido: async (id: number, detalles: any[]) => editarPedidoMutation.mutateAsync({ id, detalles }),
   };
 }

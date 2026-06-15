@@ -49,4 +49,9 @@ export const pedidosService = {
     const { data } = await api.patch<Pedido>(`/pedidos/${id}/cancelar`);
     return data;
   },
+
+  async editarPedido(id: number, detalles: PedidoCreateInput['detalles']): Promise<Pedido> {
+    const { data } = await api.patch<Pedido>(`/pedidos/${id}/editar`, { detalles });
+    return data;
+  },
 };

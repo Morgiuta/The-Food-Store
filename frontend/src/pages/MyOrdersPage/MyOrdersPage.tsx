@@ -1,9 +1,10 @@
 import { format } from 'date-fns';
-import { Eye, RefreshCcw, XCircle } from 'lucide-react';
+import { Eye, RefreshCcw, XCircle, Edit2 } from 'lucide-react';
 import { useState } from 'react';
 import { usePedidos } from '../../hooks/usePedidos';
 import type { Pedido } from '../../types/pedido';
 import { ClientOrderModal } from './ClientOrderModal';
+import { ModalEditarPedido } from './ModalEditarPedido';
 import { useToast } from '../../components/ui/Toast/Toast';
 
 const cancelables = new Set(['PENDIENTE', 'CONFIRMADO']);
@@ -17,9 +18,20 @@ const estadoStyles: Record<string, string> = {
 };
 
 export function MyOrdersPage() {
-  const { pedidos, isLoading, isFetching, error, reload, cancelarPedido, isMutating } = usePedidos();
+  const { pedidos, isLoading, isFetching, error, reload, cancelarPedido, isMutating, editarPedido } = usePedidos();
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  const [editingPedido, setEditingPedido] = useState<Pedido | null>(null);
   const { confirm, notify } = useToast();
+
+  const handleEditSave = async (pedidoId: number, detalles: any[]) => {
+    try {
+      await editarPedido(pedidoId, detalles);
+      setEditingPedido(null);
+      notify('success', 'Pedido actualizado correctamente.');
+    } catch {
+      notify('error', 'No se pudo actualizar el pedido.');
+    }
+  };
 
   const handleCancel = async (pedido: Pedido) => {
     const confirmed = await confirm({
@@ -126,6 +138,17 @@ export function MyOrdersPage() {
                     <Eye size={16} />
                     Ver detalle
                   </button>
+                  {['PENDIENTE', 'CONFIRMADO', 'EN_PREP'].includes(pedido.estado_codigo) && pedido.forma_pago_codigo === 'EFECTIVO' && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingPedido(pedido)}
+                      disabled={isMutating}
+                      className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-black text-charcoal hover:border-primary disabled:opacity-60"
+                    >
+                      <Edit2 size={16} />
+                      Editar
+                    </button>
+                  )}
                   {cancelables.has(pedido.estado_codigo) && (
                     <button
                       type="button"
@@ -150,6 +173,15 @@ export function MyOrdersPage() {
           isMutating={isMutating}
           onClose={() => setSelectedPedido(null)}
           onCancel={handleCancel}
+        />
+      )}
+
+      {editingPedido && (
+        <ModalEditarPedido
+          pedido={editingPedido}
+          isMutating={isMutating}
+          onClose={() => setEditingPedido(null)}
+          onSave={handleEditSave}
         />
       )}
     </section>
