@@ -10,6 +10,7 @@ from app.modules.categoria.schemas import (
     CategoriaPublic,
     CategoriaTree,
     CategoriaUpdate,
+    ImagenCategoriaUpdate,
 )
 from app.modules.categoria.service import CategoriaService
 
@@ -91,6 +92,16 @@ def update_categoria(
     svc: CategoriaService = Depends(get_categoria_service),
 ) -> CategoriaPublic:
     return svc.update(categoria_id, data)
+
+
+@router.patch("/{categoria_id}/imagen", response_model=CategoriaPublic)
+def update_categoria_imagen(
+    categoria_id: Annotated[int, Path(gt=0)],
+    data: ImagenCategoriaUpdate,
+    _current_user=Depends(require_permission("categoria", "manage")),
+    svc: CategoriaService = Depends(get_categoria_service),
+) -> CategoriaPublic:
+    return svc.update_imagen(categoria_id, data)
 
 
 @router.delete("/{categoria_id}", status_code=status.HTTP_204_NO_CONTENT)

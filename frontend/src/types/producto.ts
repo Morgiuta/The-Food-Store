@@ -19,6 +19,10 @@ export interface ProductoIngredientePublic extends ProductoIngredienteLink {
   deleted_at: string | null;
 }
 
+export interface ImagenProductoUpdate {
+  imagenes_url: string[];
+}
+
 export interface UnidadMedidaPublic {
   id: number;
   codigo: string;

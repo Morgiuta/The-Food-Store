@@ -9,6 +9,7 @@ from app.modules.categoria.schemas import (
     CategoriaPublic,
     CategoriaTree,
     CategoriaUpdate,
+    ImagenCategoriaUpdate,
 )
 from app.modules.categoria.unit_of_work import CategoriaUnitOfWork
 
@@ -55,6 +56,11 @@ class CategoriaService(BaseService):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Categoria padre con id={parent_id} no encontrada",
             )
+        if current_id is not None and parent_id in uow.categorias.list_descendant_ids(current_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Una categoria no puede depender de una subcategoria propia",
+            )
 
     def create(self, data: CategoriaCreate) -> CategoriaPublic:
         with CategoriaUnitOfWork(self._session) as uow:
@@ -98,7 +104,7 @@ class CategoriaService(BaseService):
 
     def get_tree(self, include_deleted: bool = False) -> list[CategoriaTree]:
         with CategoriaUnitOfWork(self._session) as uow:
-            categorias = uow.categorias.get_all_active(include_deleted=include_deleted)
+            categorias = uow.categorias.get_tree_rows(include_deleted=include_deleted)
 
         tree_nodes = {
             cat.id: CategoriaTree.model_validate(cat)
@@ -143,6 +149,24 @@ class CategoriaService(BaseService):
             for field, value in patch.items():
                 setattr(categoria, field, value)
 
+            categoria.updated_at = utcnow()
+            uow.categorias.add(categoria)
+            result = CategoriaPublic.model_validate(categoria)
+        return result
+
+    def update_imagen(
+        self,
+        categoria_id: int,
+        data: ImagenCategoriaUpdate,
+    ) -> CategoriaPublic:
+        with CategoriaUnitOfWork(self._session) as uow:
+            categoria = self._get_or_404(uow, categoria_id)
+            if categoria.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No se puede editar una categoria inactiva",
+                )
+            categoria.imagen_url = data.imagen_url
             categoria.updated_at = utcnow()
             uow.categorias.add(categoria)
             result = CategoriaPublic.model_validate(categoria)

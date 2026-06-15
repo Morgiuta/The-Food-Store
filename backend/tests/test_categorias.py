@@ -61,3 +61,52 @@ def test_obtener_categoria_inexistente(client):
     response = client.get("/api/v1/categorias/99999")
     
     assert response.status_code == 404
+
+
+def test_categoria_no_permite_ciclos(client):
+    padre = client.post("/api/v1/categorias/", json={"nombre": "Menu", "orden_display": 1}).json()
+    hija = client.post(
+        "/api/v1/categorias/",
+        json={"nombre": "Menu Infantil", "parent_id": padre["id"], "orden_display": 1},
+    ).json()
+    nieta = client.post(
+        "/api/v1/categorias/",
+        json={"nombre": "Menu Infantil Bebidas", "parent_id": hija["id"], "orden_display": 1},
+    ).json()
+
+    response = client.patch(
+        f"/api/v1/categorias/{padre['id']}",
+        json={"parent_id": nieta["id"]},
+    )
+
+    assert response.status_code == 422
+
+
+def test_actualizar_imagen_categoria(client):
+    categoria = client.post(
+        "/api/v1/categorias/",
+        json={"nombre": "Postres", "orden_display": 2},
+    ).json()
+
+    response = client.patch(
+        f"/api/v1/categorias/{categoria['id']}/imagen",
+        json={"imagen_url": "https://res.cloudinary.com/demo/image/upload/postres.webp"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["imagen_url"].endswith("postres.webp")
+
+
+def test_categorias_tree_jerarquico(client):
+    padre = client.post("/api/v1/categorias/", json={"nombre": "Bebidas", "orden_display": 1}).json()
+    hija = client.post(
+        "/api/v1/categorias/",
+        json={"nombre": "Gaseosas", "parent_id": padre["id"], "orden_display": 1},
+    ).json()
+
+    response = client.get("/api/v1/categorias/tree")
+
+    assert response.status_code == 200
+    tree = response.json()
+    root = next(item for item in tree if item["id"] == padre["id"])
+    assert any(child["id"] == hija["id"] for child in root["children"])

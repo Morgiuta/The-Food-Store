@@ -50,6 +50,23 @@ def test_actualizar_producto(client):
     assert response.status_code == 200
     assert float(response.json()["precio_base"]) == 1700.0
 
+
+def test_actualizar_producto_con_put(client):
+    payload = {
+        "nombre": "Papas Grandes",
+        "descripcion": "Porcion grande de papas fritas",
+        "precio_base": 3200.0,
+        "stock_cantidad": 15
+    }
+    creacion = client.post("/api/v1/productos/", json=payload)
+    prod_id = creacion.json()["id"]
+
+    response = client.put(f"/api/v1/productos/{prod_id}", json={"precio_base": 3500.0})
+
+    assert response.status_code == 200
+    assert float(response.json()["precio_base"]) == 3500.0
+
+
 def test_producto_sin_stock(client):   
     print("Test producto agotado")
     payload = {
@@ -62,6 +79,60 @@ def test_producto_sin_stock(client):
     
     assert response.status_code in [200, 201]
     assert response.json()["stock_cantidad"] == 0
+    assert response.json()["disponible"] is True
+
+
+def test_stock_no_cambia_disponibilidad_automaticamente(client):
+    payload = {
+        "nombre": "Sandwich Veggie",
+        "descripcion": "Sandwich con vegetales grillados",
+        "precio_base": 5200.0,
+        "stock_cantidad": 8
+    }
+    creacion = client.post("/api/v1/productos/", json=payload)
+    prod_id = creacion.json()["id"]
+
+    response = client.patch(f"/api/v1/productos/{prod_id}/stock", json={"stock_cantidad": 0})
+
+    assert response.status_code == 200
+    assert response.json()["stock_cantidad"] == 0
+    assert response.json()["disponible"] is True
+
+
+def test_producto_ingredientes_endpoints(client):
+    producto = client.post("/api/v1/productos/", json={
+        "nombre": "Pizza Especial",
+        "descripcion": "Pizza con ingredientes editables",
+        "precio_base": 9200.0,
+        "stock_cantidad": 10
+    })
+    producto_id = producto.json()["id"]
+    ingrediente = client.post("/api/v1/ingredientes/", json={
+        "nombre": "Muzzarella",
+        "descripcion": "Queso para pizza",
+        "stock_actual": 50,
+        "costo_unitario": 1200,
+        "unidad": "gramos"
+    })
+    ingrediente_id = ingrediente.json()["id"]
+
+    post_response = client.post(
+        f"/api/v1/productos/{producto_id}/ingredientes",
+        json=[
+            {
+                "ingrediente_id": ingrediente_id,
+                "es_removible": True,
+                "es_opcional": False,
+                "cantidad_requerida": 2
+            }
+        ],
+    )
+    get_response = client.get(f"/api/v1/productos/{producto_id}/ingredientes")
+
+    assert post_response.status_code == 200
+    assert get_response.status_code == 200
+    assert get_response.json()[0]["ingrediente_id"] == ingrediente_id
+    assert get_response.json()[0]["es_removible"] is True
     
     
 def test_crear_producto_falta_nombre(client):

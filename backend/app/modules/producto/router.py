@@ -5,8 +5,11 @@ from fastapi import APIRouter, Depends, Path, Query, status
 from app.api.deps import DbSession
 from app.modules.auth.dependencies import require_permission
 from app.modules.producto.schemas import (
+    ImagenProductoUpdate,
     ProductoCreate,
     ProductoDisponibilidadUpdate,
+    ProductoIngredienteLink,
+    ProductoIngredientePublic,
     ProductoList,
     ProductoPublic,
     ProductoStockUpdate,
@@ -69,6 +72,16 @@ def update_producto(
     return svc.update(producto_id, data)
 
 
+@router.put("/{producto_id}", response_model=ProductoPublic)
+def replace_producto(
+    producto_id: Annotated[int, Path(gt=0)],
+    data: ProductoUpdate,
+    _current_user=Depends(require_permission("producto", "manage")),
+    svc: ProductoService = Depends(get_producto_service),
+) -> ProductoPublic:
+    return svc.update(producto_id, data)
+
+
 @router.patch("/{producto_id}/disponibilidad", response_model=ProductoPublic)
 def update_producto_disponibilidad(
     producto_id: Annotated[int, Path(gt=0)],
@@ -79,7 +92,25 @@ def update_producto_disponibilidad(
     return svc.update_disponibilidad(producto_id, data)
 
 
-from app.modules.producto.schemas import ImagenProductoUpdate
+@router.get("/{producto_id}/ingredientes", response_model=list[ProductoIngredientePublic])
+def get_producto_ingredientes(
+    producto_id: Annotated[int, Path(gt=0)],
+    _current_user=Depends(require_permission("producto", "read")),
+    svc: ProductoService = Depends(get_producto_service),
+) -> list[ProductoIngredientePublic]:
+    return svc.get_ingredientes(producto_id)
+
+
+@router.post("/{producto_id}/ingredientes", response_model=list[ProductoIngredientePublic])
+def update_producto_ingredientes(
+    producto_id: Annotated[int, Path(gt=0)],
+    data: list[ProductoIngredienteLink],
+    _current_user=Depends(require_permission("producto", "manage")),
+    svc: ProductoService = Depends(get_producto_service),
+) -> list[ProductoIngredientePublic]:
+    return svc.update_ingredientes(producto_id, data)
+
+
 @router.patch("/{producto_id}/imagenes", response_model=ProductoPublic)
 def update_producto_imagenes(
     producto_id: Annotated[int, Path(gt=0)],

@@ -83,14 +83,14 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
   - [x] `GET /api/v1/categorias/tree`.
   - [x] Crear/editar/borrar soft delete.
 
-- [ ] Cloudinary para imagen de categoria.
+- [x] Cloudinary para imagen de categoria.
   - [x] Campo `imagen_url` ya existe.
   - [x] Upload real con modulo `/uploads/imagen`.
-  - [ ] Falta endpoint para actualizar imagen segun contrato.
+  - [x] Endpoint para actualizar imagen segun contrato.
 
-- [ ] Jerarquia.
-  - [ ] Validar que no permita ciclos.
-  - [ ] Si el documento exige CTE recursiva, implementar consulta en repository.
+- [x] Jerarquia.
+  - [x] Validar que no permita ciclos.
+  - [x] Si el documento exige CTE recursiva, implementar consulta en repository.
 
 ### Productos
 
@@ -106,21 +106,21 @@ Pero frente al documento v6 faltan integraciones grandes y hay diferencias de co
   - [x] Incluir en schemas create/update/read.
   - [x] Mostrar simbolo en frontend.
 
-- [ ] Revisar imagenes.
+- [x] Revisar imagenes.
   - [x] Actualmente hay `imagen_url` e `imagenes_url`.
-  - [ ] Definir si se mantiene compatibilidad o se usa solo `imagenes_url`.
+  - [x] Definir si se mantiene compatibilidad o se usa solo `imagenes_url`.
   - [x] Agregar `PATCH /api/v1/productos/{id}/imagenes`.
   - [x] Integrar con `/uploads`.
 
-- [ ] Revisar endpoints.
-  - [ ] Documento pide `PUT /productos/{id}` para actualizar; proyecto usa `PATCH`.
-  - [ ] Documento pide `GET /productos/{id}/ingredientes`.
-  - [ ] Documento pide `POST /productos/{id}/ingredientes`.
+- [x] Revisar endpoints.
+  - [x] Documento pide `PUT /productos/{id}` para actualizar; proyecto usa `PATCH`.
+  - [x] Documento pide `GET /productos/{id}/ingredientes`.
+  - [x] Documento pide `POST /productos/{id}/ingredientes`.
 
-- [ ] Stock.
+- [x] Stock.
   - [x] Mantener `PATCH /stock`.
   - [x] Validar permisos ADMIN/STOCK.
-  - [ ] Validar que `disponible` sea independiente del stock, salvo regla explicita.
+  - [x] Validar que `disponible` sea independiente del stock, salvo regla explicita.
 
 ### Ingredientes
 

@@ -18,6 +18,10 @@ export interface CategoriaFormValues {
   orden_display: number;
 }
 
+export interface ImagenCategoriaUpdate {
+  imagen_url: string;
+}
+
 export interface CategoriasQuery {
   page: number;
   size: number;

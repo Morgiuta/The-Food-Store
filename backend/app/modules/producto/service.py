@@ -35,9 +35,6 @@ class ProductoService(BaseService):
             )
         return producto
 
-    def _apply_stock_rule(self, producto: Producto) -> None:
-        producto.disponible = producto.stock_cantidad > 0
-
     def _assert_categoria_exists(self, uow: ProductoUnitOfWork, categoria_id: int) -> None:
         if not uow.categorias.get_active_by_id(categoria_id):
             raise HTTPException(
@@ -178,7 +175,6 @@ class ProductoService(BaseService):
         
         if posibles:
             producto.stock_cantidad = min(posibles)
-            self._apply_stock_rule(producto)
 
     def _to_public(
         self,
@@ -248,6 +244,29 @@ class ProductoService(BaseService):
             ],
         )
 
+    def _to_ingredientes_public(
+        self,
+        uow: ProductoUnitOfWork,
+        ingredientes: list[ProductoIngrediente],
+    ) -> list[ProductoIngredientePublic]:
+        ingredientes_by_id = self._ingredientes_by_id(uow, ingredientes)
+        return [
+            ProductoIngredientePublic(
+                ingrediente_id=link.ingrediente_id,
+                nombre=ingredientes_by_id[link.ingrediente_id].nombre,
+                descripcion=ingredientes_by_id[link.ingrediente_id].descripcion,
+                es_alergeno=ingredientes_by_id[link.ingrediente_id].es_alergeno,
+                created_at=ingredientes_by_id[link.ingrediente_id].created_at,
+                updated_at=ingredientes_by_id[link.ingrediente_id].updated_at,
+                deleted_at=ingredientes_by_id[link.ingrediente_id].deleted_at,
+                es_removible=link.es_removible,
+                es_opcional=link.es_opcional,
+                cantidad_requerida=link.cantidad_requerida,
+            )
+            for link in ingredientes
+            if link.ingrediente_id in ingredientes_by_id
+        ]
+
     def _ingredientes_by_id(
         self,
         uow: ProductoUnitOfWork,
@@ -283,7 +302,6 @@ class ProductoService(BaseService):
             producto_data = data.model_dump(exclude={"categorias", "ingredientes"})
             self._assert_unidad_venta_exists(uow, data.unidad_venta_id)
             producto = Producto.model_validate(producto_data)
-            self._apply_stock_rule(producto)
             uow.productos.add(producto)
             self._sync_categorias(uow, producto.id, data.categorias)
             self._sync_ingredientes(uow, producto.id, data.ingredientes)
@@ -395,7 +413,6 @@ class ProductoService(BaseService):
             for field, value in patch.items():
                 setattr(producto, field, value)
 
-            self._apply_stock_rule(producto)
             producto.updated_at = utcnow()
             uow.productos.add(producto)
 
@@ -441,6 +458,38 @@ class ProductoService(BaseService):
             )
         return result
 
+    def get_ingredientes(self, producto_id: int) -> list[ProductoIngredientePublic]:
+        with ProductoUnitOfWork(self._session) as uow:
+            self._get_or_404(uow, producto_id)
+            result = self._to_ingredientes_public(
+                uow,
+                uow.producto_ingredientes.list_by_producto(producto_id),
+            )
+        return result
+
+    def update_ingredientes(
+        self,
+        producto_id: int,
+        ingredientes: list[ProductoIngredienteLink],
+    ) -> list[ProductoIngredientePublic]:
+        with ProductoUnitOfWork(self._session) as uow:
+            producto = self._get_or_404(uow, producto_id)
+            if producto.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No se puede editar un producto inactivo",
+                )
+            self._sync_ingredientes(uow, producto_id, ingredientes)
+            self.recalcular_stock(uow, producto)
+            producto.updated_at = utcnow()
+            uow.productos.add(producto)
+            uow.productos.flush()
+            result = self._to_ingredientes_public(
+                uow,
+                uow.producto_ingredientes.list_by_producto(producto_id),
+            )
+        return result
+
     def update_imagenes(
         self,
         producto_id: int,
@@ -472,10 +521,8 @@ class ProductoService(BaseService):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="No se puede editar un producto inactivo",
-                )
+            )
             producto.stock_cantidad = data.stock_cantidad
-            if data.stock_cantidad == 0:
-                producto.disponible = False
             producto.updated_at = utcnow()
             uow.productos.add(producto)
             result = self._to_public(

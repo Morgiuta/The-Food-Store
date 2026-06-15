@@ -1,4 +1,12 @@
-import type { ProductosQuery, ProductosResponse, Producto, ProductoFormValues } from '../types/producto';
+import type {
+  ImagenProductoUpdate,
+  Producto,
+  ProductoFormValues,
+  ProductoIngredienteLink,
+  ProductoIngredientePublic,
+  ProductosQuery,
+  ProductosResponse,
+} from '../types/producto';
 import { api } from './api';
 
 function buildQuery(params: ProductosQuery): string {
@@ -43,11 +51,36 @@ export const productosService = {
   },
 
   async update(id: number, input: ProductoFormValues): Promise<Producto> {
-    const { data } = await api.patch<Producto>(`/productos/${id}`, {
-      ...input,
+    const { imagenes_url, ingredientes, ...productoBase } = input;
+    await api.put<Producto>(`/productos/${id}`, {
+      ...productoBase,
       descripcion: input.descripcion || null,
       imagen_url: input.imagen_url || null,
     });
+
+    await this.updateImagenes(id, { imagenes_url });
+    await this.updateIngredientes(id, ingredientes);
+    return this.getById(id);
+  },
+
+  async updateImagenes(id: number, input: ImagenProductoUpdate): Promise<Producto> {
+    const { data } = await api.patch<Producto>(`/productos/${id}/imagenes`, input);
+    return data;
+  },
+
+  async getIngredientes(id: number): Promise<ProductoIngredientePublic[]> {
+    const { data } = await api.get<ProductoIngredientePublic[]>(`/productos/${id}/ingredientes`);
+    return data;
+  },
+
+  async updateIngredientes(
+    id: number,
+    ingredientes: ProductoIngredienteLink[],
+  ): Promise<ProductoIngredientePublic[]> {
+    const { data } = await api.post<ProductoIngredientePublic[]>(
+      `/productos/${id}/ingredientes`,
+      ingredientes,
+    );
     return data;
   },
 

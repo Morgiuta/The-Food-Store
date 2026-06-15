@@ -23,6 +23,10 @@ class CategoriaUpdate(SQLModel):
     orden_display: Optional[int] = Field(default=None, ge=0)
 
 
+class ImagenCategoriaUpdate(SQLModel):
+    imagen_url: str = Field(min_length=1)
+
+
 class CategoriaPublic(PublicSchema):
     id: int
     parent_id: Optional[int]

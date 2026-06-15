@@ -1,4 +1,11 @@
-import type { CategoriasQuery, CategoriasResponse, Categoria, CategoriaFormValues, CategoriaTree } from '../types/categoria';
+import type {
+  CategoriasQuery,
+  CategoriasResponse,
+  Categoria,
+  CategoriaFormValues,
+  CategoriaTree,
+  ImagenCategoriaUpdate,
+} from '../types/categoria';
 import { api } from './api';
 
 function buildQuery(params: CategoriasQuery): string {
@@ -50,6 +57,16 @@ export const categoriasService = {
       descripcion: input.descripcion || null,
       imagen_url: input.imagen_url || null,
     });
+
+    if (!input.imagen_url) {
+      return data;
+    }
+
+    return this.updateImagen(id, { imagen_url: input.imagen_url });
+  },
+
+  async updateImagen(id: number, input: ImagenCategoriaUpdate): Promise<Categoria> {
+    const { data } = await api.patch<Categoria>(`/categorias/${id}/imagen`, input);
     return data;
   },
 
