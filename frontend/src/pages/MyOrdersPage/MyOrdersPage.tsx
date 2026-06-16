@@ -75,9 +75,9 @@ export function MyOrdersPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-black">Pedido #{pedido.id}</h2>
+                    <h2 className="text-lg sm:text-xl font-black">Pedido #{pedido.id}</h2>
                     <span
-                      className={`rounded-md px-2 py-1 text-xs font-black ${
+                      className={`rounded-md px-2 py-1 text-[10px] sm:text-xs font-black whitespace-nowrap ${
                         estadoStyles[pedido.estado_codigo] || 'bg-surface-warm text-charcoal'
                       }`}
                     >
@@ -88,9 +88,9 @@ export function MyOrdersPage() {
                     {format(new Date(pedido.created_at), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-black">${pedido.total}</p>
-                  <p className="text-sm font-semibold text-muted">{pedido.forma_pago_codigo}</p>
+                <div className="text-left sm:text-right mt-2 sm:mt-0">
+                  <p className="text-xl sm:text-2xl font-black">${pedido.total}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-muted">{pedido.forma_pago_codigo}</p>
                 </div>
               </div>
 

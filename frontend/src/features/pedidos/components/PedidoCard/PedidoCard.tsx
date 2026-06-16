@@ -76,6 +76,9 @@ export function PedidoCard({ pedido, onClick, onAdvance }: PedidoCardProps) {
         <div className="flex justify-between items-start mb-2">
           <div>
              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Orden #{pedido.id}</span>
+             <div className="text-sm font-bold text-gray-700 truncate max-w-[120px] sm:max-w-[150px]" title={pedido.usuario_nombre || `Cliente #${pedido.usuario_id}`}>
+                {pedido.usuario_nombre || `Cliente #${pedido.usuario_id}`}
+             </div>
              <h4 className="font-black text-charcoal">{formatCurrency(pedido.total)}</h4>
           </div>
           <div className="flex flex-col items-end gap-1">

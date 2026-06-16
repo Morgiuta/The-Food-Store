@@ -22,6 +22,7 @@ export function usePedidos() {
       pedidosService.avanzarEstado(id, nuevoEstado),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     },
   });
 
@@ -29,6 +30,7 @@ export function usePedidos() {
     mutationFn: (id: number) => pedidosService.cancelar(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     },
   });
 
@@ -37,6 +39,7 @@ export function usePedidos() {
       pedidosService.editarPedido(id, detalles),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     },
   });
 

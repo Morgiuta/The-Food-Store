@@ -1,8 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboard.api';
 import { pedidosService } from '../services/pedidosService';
+import { usePedidosWebSocket } from './usePedidosWebSocket';
 
 export function useDashboard() {
+  usePedidosWebSocket([]);
+
   const metricsQuery = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: () => dashboardService.getMetrics(),

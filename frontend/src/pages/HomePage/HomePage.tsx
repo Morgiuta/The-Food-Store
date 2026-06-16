@@ -222,7 +222,7 @@ export function HomePage() {
                   >
                     <td className="px-6 py-4 font-bold text-charcoal">#{pedido.id}</td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-charcoal">{pedido.usuario_id || 'Cliente anónimo'}</div>
+                      <div className="font-semibold text-charcoal">{pedido.usuario_nombre || `Cliente #${pedido.usuario_id}`}</div>
                       <div className="text-xs text-gray-500">
                         {new Date(pedido.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>

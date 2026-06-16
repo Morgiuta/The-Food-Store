@@ -67,7 +67,7 @@ export function StoreHomePage() {
       {/* Category Background Hero */}
       {heroImage && (
         <div
-          className="absolute inset-x-0 top-0 h-[60vh] z-0 animate-in fade-in duration-700"
+          className="absolute inset-x-0 top-0 h-[400px] sm:h-[60vh] z-0 animate-in fade-in duration-700"
           style={{
             backgroundImage: `url(${heroImage})`,
             backgroundSize: "cover",
@@ -75,7 +75,7 @@ export function StoreHomePage() {
           }}
         >
           {/* Gradient to fade into the background */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-bg/90 to-bg"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-bg"></div>
         </div>
       )}
 
@@ -138,7 +138,7 @@ export function StoreHomePage() {
             Cargando productos...
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+          <div className="grid gap-3 sm:gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 items-stretch">
             {productos
               .filter((p) => p.stock_cantidad > 0)
               .map((producto) => {
@@ -153,7 +153,7 @@ export function StoreHomePage() {
                     <div className="flex-1 flex flex-col">
                       <div className="aspect-[4/3] bg-surface-warm relative">
                         {producto.stock_cantidad < 10 && (
-                          <span className="absolute top-3 right-3 shadow-sm text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-100 px-2.5 py-1 rounded-full z-10">
+                          <span className="absolute top-2 left-1/2 -translate-x-1/2 w-[90%] sm:w-auto sm:left-auto sm:translate-x-0 sm:right-3 sm:top-3 text-center shadow-sm text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-100 px-2 py-1 rounded-full z-10 leading-tight">
                             ¡Aprovecha que vuelan!
                           </span>
                         )}
@@ -170,26 +170,26 @@ export function StoreHomePage() {
                         )}
                       </div>
                       <div className="p-4 flex flex-col flex-1">
-                        <div className="mb-2 flex items-start justify-between gap-3">
-                          <h2 className="text-lg font-black leading-tight">
+                        <div className="mb-2 flex flex-col sm:flex-row items-start sm:justify-between gap-1 sm:gap-3">
+                          <h2 className="text-sm sm:text-lg font-black leading-tight">
                             {producto.nombre}
                           </h2>
-                          <span className="rounded-md bg-surface-warm px-2 py-1 text-sm font-black text-primary-dark">
+                          <span className="self-start sm:self-auto rounded-md bg-surface-warm px-1.5 py-0.5 sm:px-2 sm:py-1 text-[11px] sm:text-sm font-black text-primary-dark whitespace-nowrap">
                             ${producto.precio_base}
                           </span>
                         </div>
-                        <p className="min-h-10 text-sm font-medium text-muted">
+                        <p className="min-h-10 text-xs sm:text-sm font-medium text-muted line-clamp-3 sm:line-clamp-none">
                           {producto.descripcion ||
                             "Producto disponible para entrega."}
                         </p>
-                        <div className="mt-auto pt-4 flex items-center justify-between gap-3">
-                          <span className="text-xs font-bold uppercase text-muted">
+                        <div className="mt-auto pt-3 sm:pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-3">
+                          <span className="text-[10px] sm:text-xs font-bold uppercase text-muted">
                             {principal
                               ? categoriasById.get(principal.categoria_id) ||
                                 "Categoria"
                               : "Catalogo"}
                           </span>
-                          <span className="text-xs font-bold text-lettuce">
+                          <span className="text-[10px] sm:text-xs font-bold text-lettuce">
                             Stock {producto.stock_cantidad}{" "}
                             {producto.unidad_venta?.simbolo ?? "un."}
                           </span>
@@ -216,10 +216,10 @@ export function StoreHomePage() {
                                   producto.stock_cantidad <= 0 ||
                                   totalInCart >= producto.stock_cantidad
                                 }
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex w-full items-center justify-center gap-1 sm:gap-2 rounded-md bg-primary px-2 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-black text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                <ShoppingCart size={17} />
-                                {totalInCart > 0 ? `Agregar otra (${totalInCart} en carrito)` : "Agregar"}
+                                <ShoppingCart size={15} className="sm:w-[17px] sm:h-[17px] w-4 h-4 shrink-0" />
+                                <span className="truncate">{totalInCart > 0 ? `Otra (${totalInCart})` : "Agregar"}</span>
                               </button>
                             ) : (
                               <>

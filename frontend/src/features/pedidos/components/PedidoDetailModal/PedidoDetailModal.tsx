@@ -62,7 +62,7 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
           <div className="text-center mb-6 pt-4 border-b border-dashed border-gray-300 pb-4">
              <h3 className="font-black text-charcoal uppercase tracking-widest text-lg">Ticket de Cocina</h3>
              <p className="text-sm text-gray-500">{format(new Date(pedido.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</p>
-             <p className="text-sm font-bold text-gray-700 mt-1">Usuario ID: {pedido.usuario_id}</p>
+             <p className="text-sm font-bold text-gray-700 mt-1">Cliente: {pedido.usuario_nombre || `Cliente #${pedido.usuario_id}`}</p>
           </div>
 
           <ul className="space-y-4 mb-6">

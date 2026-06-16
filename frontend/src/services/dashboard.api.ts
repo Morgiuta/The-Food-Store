@@ -71,7 +71,7 @@ export const dashboardService = {
       api.get<EstadisticasProductoTop[]>(`/estadisticas/productos-top${queryStr}`),
       api.get<EstadisticasPedidosEstado[]>(`/estadisticas/pedidos-por-estado${queryStr}`),
       api.get<EstadisticasIngresosFormaPago[]>(`/estadisticas/ingresos${queryStr}`),
-      api.get<ProductoListResponse>('/productos/?page=1&size=1000'), // For stock only
+      api.get<ProductoListResponse>('/productos/?page=1&size=100'), // For stock only
     ]);
 
     const productosBajoStock = (productosRes.data.items || []).filter(
@@ -84,16 +84,20 @@ export const dashboardService = {
       .reduce((acc, curr) => acc + curr.cantidad, 0);
 
     // Get today's income if it exists in ventas por dia
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA'); // Gets local YYYY-MM-DD
     const todayVentas = ventasRes.data.find(v => v.fecha === todayStr);
-    const ingresosDia = todayVentas ? todayVentas.ingresos : 0;
+    const ingresosDia = todayVentas ? Number(todayVentas.ingresos) : 0;
 
     return {
-      resumen: resumenRes.data,
-      ventasPorDia: ventasRes.data,
-      productosTop: topRes.data,
+      resumen: {
+        ...resumenRes.data,
+        ingresos_totales: Number(resumenRes.data.ingresos_totales),
+        ticket_promedio: Number(resumenRes.data.ticket_promedio),
+      },
+      ventasPorDia: ventasRes.data.map(v => ({ ...v, ingresos: Number(v.ingresos) })),
+      productosTop: topRes.data.map(p => ({ ...p, ingresos_generados: Number(p.ingresos_generados), cantidad_vendida: Number(p.cantidad_vendida) })),
       pedidosPorEstado: estadosRes.data,
-      ingresosPorFormaPago: formasPagoRes.data,
+      ingresosPorFormaPago: formasPagoRes.data.map(i => ({ ...i, ingresos: Number(i.ingresos) })),
       productosBajoStock,
       pedidosActivos,
       ingresosDia

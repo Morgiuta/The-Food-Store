@@ -100,6 +100,7 @@ class HistorialEstadoPedidoPublic(SQLModel):
 class PedidoPublic(SQLModel):
     id: int
     usuario_id: int
+    usuario_nombre: str | None = None
     direccion_id: int | None
     estado_codigo: str
     forma_pago_codigo: str

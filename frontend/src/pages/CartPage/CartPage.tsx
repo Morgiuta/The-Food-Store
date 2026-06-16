@@ -33,8 +33,8 @@ export function CartPage() {
           <div className="space-y-3">
             {items.map((item) => (
               <article key={item.id} className="rounded-lg border border-border bg-surface p-4">
-                <div className="flex gap-4">
-                  <div className="h-20 w-24 overflow-hidden rounded-md bg-surface-warm">
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="h-16 w-16 sm:h-20 sm:w-24 shrink-0 overflow-hidden rounded-md bg-surface-warm">
                     {item.producto.imagen_url ? (
                       <img
                         src={item.producto.imagen_url}
@@ -42,14 +42,14 @@ export function CartPage() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center bg-primary text-lg font-black text-white">
+                      <div className="flex h-full items-center justify-center bg-primary text-sm sm:text-lg font-black text-white">
                         FS
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-black">{item.producto.nombre}</h2>
-                    <p className="text-sm font-medium text-muted">${item.producto.precio_base} c/u</p>
+                    <h2 className="text-sm sm:text-base font-black leading-tight">{item.producto.nombre}</h2>
+                    <p className="text-xs sm:text-sm font-medium text-muted">${item.producto.precio_base} c/u</p>
                     
                     {item.personalizacion?.removed_ingredients && item.personalizacion.removed_ingredients.length > 0 && (
                       <p className="mt-1 text-xs text-red-500 font-bold">
@@ -57,11 +57,11 @@ export function CartPage() {
                       </p>
                     )}
 
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, item.cantidad - 1)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:border-primary"
+                        className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-md border border-border hover:border-primary"
                         title="Restar"
                       >
                         <Minus size={16} />
@@ -75,19 +75,19 @@ export function CartPage() {
                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:border-primary"
                         title="Sumar"
                       >
-                        <Plus size={16} />
+                        <Plus size={14} className="sm:w-4 sm:h-4" />
                       </button>
                       <button
                         type="button"
                         onClick={() => removeItem(item.id)}
-                        className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-ketchup hover:border-ketchup"
+                        className="ml-auto inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-md border border-border text-ketchup hover:border-ketchup"
                         title="Quitar"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>
-                  <strong className="text-right text-lg">${item.producto.precio_base * item.cantidad}</strong>
+                  <strong className="text-right text-base sm:text-lg ml-auto whitespace-nowrap pt-1">${item.producto.precio_base * item.cantidad}</strong>
                 </div>
               </article>
             ))}

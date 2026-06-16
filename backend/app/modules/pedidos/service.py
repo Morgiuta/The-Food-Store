@@ -563,9 +563,14 @@ class PedidosService:
             )
 
     def _to_public(self, pedido: Pedido) -> PedidoPublic:
+        usuario_nombre = None
+        if pedido.usuario:
+            usuario_nombre = f"{pedido.usuario.nombre} {pedido.usuario.apellido or ''}".strip()
+
         return PedidoPublic(
             id=pedido.id or 0,
             usuario_id=pedido.usuario_id,
+            usuario_nombre=usuario_nombre,
             direccion_id=pedido.direccion_id,
             estado_codigo=pedido.estado_codigo,
             forma_pago_codigo=pedido.forma_pago_codigo,

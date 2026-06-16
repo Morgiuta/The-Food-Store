@@ -36,8 +36,8 @@ export function StoreLayout() {
   return (
     <div className="min-h-screen bg-bg">
       <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-          <Link to="/" className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-3 gap-x-4 px-4 py-3">
+          <Link to="/" className="flex items-center gap-3 shrink-0">
             <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-lg font-black text-white">
               FS
             </span>
@@ -47,9 +47,9 @@ export function StoreLayout() {
             </div>
           </Link>
 
-          <div className="hidden flex-1 items-center mx-10 md:flex">
+          <div className="flex w-full order-3 md:order-2 md:w-auto md:flex-1 items-center md:mx-10">
             <div className="flex w-full items-center gap-2 rounded-md border border-border bg-white px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 shadow-sm">
-              <Search size={18} className="text-muted" />
+              <Search size={18} className="text-muted shrink-0" />
               <input
                 className="w-full bg-transparent text-sm font-semibold outline-none text-charcoal"
                 placeholder="Buscar hamburguesas, bebidas, combos..."
@@ -72,7 +72,7 @@ export function StoreLayout() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 order-2 md:order-3 shrink-0">
             <Link
               to="/carrito"
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-charcoal hover:border-primary"
@@ -143,13 +143,6 @@ export function StoreLayout() {
               </Link>
             )}
 
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border md:hidden"
-              title="Menu"
-            >
-              <Menu size={20} />
-            </button>
           </div>
         </div>
       </header>

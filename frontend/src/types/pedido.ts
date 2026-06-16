@@ -41,6 +41,7 @@ export interface HistorialEstadoPedidoPublic {
 export interface Pedido {
   id: number;
   usuario_id: number;
+  usuario_nombre: string | null;
   direccion_id: number | null;
   estado_codigo: string;
   forma_pago_codigo: string;
