@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "../../components/ui/Modal/Modal";
 import { useToast } from "../../components/ui/Toast/Toast";
 import { ProductoForm } from "../../features/productos/components/ProductoForm/ProductoForm";
@@ -36,6 +36,8 @@ export function ProductosPage() {
   const {
     productos,
     total,
+    page,
+    pages,
     error,
     isLoading,
     isMutating,
@@ -80,15 +82,33 @@ export function ProductosPage() {
     return map;
   }, [productos, supplies]);
 
-  const totalPages = Math.max(1, Math.ceil(total / query.size));
-
-  const updateQuery = (patch: Partial<ProductosQuery>) => {
+  const updateQuery = useCallback((patch: Partial<ProductosQuery>) => {
     setQuery((current) => ({
       ...current,
       ...patch,
       page: patch.page ?? current.page,
     }));
+  }, []);
+
+  const clearFilters = () => {
+    setSearchDraft("");
+    setQuery(defaultQuery);
   };
+
+  const totalPages = pages;
+  const currentPage = page;
+  const hasActiveFilters = Boolean(
+    query.q ||
+      query.categoria_id ||
+      query.disponible !== undefined ||
+      query.include_deleted,
+  );
+
+  useEffect(() => {
+    if (!isLoading && query.page > totalPages) {
+      updateQuery({ page: totalPages });
+    }
+  }, [isLoading, query.page, totalPages, updateQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,7 +211,7 @@ export function ProductosPage() {
   const catOptions = getFlatOptions(categoriasTree);
 
   return (
-    <section className="space-y-6 animate-in fade-in duration-300 h-full flex flex-col">
+    <section className="space-y-6 animate-in fade-in duration-300 min-h-full">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
           <span className="section-kicker">Catálogo</span>
@@ -210,8 +230,8 @@ export function ProductosPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
-        <section className="p-6 flex-1 flex flex-col">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <section className="p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-100 pb-6">
             <form
               onSubmit={handleSearch}
@@ -327,6 +347,28 @@ export function ProductosPage() {
                 <option value={50}>50</option>
               </select>
             </label>
+            {hasActiveFilters ? (
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-100 font-bold text-sm text-charcoal"
+                  onClick={clearFilters}
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500">
+            <span>
+              Mostrando {productos.length} de {total} productos
+            </span>
+            {hasActiveFilters ? (
+              <span className="font-medium text-primary-dark">
+                Hay filtros activos
+              </span>
+            ) : null}
           </div>
 
           {error ? (
@@ -352,19 +394,19 @@ export function ProductosPage() {
             <button
               className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               type="button"
-              disabled={query.page <= 1 || isLoading}
-              onClick={() => updateQuery({ page: query.page - 1 })}
+              disabled={currentPage <= 1 || isLoading}
+              onClick={() => updateQuery({ page: currentPage - 1 })}
             >
               Anterior
             </button>
             <span className="text-sm font-medium text-gray-500">
-              Página {query.page} de {totalPages} ({total} resultados)
+              Página {currentPage} de {totalPages} ({total} resultados)
             </span>
             <button
               className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               type="button"
-              disabled={query.page >= totalPages || isLoading}
-              onClick={() => updateQuery({ page: query.page + 1 })}
+              disabled={currentPage >= totalPages || isLoading}
+              onClick={() => updateQuery({ page: currentPage + 1 })}
             >
               Siguiente
             </button>
