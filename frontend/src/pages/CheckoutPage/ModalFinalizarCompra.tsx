@@ -106,11 +106,12 @@ export function ModalFinalizarCompra({
                  <div className="p-4 text-center font-bold text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">Cargando métodos de pago...</div>
               ) : (
                  <>
-                    {formasPago.filter(fp => fp.habilitado).map(fp => {
+                    {formasPago.filter(fp => fp.habilitado && (fp.codigo === 'EFECTIVO' || fp.codigo === 'MERCADOPAGO')).map(fp => {
                        const isMp = fp.codigo === 'MERCADOPAGO';
                        const isSelected = selectedFormaPago === fp.codigo;
                        return (
                        <label
+
                          key={fp.codigo}
                          className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
                             isSelected
