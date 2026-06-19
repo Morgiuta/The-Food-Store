@@ -14,6 +14,9 @@ export function useProductos(query: ProductosQuery) {
 
   const productos = data?.items || [];
   const total = data?.total || 0;
+  const page = data?.page ?? query.page;
+  const size = data?.size ?? query.size;
+  const pages = data?.pages ?? Math.max(1, Math.ceil(total / size));
 
   // Mutations
   const createMutation = useMutation({
@@ -72,6 +75,9 @@ export function useProductos(query: ProductosQuery) {
   return {
     productos,
     total,
+    page,
+    size,
+    pages,
     error: error instanceof Error ? error.message : null,
     isLoading,
     isMutating,

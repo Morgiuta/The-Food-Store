@@ -84,7 +84,7 @@ export function SuppliesPage() {
     restoreSupply,
   } = useSupplies(stableQuery);
 
-  const { productos } = useProductos({ page: 1, size: 1000 });
+  const { productos } = useProductos({ page: 1, size: 100 });
   const { unidades: unidadesMedida } = useUnidadesMedida({ page: 1, size: 100 });
 
   const lowStockIds = useMemo(() => {

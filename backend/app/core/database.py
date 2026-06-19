@@ -36,11 +36,13 @@ def create_db_and_tables() -> None:
     ensure_auth_timestamp_columns()
     seed_formal_data()
     normalize_pedido_estado_codes()
+    ensure_ingrediente_stock_schema()
     ensure_ingrediente_soft_delete_column()
     migrate_direcciones_to_direcciones_entrega()
     ensure_direcciones_usuario_fk()
     ensure_pedido_direccion_fk()
     ensure_producto_unidad_venta_fk()
+    ensure_detalle_pedidos_id_column()
     ensure_historial_estado_append_only()
 
 
@@ -255,6 +257,217 @@ def ensure_ingrediente_soft_delete_column() -> None:
         connection.execute(text(f"ALTER TABLE ingredientes ADD COLUMN deleted_at {column_type}"))
 
 
+def ensure_ingrediente_stock_schema() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("ingredientes") or not inspector.has_table("unidades_medida"):
+        return
+
+    ingredientes_columns = {column["name"] for column in inspector.get_columns("ingredientes")}
+    producto_ingrediente_columns = (
+        {column["name"] for column in inspector.get_columns("producto_ingrediente")}
+        if inspector.has_table("producto_ingrediente")
+        else set()
+    )
+
+    with engine.begin() as connection:
+        default_unidad_id = connection.execute(
+            text("SELECT id FROM unidades_medida ORDER BY id LIMIT 1")
+        ).scalar_one_or_none()
+        if default_unidad_id is None:
+            return
+
+        if "stock_cantidad" not in ingredientes_columns:
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE ingredientes
+                    ADD COLUMN stock_cantidad NUMERIC(10, 2)
+                    DEFAULT 0 NOT NULL
+                    """
+                )
+            )
+            if "stock_actual" in ingredientes_columns:
+                connection.execute(
+                    text(
+                        """
+                        UPDATE ingredientes
+                        SET stock_cantidad = stock_actual
+                        WHERE stock_actual IS NOT NULL
+                        """
+                    )
+                )
+
+        if "stock_actual" in ingredientes_columns:
+            connection.execute(
+                text(
+                    """
+                    UPDATE ingredientes
+                    SET stock_actual = stock_cantidad
+                    WHERE stock_actual IS NULL
+                    """
+                )
+            )
+            if engine.dialect.name == "postgresql":
+                connection.execute(
+                    text(
+                        """
+                        ALTER TABLE ingredientes
+                        ALTER COLUMN stock_actual SET DEFAULT 0
+                        """
+                    )
+                )
+
+        if "costo_unitario" not in ingredientes_columns:
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE ingredientes
+                    ADD COLUMN costo_unitario NUMERIC(10, 2)
+                    DEFAULT 0 NOT NULL
+                    """
+                )
+            )
+
+        if "es_producto_terminado" not in ingredientes_columns:
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE ingredientes
+                    ADD COLUMN es_producto_terminado BOOLEAN
+                    DEFAULT false NOT NULL
+                    """
+                )
+            )
+
+        if "unidad_medida_id" not in ingredientes_columns:
+            connection.execute(
+                text(
+                    f"""
+                    ALTER TABLE ingredientes
+                    ADD COLUMN unidad_medida_id INTEGER
+                    DEFAULT {int(default_unidad_id)} NOT NULL
+                    """
+                )
+            )
+        else:
+            connection.execute(
+                text(
+                    """
+                    UPDATE ingredientes
+                    SET unidad_medida_id = :default_unidad_id
+                    WHERE unidad_medida_id IS NULL
+                    """
+                ),
+                {"default_unidad_id": default_unidad_id},
+            )
+
+        if inspector.has_table("producto_ingrediente"):
+            if "cantidad" not in producto_ingrediente_columns:
+                connection.execute(
+                    text(
+                        """
+                        ALTER TABLE producto_ingrediente
+                        ADD COLUMN cantidad NUMERIC(10, 2)
+                        DEFAULT 1 NOT NULL
+                        """
+                    )
+                )
+                if "cantidad_requerida" in producto_ingrediente_columns:
+                    connection.execute(
+                        text(
+                            """
+                            UPDATE producto_ingrediente
+                            SET cantidad = cantidad_requerida
+                            WHERE cantidad_requerida IS NOT NULL
+                            """
+                        )
+                    )
+
+            if "cantidad_requerida" in producto_ingrediente_columns:
+                connection.execute(
+                    text(
+                        """
+                        UPDATE producto_ingrediente
+                        SET cantidad_requerida = cantidad
+                        WHERE cantidad_requerida IS NULL
+                        """
+                    )
+                )
+                if engine.dialect.name == "postgresql":
+                    connection.execute(
+                        text(
+                            """
+                            ALTER TABLE producto_ingrediente
+                            ALTER COLUMN cantidad_requerida SET DEFAULT 1
+                            """
+                        )
+                    )
+
+            if "unidad_medida_id" not in producto_ingrediente_columns:
+                connection.execute(
+                    text(
+                        f"""
+                        ALTER TABLE producto_ingrediente
+                        ADD COLUMN unidad_medida_id INTEGER
+                        DEFAULT {int(default_unidad_id)} NOT NULL
+                        """
+                    )
+                )
+            else:
+                connection.execute(
+                    text(
+                        """
+                        UPDATE producto_ingrediente
+                        SET unidad_medida_id = :default_unidad_id
+                        WHERE unidad_medida_id IS NULL
+                        """
+                    ),
+                    {"default_unidad_id": default_unidad_id},
+                )
+
+        if engine.dialect.name != "postgresql":
+            return
+
+        ingrediente_fks = [
+            fk
+            for fk in inspect(connection).get_foreign_keys("ingredientes")
+            if fk.get("constrained_columns") == ["unidad_medida_id"]
+        ]
+        if not any(fk.get("referred_table") == "unidades_medida" for fk in ingrediente_fks):
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE ingredientes
+                    ADD CONSTRAINT ingredientes_unidad_medida_id_fkey
+                    FOREIGN KEY (unidad_medida_id)
+                    REFERENCES unidades_medida(id)
+                    ON DELETE RESTRICT
+                    NOT VALID
+                    """
+                )
+            )
+
+        if inspector.has_table("producto_ingrediente"):
+            receta_fks = [
+                fk
+                for fk in inspect(connection).get_foreign_keys("producto_ingrediente")
+                if fk.get("constrained_columns") == ["unidad_medida_id"]
+            ]
+            if not any(fk.get("referred_table") == "unidades_medida" for fk in receta_fks):
+                connection.execute(
+                    text(
+                        """
+                        ALTER TABLE producto_ingrediente
+                        ADD CONSTRAINT producto_ingrediente_unidad_medida_id_fkey
+                        FOREIGN KEY (unidad_medida_id)
+                        REFERENCES unidades_medida(id)
+                        ON DELETE RESTRICT
+                        NOT VALID
+                        """
+                    )
+                )
+
+
 def ensure_pedido_direccion_fk() -> None:
     if engine.dialect.name != "postgresql":
         return
@@ -288,6 +501,37 @@ def ensure_pedido_direccion_fk() -> None:
                 REFERENCES direcciones_entrega(id)
                 ON DELETE SET NULL
                 NOT VALID
+                """
+            )
+        )
+
+
+def ensure_detalle_pedidos_id_column() -> None:
+    if engine.dialect.name != "postgresql":
+        return
+
+    inspector = inspect(engine)
+    if not inspector.has_table("detalle_pedidos"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("detalle_pedidos")}
+    if "id" in columns:
+        return
+
+    pk_constraint = inspector.get_pk_constraint("detalle_pedidos")
+    pk_name = pk_constraint.get("name")
+
+    with engine.begin() as connection:
+        if pk_name:
+            connection.execute(
+                text(f"ALTER TABLE detalle_pedidos DROP CONSTRAINT IF EXISTS {pk_name}")
+            )
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE detalle_pedidos
+                ADD COLUMN id BIGSERIAL PRIMARY KEY
                 """
             )
         )
