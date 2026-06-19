@@ -119,6 +119,17 @@ class PedidosService:
                     producto.disponible = False
                 producto.updated_at = utcnow()
                 uow.pedidos.save_producto(producto)
+                
+                # Descontar stock de ingredientes
+                for link in producto.productos_ingrediente:
+                    ingrediente = link.ingrediente
+                    if ingrediente:
+                        ingrediente.stock_cantidad -= Decimal(str(link.cantidad)) * Decimal(str(detalle_data.cantidad))
+                        # Opcional: no permitir stock negativo
+                        if ingrediente.stock_cantidad < 0:
+                            ingrediente.stock_cantidad = Decimal("0.00")
+                        ingrediente.updated_at = utcnow()
+                        uow.pedidos.session.add(ingrediente)
 
             pedido = uow.pedidos.create(
                 Pedido(
@@ -276,6 +287,24 @@ class PedidosService:
                 )
 
             pedido.updated_at = utcnow()
+            
+            # Devolver stock de productos e ingredientes
+            detalles = uow.pedidos.list_detalles(pedido_id)
+            for detalle in detalles:
+                producto = uow.pedidos.session.get(Producto, detalle.producto_id)
+                if producto:
+                    producto.stock_cantidad += detalle.cantidad
+                    producto.disponible = True
+                    uow.pedidos.save_producto(producto)
+                    
+                    # Devolver stock de ingredientes
+                    for link in producto.productos_ingrediente:
+                        ingrediente = link.ingrediente
+                        if ingrediente:
+                            ingrediente.stock_cantidad += Decimal(str(link.cantidad)) * Decimal(str(detalle.cantidad))
+                            ingrediente.updated_at = utcnow()
+                            uow.pedidos.session.add(ingrediente)
+            
             uow.pedidos.update_estado(
                 pedido=pedido,
                 estado_hacia="CANCELADO",
@@ -356,6 +385,14 @@ class PedidosService:
                     producto.stock_cantidad += old_detalle.cantidad
                     producto.disponible = True
                     uow.pedidos.save_producto(producto)
+                    
+                    # Devolver stock de ingredientes
+                    for link in producto.productos_ingrediente:
+                        ingrediente = link.ingrediente
+                        if ingrediente:
+                            ingrediente.stock_cantidad += Decimal(str(link.cantidad)) * Decimal(str(old_detalle.cantidad))
+                            ingrediente.updated_at = utcnow()
+                            uow.pedidos.session.add(ingrediente)
 
             # Validar disponibilidad y stock con el nuevo carrito
             self._validate_productos_disponibles(data, productos)
@@ -374,6 +411,16 @@ class PedidosService:
                     producto.disponible = False
                 producto.updated_at = utcnow()
                 uow.pedidos.save_producto(producto)
+                
+                # Descontar stock de ingredientes
+                for link in producto.productos_ingrediente:
+                    ingrediente = link.ingrediente
+                    if ingrediente:
+                        ingrediente.stock_cantidad -= Decimal(str(link.cantidad)) * Decimal(str(detalle_data.cantidad))
+                        if ingrediente.stock_cantidad < 0:
+                            ingrediente.stock_cantidad = Decimal("0.00")
+                        ingrediente.updated_at = utcnow()
+                        uow.pedidos.session.add(ingrediente)
 
                 personalizacion = detalle_data.personalizacion
                 if hasattr(personalizacion, "model_dump"):

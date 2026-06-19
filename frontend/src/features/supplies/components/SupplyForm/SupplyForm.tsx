@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { Supply, SupplyFormValues } from '../../../../types/supply';
 
 import type { UnidadMedida } from '../../../../types/unidadMedida';
+import { SearchableSelect } from '../../../../components/ui/SearchableSelect';
 
 const initialValues: SupplyFormValues = {
   nombre: '',
@@ -160,23 +161,19 @@ export function SupplyForm({
 
         <div>
           <label className="block text-sm font-bold text-charcoal mb-2">Unidad de medida</label>
-          <select
-            className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white ${submitAttempted && errors.unidad_medida_id ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            name="unidad_medida_id"
+          <SearchableSelect
             value={values.unidad_medida_id ?? 0}
-            onChange={(event) => {
-              const val = Number(event.target.value);
+            onChange={(val) => {
+              const numVal = Number(val);
               setValues((current) => ({
                 ...current,
-                unidad_medida_id: val === 0 ? null : val,
+                unidad_medida_id: numVal === 0 ? null : numVal,
               }));
             }}
-          >
-            <option value={0} disabled>Seleccione unidad...</option>
-            {unidadesMedida.map((u) => (
-              <option key={u.id} value={u.id}>{u.nombre} ({u.simbolo})</option>
-            ))}
-          </select>
+            options={unidadesMedida.map((u) => ({ value: u.id, label: `${u.nombre} (${u.simbolo})` }))}
+            placeholder="Seleccione unidad..."
+            hasError={submitAttempted && !!errors.unidad_medida_id}
+          />
           {submitAttempted && errors.unidad_medida_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.unidad_medida_id}</p>}
         </div>
 

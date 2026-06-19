@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Categoria, CategoriaFormValues, CategoriaTree } from '../../../../types/categoria';
 import { uploadImagen, deleteImagen } from '../../../../services/uploadsService';
+import { SearchableSelect } from '../../../../components/ui/SearchableSelect';
 
 const initialValues: CategoriaFormValues = {
   nombre: '',
@@ -153,16 +154,15 @@ export function CategoriaForm({
 
       <div>
         <label className="block text-sm font-bold text-charcoal mb-2">Categoría Padre (Opcional)</label>
-        <select
-          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
+        <SearchableSelect
           value={values.parent_id || 0}
-          onChange={(event) => setValues((current) => ({ ...current, parent_id: Number(event.target.value) || null }))}
-        >
-          <option value={0}>Ninguna (Categoría Principal)</option>
-          {parentOptions.map((opt) => (
-            <option key={opt.id} value={opt.id}>{opt.label}</option>
-          ))}
-        </select>
+          onChange={(val) => setValues((current) => ({ ...current, parent_id: Number(val) || null }))}
+          options={[
+            { value: 0, label: 'Ninguna (Categoría Principal)' },
+            ...parentOptions.map((opt) => ({ value: opt.id, label: opt.label }))
+          ]}
+          placeholder="Seleccione categoría padre..."
+        />
       </div>
 
       <div>

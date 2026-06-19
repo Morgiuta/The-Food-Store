@@ -43,6 +43,8 @@ export interface DashboardMetrics {
 
 interface ProductoItem {
   stock_cantidad: number;
+  disponible?: boolean;
+  deleted_at?: string | null;
 }
 
 interface ProductoListResponse {
@@ -71,11 +73,11 @@ export const dashboardService = {
       api.get<EstadisticasProductoTop[]>(`/estadisticas/productos-top${queryStr}`),
       api.get<EstadisticasPedidosEstado[]>(`/estadisticas/pedidos-por-estado${queryStr}`),
       api.get<EstadisticasIngresosFormaPago[]>(`/estadisticas/ingresos${queryStr}`),
-      api.get<ProductoListResponse>('/productos/?page=1&size=100'), // For stock only
+      api.get<ProductoListResponse>('/productos/?page=1&size=100&disponible=true'), // For stock only
     ]);
 
     const productosBajoStock = (productosRes.data.items || []).filter(
-      (p) => Number(p.stock_cantidad) < 10
+      (p) => Number(p.stock_cantidad) < 10 && p.disponible !== false && !p.deleted_at
     ).length;
 
     // Calculate backward compatible fields for UI that hasn't changed yet

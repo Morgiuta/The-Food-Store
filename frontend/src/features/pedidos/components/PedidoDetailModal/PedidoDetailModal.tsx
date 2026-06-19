@@ -164,14 +164,16 @@ export function PedidoDetailModal({ pedido, isMutating, onClose, onAdvance, onCa
                     Modificar Pedido
                   </Button>
                 )}
-                <Button 
-                   variant="ghost" 
-                   className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                   disabled={isMutating}
-                   onClick={() => onCancel(pedido)}
-                >
-                   Cancelar pedido
-                </Button>
+                {['PENDIENTE', 'CONFIRMADO'].includes(pedido.estado_codigo) && (
+                  <Button 
+                     variant="ghost" 
+                     className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                     disabled={isMutating}
+                     onClick={() => onCancel(pedido)}
+                  >
+                     Cancelar pedido
+                  </Button>
+                )}
              </div>
            )}
         </div>

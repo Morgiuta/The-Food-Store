@@ -5,6 +5,7 @@ import type { CategoriaTree } from '../../../../types/categoria';
 import type { Supply } from '../../../../types/supply';
 import type { UnidadMedida } from '../../../../types/unidadMedida';
 import { uploadImagen, deleteImagen } from '../../../../services/uploadsService';
+import { SearchableSelect } from '../../../../components/ui/SearchableSelect';
 
 const initialValues: ProductoFormValues = {
   nombre: '',
@@ -183,11 +184,20 @@ export function ProductoForm({
       let changed = false;
       const ingredientes = current.ingredientes.map((ing) => {
         const selectedIngrediente = ingredientesActivos.find((s) => s.id === ing.ingrediente_id);
+        
+        let newIng = { ...ing };
+        
         if (selectedIngrediente?.es_producto_terminado === true && ing.cantidad !== 1) {
           changed = true;
-          return { ...ing, cantidad: 1 };
+          newIng.cantidad = 1;
         }
-        return ing;
+
+        if (selectedIngrediente?.unidad_medida_id && selectedIngrediente.unidad_medida_id !== ing.unidad_medida_id) {
+          changed = true;
+          newIng.unidad_medida_id = selectedIngrediente.unidad_medida_id;
+        }
+
+        return newIng;
       });
 
       return changed ? { ...current, ingredientes } : current;
@@ -335,24 +345,22 @@ export function ProductoForm({
 
               <div>
                 <label className="block text-sm font-bold text-charcoal mb-2">Unidad de venta</label>
-                <select
-                  className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${submitAttempted && errors.unidad_venta_id ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                <SearchableSelect
                   value={values.unidad_venta_id ?? 0}
-                  onChange={(e) => {
-                    const unidadId = Number(e.target.value);
+                  onChange={(val) => {
+                    const unidadId = Number(val);
                     setValues(v => ({
                       ...v,
                       unidad_venta_id: unidadId === 0 ? null : unidadId,
                     }));
                   }}
-                >
-                  <option value={0} disabled>Seleccione una unidad...</option>
-                  {unidadesMedida.map((unidad) => (
-                    <option key={unidad.id} value={unidad.id}>
-                      {unidad.nombre} ({unidad.simbolo})
-                    </option>
-                  ))}
-                </select>
+                  options={unidadesMedida.map((unidad) => ({
+                    value: unidad.id,
+                    label: `${unidad.nombre} (${unidad.simbolo})`
+                  }))}
+                  placeholder="Seleccione una unidad..."
+                  hasError={submitAttempted && !!errors.unidad_venta_id}
+                />
                 {submitAttempted && errors.unidad_venta_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.unidad_venta_id}</p>}
               </div>
 
@@ -463,22 +471,18 @@ export function ProductoForm({
                   {values.categorias.map((cat, idx) => (
                     <div key={idx} className="flex gap-3 items-center bg-white p-3 rounded shadow-sm border border-gray-100">
                       <div className="flex-1">
-                        <select
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary outline-none"
-                          value={cat.categoria_id}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
+                        <SearchableSelect
+                          value={cat.categoria_id === 0 ? null : cat.categoria_id}
+                          onChange={(val) => {
+                            const numVal = Number(val);
                             setValues(v => ({
                               ...v,
-                              categorias: v.categorias.map((c, i) => i === idx ? { ...c, categoria_id: val } : c)
+                              categorias: v.categorias.map((c, i) => i === idx ? { ...c, categoria_id: numVal } : c)
                             }));
                           }}
-                        >
-                          <option value={0} disabled>Seleccione una categoría...</option>
-                          {categoriasOptions.map(opt => (
-                            <option key={opt.id} value={opt.id}>{opt.label}</option>
-                          ))}
-                        </select>
+                          options={categoriasOptions.map(opt => ({ value: opt.id, label: opt.label }))}
+                          placeholder="Seleccione una categoría..."
+                        />
                       </div>
                       {idx === 0 && <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">Principal</span>}
                       <button
@@ -526,21 +530,20 @@ export function ProductoForm({
 
                     return (
                     <div key={idx} className="flex flex-wrap md:flex-nowrap gap-3 items-start md:items-center bg-white p-3 rounded shadow-sm border border-orange-100">
-                      <div className="w-full md:w-1/3">
+                      <div className="w-full md:flex-1">
                         <div className="flex items-center gap-2">
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm"
-                            value={ing.ingrediente_id}
-                            onChange={(e) => {
-                              const val = Number(e.target.value);
-                              const ingredienteSeleccionado = ingredientesActivos.find((s) => s.id === val);
+                          <SearchableSelect
+                            value={ing.ingrediente_id === 0 ? null : ing.ingrediente_id}
+                            onChange={(val) => {
+                              const numVal = Number(val);
+                              const ingredienteSeleccionado = ingredientesActivos.find((s) => s.id === numVal);
                               setValues(v => ({
                                 ...v,
                                 ingredientes: v.ingredientes.map((c, i) =>
                                   i === idx
                                     ? {
                                         ...c,
-                                        ingrediente_id: val,
+                                        ingrediente_id: numVal,
                                         cantidad: ingredienteSeleccionado?.es_producto_terminado ? 1 : c.cantidad,
                                         unidad_medida_id: ingredienteSeleccionado?.unidad_medida_id ?? c.unidad_medida_id,
                                       }
@@ -548,12 +551,10 @@ export function ProductoForm({
                                 )
                               }));
                             }}
-                          >
-                            <option value={0} disabled>Seleccione insumo...</option>
-                            {ingredientesActivos.map(opt => (
-                              <option key={opt.id} value={opt.id}>{opt.nombre}</option>
-                            ))}
-                          </select>
+                            options={ingredientesActivos.map(opt => ({ value: opt.id, label: opt.nombre }))}
+                            placeholder="Seleccione insumo..."
+                            className="text-sm flex-1"
+                          />
                           {isProductoTerminado && (
                             <span className="shrink-0 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">
                               Terminado
@@ -576,23 +577,14 @@ export function ProductoForm({
                           }))}
                         />
                       </div>
-                      <div className="w-32">
-                        <select
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          value={ing.unidad_medida_id || 0}
-                          disabled={isProductoTerminado || ing.ingrediente_id === 0}
-                          onChange={(e) => setValues(v => ({
-                            ...v,
-                            ingredientes: v.ingredientes.map((c, i) => i === idx ? { ...c, unidad_medida_id: Number(e.target.value) } : c)
-                          }))}
-                        >
-                          <option value={0} disabled>Unidad...</option>
-                          {unidadesMedida.map((u) => (
-                            <option key={u.id} value={u.id}>{u.simbolo}</option>
-                          ))}
-                        </select>
+                      <div className="w-24 shrink-0 flex items-center bg-gray-50 border border-gray-200 rounded px-3 py-2 cursor-not-allowed" title="La unidad de medida se define en el insumo">
+                        <span className="text-sm text-gray-500 font-medium truncate">
+                          {ing.unidad_medida_id 
+                            ? unidadesMedida.find(u => u.id === ing.unidad_medida_id)?.simbolo || 'Unidad...'
+                            : 'Unidad...'}
+                        </span>
                       </div>
-                      <div className="flex-1 flex gap-4 text-sm">
+                      <div className="flex gap-4 text-sm whitespace-nowrap shrink-0">
                         <label className="flex items-center gap-1 cursor-pointer">
                           <input 
                             type="checkbox" 

@@ -95,10 +95,10 @@ export function HomePage() {
               <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metrics?.ventasPorDia || []}>
+                <LineChart data={metrics?.ventasPorDia || []} margin={{ left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="fecha" />
-                  <YAxis tickFormatter={(val) => `$${val}`} />
+                  <YAxis tickFormatter={(val) => `$${val.toLocaleString('es-AR')}`} width={80} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   <Line type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
@@ -163,10 +163,10 @@ export function HomePage() {
               <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={metrics?.ingresosPorFormaPago || []}>
+                <BarChart data={metrics?.ingresosPorFormaPago || []} margin={{ left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="forma_pago" />
-                  <YAxis tickFormatter={(val) => `$${val}`} />
+                  <YAxis tickFormatter={(val) => `$${val.toLocaleString('es-AR')}`} width={80} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   <Bar dataKey="ingresos" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                 </BarChart>
